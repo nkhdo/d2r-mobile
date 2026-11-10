@@ -48,14 +48,14 @@ JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeBag(JNIEnv *env, jc
         o[1] = (unsigned char)it->code[0] | (unsigned char)it->code[1] << 8 | (unsigned char)it->code[2] << 16;
         o[2] = it->where | it->quality << 8 | it->unid << 16 | (jint)((uint32_t)it->loc << 24);
         o[3] = (uint8_t)it->x | (uint8_t)it->y << 8 | (uint8_t)it->w << 16 | (jint)((uint32_t)(uint8_t)it->h << 24);
-        o[4] = it->row;
+        o[4] = (jint)((uint16_t)it->row | (uint32_t)it->flags << 16);
     }
     (*env)->SetIntArrayRegion(env, out, 0, 1 + n * INTS, v);
     return n;
 }
 
 // action numbers match A_* in ThorDeck.java
-enum { A_DRINK, A_FEED_MERC, A_PORTAL, A_MAP, A_SWAP, A_TAB, A_PLAYERS };
+enum { A_DRINK, A_FEED_MERC, A_PORTAL, A_MAP, A_SWAP, A_TAB, A_PLAYERS, A_USE, A_TO_BELT, A_SORT };
 
 JNIEXPORT void JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeAction(JNIEnv *env, jclass cls, jint action, jint arg) {
     (void)env; (void)cls;
@@ -67,6 +67,9 @@ JNIEXPORT void JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeAction(JNIEnv *env,
     case A_SWAP: dm_swap_request(); break;
     case A_TAB: dm_ui_open_tab(arg); break;
     case A_PLAYERS: dm_hud_request_players(arg); break;
+    case A_USE: dm_item_use((uint32_t)arg); break;          // Bag tab item sheet: arg = item id
+    case A_TO_BELT: dm_belt_put((uint32_t)arg); break;
+    case A_SORT: dm_inv_sort(0); break;                      // page 0 = the bag
     }
 }
 

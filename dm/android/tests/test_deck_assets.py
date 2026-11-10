@@ -86,5 +86,37 @@ class ItemIcons(unittest.TestCase):
         self.assertEqual(deck.icon_file('weapon/axe/hand_axe'), 'weapon_axe_hand_axe.png')
 
 
+class ItemNames(unittest.TestCase):
+    BASE = {'weapon': [{'code': 'hax', 'namestr': 'hax'}], 'misc': [{'code': 'r01', 'namestr': 'r01'}, {'code': 'zzz', 'namestr': 'nokey'}]}
+    UROWS = [{'index': 'The Gnasher', 'code': 'hax', '*ID': '0'}]
+    SROWS = [{'index': "Civerb's Icon", 'item': 'amu', '*ID': '7'}]
+    STRINGS = [
+        {'Key': 'hax', 'enUS': 'Hand Axe', 'esES': '[fs]Hacha de mano', 'deDE': '[ns]Handaxt'},
+        {'Key': 'r01', 'enUS': 'El Rune', 'deDE': 'ÿc4El-Rune'},
+        {'Key': 'The Gnasher', 'enUS': 'The Gnasher', 'zhCN': '啸哮'},
+        {'Key': "Civerb's Icon", 'enUS': "Civerb's Icon"},
+    ]
+
+    def table(self):
+        return {r[0]: r[1:] for r in rows(deck.item_name_table(self.BASE, self.UROWS, self.SROWS, self.STRINGS))[1:]}
+
+    def test_header_is_key_then_the_game_languages(self):
+        self.assertEqual(rows(deck.item_name_table(self.BASE, self.UROWS, self.SROWS, self.STRINGS))[0], ['key'] + list(deck.LANGS))
+
+    def test_base_unique_and_set_names(self):
+        t = self.table()
+        self.assertEqual(t['hax'][0], 'Hand Axe')
+        self.assertEqual(t['hax'][2], 'Hacha de mano')
+        self.assertEqual(t['hax'][1], 'Handaxt')   # German gender marker dropped too
+        self.assertEqual(t['u0'][8], '啸哮')
+        self.assertEqual(t['s7'][0], "Civerb's Icon")
+
+    def test_colour_codes_are_removed(self):
+        self.assertEqual(self.table()['r01'][1], 'El-Rune')
+
+    def test_keys_without_a_string_are_left_out(self):
+        self.assertNotIn('zzz', self.table())
+
+
 if __name__ == '__main__':
     unittest.main()

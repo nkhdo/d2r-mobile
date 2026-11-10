@@ -47,6 +47,20 @@ static void item_size(uint8_t *b, uint64_t item, int *w, int *h) {
     if (t && ci < *(uint32_t *)(t + 0x15c8)) { uint64_t rec = *(uint64_t *)(t + 0x15c0) + (uint64_t)ci * 0x1c0; *w = *(uint8_t *)(rec + 0x11e); *h = *(uint8_t *)(rec + 0x11f); }
 }
 
+// Use and belt flags by the game's own item-type tests (as dm_cursor_item.c): type 9 potion, 0x16 scroll, 0x12 tome, plus the cube;
+// beltable = item table record (stride 0x1c0) +0x12e main type -> type table (stride 0xe8) +0x17
+static int item_flags(uint8_t *b, uint64_t item, const char *code) {
+    int (*is_type)(uint64_t, int) = (void *)(b + 0x574bc0); int f = 0;
+    if (is_type(item, 9) || is_type(item, 0x16) || is_type(item, 0x12) || !strcmp(code, "box")) f |= DM_INV_F_USE;
+    uint8_t ver = *(uint8_t *)(item + 0x1bd); uint32_t ci = *(uint32_t *)(item + 4);
+    if (ver >= 1 && ver <= 3) {
+        uint64_t t = *(uint64_t *)(b + 0x2d64a18 + (uint64_t)ver * 16), recs = t ? *(uint64_t *)(t + 0x15c0) : 0, types = t ? *(uint64_t *)(t + 0x1368) : 0;
+        if (recs && types && ci < *(uint32_t *)(t + 0x15c8)) { int16_t ty = *(int16_t *)(recs + (uint64_t)ci * 0x1c0 + 0x12e);
+            if (ty >= 0 && (uint64_t)ty < *(uint64_t *)(t + 0x1370) && *(uint8_t *)(types + (uint64_t)ty * 0xe8 + 0x17)) f |= DM_INV_F_BELT; }
+    }
+    return f;
+}
+
 void dm_inv_tick(uint8_t *b, uint64_t pl) {
     static dm_inv_item cur[DM_INV_MAX];
     if (!atomic_load(&g_want)) return;
@@ -70,6 +84,7 @@ void dm_inv_tick(uint8_t *b, uint64_t pl) {
             if (pp && mode != 1) { o->x = (int8_t)*(int32_t *)(pp + 0x10); o->y = (int8_t)*(int32_t *)(pp + 0x14); }
             int w = 1, h = 1; if (mode != 2) item_size(b, it, &w, &h);
             o->w = (int8_t)w; o->h = (int8_t)h;
+            o->flags = (uint8_t)item_flags(b, it, o->code);
         }
         it = *(uint64_t *)(d + 0xb0);
     }

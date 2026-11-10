@@ -11,11 +11,15 @@ public class BagModelTest {
         cases++;
         if (Math.abs(want - actual) > 0.01f) throw new AssertionError(what + ": want=" + want + " actual=" + actual);
     }
-    // one item as nativeBag packs it: id, code bytes, where | quality << 8 | unid << 16 | loc << 24, x | y << 8 | w << 16 | h << 24, row
+    // one item as nativeBag packs it: id, code bytes, where | quality << 8 | unid << 16 | loc << 24, x | y << 8 | w << 16 | h << 24, row & 0xffff | flags << 16
     private static int[] item(int id, String code, int where, int quality, int unid, int loc, int x, int y, int w, int h, int row) {
-        int c = 0; for (int i = 0; i < code.length(); i++) c |= code.charAt(i) << (8 * i);
-        return new int[] { id, c, where | quality << 8 | unid << 16 | loc << 24, (x & 0xff) | (y & 0xff) << 8 | w << 16 | h << 24, row };
+        return item(id, code, where, quality, unid, loc, x, y, w, h, row, 0);
     }
+    private static int[] item(int id, String code, int where, int quality, int unid, int loc, int x, int y, int w, int h, int row, int flags) {
+        int c = 0; for (int i = 0; i < code.length(); i++) c |= code.charAt(i) << (8 * i);
+        return new int[] { id, c, where | quality << 8 | unid << 16 | loc << 24, (x & 0xff) | (y & 0xff) << 8 | w << 16 | h << 24, row & 0xffff | flags << 16 };
+    }
+    private static String acts(BagModel.Item it) { return java.util.Arrays.toString(BagModel.actions(it)); }
     private static int[] pack(int[]... items) {
         int[] raw = new int[items.length * BagModel.INTS];
         for (int i = 0; i < items.length; i++) System.arraycopy(items[i], 0, raw, i * BagModel.INTS, BagModel.INTS);
@@ -24,11 +28,11 @@ public class BagModelTest {
     public static void main(String[] args) {
         BagModel.Item[] items = BagModel.decode(pack(
             item(11, "lsd", BagModel.BAG, 7, 0, 0, 2, 1, 2, 3, 42),   // a unique long sword at cells (2,1), 2 x 3
-            item(12, "hp1", BagModel.BAG, 2, 0, 0, 9, 3, 1, 1, -1),
+            item(12, "hp1", BagModel.BAG, 2, 0, 0, 9, 3, 1, 1, -1, BagModel.F_USE | BagModel.F_BELT),
             item(13, "cap", BagModel.WORN, 4, 1, 1, 0, 0, 2, 2, -1),   // worn on the head, unidentified magic
             item(14, "rin", BagModel.WORN, 5, 0, 7, 0, 0, 1, 1, 9),   // left ring, set item row 9
             item(15, "axe", BagModel.WORN, 2, 0, 11, 0, 0, 2, 3, -1), // other weapon set: not drawn
-            item(16, "mp2", BagModel.BELT, 2, 0, 0, 5, 0, 1, 1, -1)), 6);
+            item(16, "mp2", BagModel.BELT, 2, 0, 0, 5, 0, 1, 1, -1, BagModel.F_USE | BagModel.F_BELT)), 6);
         check("count", 6, items.length);
         check("code", "lsd", items[0].code);
         check("quality", 7, items[0].quality);
@@ -37,6 +41,15 @@ public class BagModelTest {
         check("plain picture key", "hp1", items[1].pictureKey());
         check("unidentified", true, items[2].unid);
         check("body location", 1, items[2].loc);
+        check("row survives the flags beside it", 42, items[0].row);
+        check("no row", -1, items[1].row);
+
+        // the item sheet's buttons
+        String use = String.valueOf(BagModel.ACT_USE), toBelt = String.valueOf(BagModel.ACT_BELT), sort = String.valueOf(BagModel.ACT_SORT);
+        check("potion in the bag: use, to belt, sort", "[" + use + ", " + toBelt + ", " + sort + "]", acts(items[1]));
+        check("sword in the bag: sort only", "[" + sort + "]", acts(items[0]));
+        check("worn item: nothing to do", "[]", acts(items[2]));
+        check("potion already in the belt: use only", "[" + use + "]", acts(items[5]));
 
         // content 1200 x 1000 at (0, 100)
         BagModel.Layout l = new BagModel.Layout(0, 100, 1200, 1000, 12);

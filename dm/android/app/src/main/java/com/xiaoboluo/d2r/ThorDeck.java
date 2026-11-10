@@ -18,14 +18,15 @@ import java.util.Arrays;
 // 4 x 3 large buttons below: Inventory, Character, Skills, Quests / Portal, Map, Swap weapons, Players / the four belt columns (tap = drink the bottom-row bottle, long press = feed the mercenary).
 // Drawn on the canvas only (no game art); all text goes through the string table (nativeText). SecondScreen reads a snapshot every 100 ms and passes it to update, which redraws only on change; press feedback is drawn at once.
 // A touch takes effect on release, and CANCEL means undo: right after the bottom screen appears, the first touch arrives as DOWN then CANCEL
-// A tab row on top switches between Main (the above) and Bag (read only: worn items, the bag grid and the belt, with the player's own item
-// pictures; BagModel.java). The host reads the items only while Bag is showing.
+// A tab row on top switches between Main (the above) and Bag (worn items, the bag grid and the belt, with the player's own item pictures;
+// BagModel.java). The host reads the items only while Bag is showing. Tapping an item opens a sheet at the bottom with its picture, its name
+// (base, unique or set name in the game's language) and the actions that apply: Use, To belt, Sort bag.
 final class ThorDeck extends View {
     // snapshot indices, matching deck_jni.c
     static final int H_VALID = 0, H_LEVEL = 1, H_EXP = 2, H_HP = 3, H_HP_MAX = 4, H_MP = 5, H_MP_MAX = 6, H_BELT = 7, H_KIND = 11, H_PORTAL = 15,
         H_PLAYERS = 16, H_POINTS = 17, H_QUEST = 18, H_DEAD = 19, H_TOWN = 20, H_SWITCH = 21, H_MAP_FULL = 22, H_AREA = 23, H_LANG = 24, H_COUNT = 25;
     // action numbers, matching deck_jni.c
-    static final int A_DRINK = 0, A_FEED_MERC = 1, A_PORTAL = 2, A_MAP = 3, A_SWAP = 4, A_TAB = 5, A_PLAYERS = 6;
+    static final int A_DRINK = 0, A_FEED_MERC = 1, A_PORTAL = 2, A_MAP = 3, A_SWAP = 4, A_TAB = 5, A_PLAYERS = 6, A_USE = 7, A_TO_BELT = 8, A_SORT = 9;
     static native int nativeHud(int[] out);
     static native void nativeAction(int action, int arg);
     static native String nativeText(String key);
@@ -64,6 +65,14 @@ final class ThorDeck extends View {
     private final int[] bagRaw = new int[1 + 128 * BagModel.INTS];
     private int bagGen = -1;
     private DeckIcons icons;
+    // the item sheet: which item it is for (item id; 0 = closed), its panel, and its buttons (BagModel.ACT_* and close)
+    // touch target codes, in ranges that cannot overlap: picker 99–107, tabs 200+, outside the sheet 499, sheet buttons 500–503, items 1000 + index (up to 128)
+    private static final int SHEET_OUT = 499, SHEET_BASE = 500, ITEM_BASE = 1000, SHEET_CLOSE = 0;
+    private int sheetId;
+    private int[] sheetActs = new int[0];
+    private final RectF sheet = new RectF(), sheetPic = new RectF();
+    private final RectF[] sheetBtn = { new RectF(), new RectF(), new RectF(), new RectF() };
+    private DeckNames itemNames;
     private final android.graphics.Rect src = new android.graphics.Rect();
     private final RectF dst = new RectF();
     private final Paint bitmapPaint = new Paint(Paint.FILTER_BITMAP_FLAG);
@@ -110,6 +119,12 @@ final class ThorDeck extends View {
         float body = pad + tabH + gap;
         strip.set(pad, body, w - pad, body + h * 0.2f);
         bagLayout = new BagModel.Layout(pad, body, w - 2 * pad, h - body - pad, gap);
+        // the sheet covers the belt area: picture on the left, name on top, up to four buttons below it
+        sheet.set(pad, bagLayout.beltY, w - pad, h - pad);
+        float sp = gap, ps = sheet.height() - 2 * sp;
+        sheetPic.set(sheet.left + sp, sheet.top + sp, sheet.left + sp + ps, sheet.bottom - sp);
+        float bx = sheetPic.right + 2 * sp, bw = (sheet.right - sp - bx - 3 * sp) / 4, by = sheet.top + sheet.height() * 0.45f;
+        for (int i = 0; i < 4; i++) sheetBtn[i].set(bx + i * (bw + sp), by, bx + i * (bw + sp) + bw, sheet.bottom - sp);
         float top = strip.bottom + gap, cw = (w - 2 * pad - 3 * gap) / 4, ch = (h - pad - top - 2 * gap) / 3;
         for (int i = 0; i < B_COUNT; i++) {
             int r = i / 4, c = i % 4; float x = pad + c * (cw + gap), y = top + r * (ch + gap);
@@ -150,7 +165,7 @@ final class ThorDeck extends View {
     // ---- Bag tab ----
     private void setTab(int t) {
         if (t == tab) return;
-        tab = t; picking = false; cancelAll();
+        tab = t; picking = false; sheetId = 0; cancelAll();
         nativeBagWant(tab == TAB_BAG); bagGen = -1;
         invalidate();
     }
@@ -165,6 +180,8 @@ final class ThorDeck extends View {
         if (n < 0 || bagRaw[0] == bagGen) return;
         bagGen = bagRaw[0];
         bag = BagModel.decode(Arrays.copyOfRange(bagRaw, 1, bagRaw.length), n);
+        BagModel.Item open = sheetItem();
+        if (open == null) sheetId = 0; else sheetActs = BagModel.actions(open);   // used up or moved away: the sheet closes
         invalidate();
     }
 
@@ -200,6 +217,63 @@ final class ThorDeck extends View {
                 c.drawText(it.code, tmp.centerX(), tmp.centerY() - (text.descent() + text.ascent()) / 2, text);
             }
             if (it.quality >= 4) { line.setColor(it.unid ? DEAD : q); c.drawRect(tmp, line); }
+            if (it.id == sheetId) { line.setColor(TEXT); c.drawRect(tmp, line); }
+        }
+        drawSheet(c);
+    }
+
+    private BagModel.Item sheetItem() {
+        if (sheetId == 0) return null;
+        for (BagModel.Item it : bag) if (it.id == sheetId) return it;
+        return null;
+    }
+
+    // name in the game's language: unique / set name once identified, else the base item's; the item code if the pack has no names
+    private String itemName(BagModel.Item it) {
+        if (itemNames == null) {
+            String tsv = "";
+            File f = new File(getContext().getFilesDir(), "dm/overlay/deck/itemnames.tsv");
+            try {
+                if (f.isFile() && f.length() <= 4 * 1024 * 1024) tsv = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+            } catch (java.io.IOException | SecurityException e) { tsv = ""; }
+            itemNames = DeckNames.parse(tsv);
+        }
+        String n = it.unid ? "" : itemNames.name(it.pictureKey(), hud[H_LANG]);
+        if (n.isEmpty()) n = itemNames.name(it.code, hud[H_LANG]);
+        return n.isEmpty() ? it.code : n;
+    }
+
+    private void drawSheet(Canvas c) {
+        BagModel.Item it = sheetItem(); if (it == null) return;
+        float rad = sheet.height() * 0.06f;
+        fill.setColor(0xF0151109); c.drawRoundRect(sheet, rad, rad, fill);
+        line.setColor(GOLD); c.drawRoundRect(sheet, rad, rad, line);
+        fill.setColor(PANEL); c.drawRect(sheetPic, fill);
+        Bitmap b = icons.get(it);
+        if (b != null) {
+            float s = Math.min(sheetPic.width() / b.getWidth(), sheetPic.height() / b.getHeight()), bw = b.getWidth() * s, bh = b.getHeight() * s;
+            src.set(0, 0, b.getWidth(), b.getHeight());
+            dst.set(sheetPic.centerX() - bw / 2, sheetPic.centerY() - bh / 2, sheetPic.centerX() + bw / 2, sheetPic.centerY() + bh / 2);
+            c.drawBitmap(b, src, dst, bitmapPaint);
+        }
+        int q = QUALITY_COLOUR[Math.max(0, Math.min(8, it.quality))];
+        String name = itemName(it);
+        text.setTextAlign(Paint.Align.LEFT); text.setColor(it.unid ? DEAD : q); text.setTextSize(sheet.height() * 0.15f);
+        float room = sheet.right - sheetBtn[0].left - sheet.height() * 0.1f;
+        if (text.measureText(name) > room) text.setTextSize(text.getTextSize() * room / text.measureText(name));
+        c.drawText(name, sheetBtn[0].left, sheet.top + sheet.height() * 0.3f, text);
+        text.setTextAlign(Paint.Align.CENTER);
+        for (int i = 0; i < 4; i++) {
+            RectF r = sheetBtn[i]; float rr = r.height() * 0.15f;
+            int act = i < sheetActs.length ? sheetActs[i] : i == 3 ? SHEET_CLOSE : -1;
+            if (act < 0) continue;
+            fill.setColor(pressed(SHEET_BASE + i) ? PRESSED : PANEL); c.drawRoundRect(r, rr, rr, fill);
+            line.setColor(GOLD); c.drawRoundRect(r, rr, rr, line);
+            String label = t(act == BagModel.ACT_USE ? "dmDeckUse" : act == BagModel.ACT_BELT ? "dmDeckToBelt" : act == BagModel.ACT_SORT ? "dmDeckSort" : "dmDeckClose");
+            text.setColor(TEXT); text.setTextSize(r.height() * 0.3f);
+            float fit = r.width() * 0.9f, tw = text.measureText(label);
+            if (tw > fit) text.setTextSize(text.getTextSize() * fit / tw);
+            c.drawText(label, r.centerX(), r.centerY() - (text.descent() + text.ascent()) / 2, text);
         }
     }
 
@@ -282,7 +356,14 @@ final class ThorDeck extends View {
 
     private int hit(float x, float y) {
         for (int i = 0; i < TAB_COUNT; i++) if (tabRect[i].contains(x, y)) return TAB_BASE + i;
-        if (tab == TAB_BAG) return -1;   // read only for now
+        if (tab == TAB_BAG) {
+            if (sheetItem() != null) {
+                for (int i = 0; i < 4; i++) if (sheetBtn[i].contains(x, y) && (i < sheetActs.length || i == 3)) return SHEET_BASE + i;
+                if (sheet.contains(x, y)) return -1;
+            }
+            int i = bagLayout == null ? -1 : bagLayout.itemAt(bag, x, y);
+            return i >= 0 ? ITEM_BASE + i : sheetItem() != null ? SHEET_OUT : -1;   // a tap on nothing closes the sheet
+        }
         if (picking) { for (int i = 0; i < 8; i++) if (pick[i].contains(x, y)) return PICK_BASE + i; return PICK_BASE - 1; }   // outside the picker = close it
         for (int i = 0; i < B_COUNT; i++) if (cell[i].contains(x, y)) return i;
         return -1;
@@ -324,6 +405,21 @@ final class ThorDeck extends View {
     }
 
     private void commit(int d) {
+        // highest range first: items (ITEM_BASE + index), sheet buttons, outside the sheet, tabs, then the players picker below
+        if (d >= ITEM_BASE) {
+            int i = d - ITEM_BASE;   // the list can change between finger down and up (10 Hz poll): check the index again
+            if (i < bag.length) { BagModel.Item it = bag[i]; sheetId = it.id == sheetId ? 0 : it.id; sheetActs = BagModel.actions(it); }
+            return;
+        }
+        if (d >= SHEET_BASE) {
+            int i = d - SHEET_BASE; BagModel.Item it = sheetItem();
+            if (it != null && i < sheetActs.length) {
+                int act = sheetActs[i];
+                nativeAction(act == BagModel.ACT_USE ? A_USE : act == BagModel.ACT_BELT ? A_TO_BELT : A_SORT, it.id);
+            }
+            sheetId = 0; return;
+        }
+        if (d == SHEET_OUT) { sheetId = 0; return; }
         if (d >= TAB_BASE) { setTab(d - TAB_BASE); return; }
         if (d >= PICK_BASE) { nativeAction(A_PLAYERS, d - PICK_BASE + 1); picking = false; return; }
         if (d < 4) nativeAction(A_TAB, d);

@@ -6,6 +6,7 @@
 // first item [+0x10]; per item: +8 id, +0xc mode (0 stored, 1 worn, 2 belt), data [+0x10] (+0 quality, +0x18 bit 0x10 identified,
 // +0x34 UniqueItems / SetItems row, +0x54 body location, +0x55 page, +0xb0 next item), cell [[item+0x38]+0x10 / +0x14].
 enum { DM_INV_BAG = 0, DM_INV_WORN = 1, DM_INV_BELT = 2 };
+enum { DM_INV_F_USE = 1, DM_INV_F_BELT = 2 };   // can be used (potion, scroll, tome, cube) / can go in the belt (item type's belt flag)
 #define DM_INV_MAX 128
 typedef struct {
     uint32_t id;
@@ -15,6 +16,7 @@ typedef struct {
     uint8_t unid;          // 1 = not identified
     uint8_t loc;           // worn: body location (1 head, 2 neck, 3 torso, 4 right hand, 5 left hand, 6 right ring, 7 left ring, 8 belt, 9 feet, 10 gloves, 11 / 12 other weapon set)
     int8_t x, y, w, h;     // bag: top-left cell and size in cells; belt: x = slot (column = x % 4, row = x / 4)
+    uint8_t flags;         // DM_INV_F_*
     int16_t row;           // set / unique: the row in SetItems / UniqueItems (picture key "s<row>" / "u<row>"); -1 otherwise
 } dm_inv_item;
 void dm_inv_want(int on);   // any thread: the Bag tab is showing (1) or not (0)

@@ -142,3 +142,10 @@ On the Thor with a rebuilt pack: the strip shows "Blood Moor" in gold on its own
 - Host: `dm_inv.c` reads the server player's item chain on the server tick, only while the Bag tab shows (`dm_inv_want`), and publishes a list with a generation number; the Deck redraws only when it changes.
 - On the Thor, a new character: the log line `Deck bag: 8 items: hp1/L0,0 ... tsc/B9,3 ... ssd/W4,0 1x3 ... buc/W5,0 2x2` matches the game, and the screenshot shows the short sword and buckler in the hand slots, two scrolls at the bag's right edge and four healing potions on the belt's bottom row.
 - Not checked yet (the test character has none): unique and set pictures (row read from item data +0x34, the offset the vault table uses) and the unidentified tint.
+
+### Slice 3 status: item sheet (done)
+
+- Pack: `deck/itemnames.tsv`, 1242 names in all 13 languages from `item-names.json` / `item-runes.json` (base items by namestr, uniques and sets by index; gender markers such as `[fs]` and `[ns]` and colour codes removed). Magic and rare names are built from affixes and are not included: the sheet shows the base name.
+- Host: `dm_inv.c` adds use and belt flags from the game's own item-type tests; the sheet's buttons go to `dm_item_use`, `dm_belt_put`, `dm_inv_sort(0)`, which already queue to the game thread.
+- On the Thor (adb taps on display 4): a belt potion's sheet showed "Minor Healing Potion" with Use and Close; Use logged `使用：物品 id 1（hp1）已调原版使用` and the bag list went from 8 to 7 items. The identify scroll's sheet showed Use, To belt, Sort bag, Close; To belt put it in the empty first belt column. Sort bag logged `整理：页 0 已调原版整理`.
+- Bug found on the device and fixed: touch codes for "outside the sheet" (399) fell inside the item range (300+), so tapping empty space read past the item list and crashed. The ranges are now apart (items 1000+).

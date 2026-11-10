@@ -5,13 +5,15 @@ package com.xiaoboluo.d2r;
 final class BagModel {
     static final int BAG = 0, WORN = 1, BELT = 2;
     static final int INTS = 5;   // ints per item in nativeBag's output
+    static final int F_USE = 1, F_BELT = 2;   // item flags from the host: can be used (potion, scroll, tome, cube), can go in the belt
+    static final int ACT_USE = 1, ACT_BELT = 2, ACT_SORT = 3;   // the item sheet's buttons
     static final int GRID_W = 10, GRID_H = 4, BELT_ROWS = 4;
     // worn slots left to right, by body location: head, neck, torso, right hand, left hand, right ring, left ring, belt, gloves, feet
     // (11 and 12 are the other weapon set: not shown)
     private static final int[] WORN_ORDER = { 1, 2, 3, 4, 5, 6, 7, 8, 10, 9 };
 
     static final class Item {
-        int id, where, quality, loc, x, y, w, h, row;
+        int id, where, quality, loc, x, y, w, h, row, flags;
         boolean unid;
         String code;
         // key into the pack's deck/items.tsv: its own picture for set and unique items, else the item code's
@@ -29,10 +31,21 @@ final class BagModel {
             it.code = c.toString();
             it.where = raw[o + 2] & 0xff; it.quality = raw[o + 2] >> 8 & 0xff; it.unid = (raw[o + 2] >> 16 & 0xff) != 0; it.loc = raw[o + 2] >>> 24;
             it.x = (byte) raw[o + 3]; it.y = (byte) (raw[o + 3] >> 8); it.w = raw[o + 3] >> 16 & 0xff; it.h = raw[o + 3] >>> 24;
-            it.row = raw[o + 4];
+            it.row = (short) raw[o + 4]; it.flags = raw[o + 4] >>> 16;
             out[i] = it;
         }
         return out;
+    }
+
+    // the buttons on the sheet for this item, in order. Worn items get none (equip and unequip come later, if at all)
+    static int[] actions(Item it) {
+        if (it.where == WORN) return new int[0];
+        if (it.where == BELT) return (it.flags & F_USE) != 0 ? new int[] { ACT_USE } : new int[0];
+        int[] out = new int[3]; int n = 0;
+        if ((it.flags & F_USE) != 0) out[n++] = ACT_USE;
+        if ((it.flags & F_BELT) != 0) out[n++] = ACT_BELT;
+        out[n++] = ACT_SORT;
+        return java.util.Arrays.copyOf(out, n);
     }
 
     static final class Layout {

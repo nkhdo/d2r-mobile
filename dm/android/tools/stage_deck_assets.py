@@ -7,6 +7,7 @@ Writes into the import pack's overlay folder, before its manifest is written:
   deck/items/*.png  inventory pictures from the player's own item sprites, at the game's native 49 px per cell
   deck/items.tsv    key -> picture file: key = item code ("hax"), "u<UniqueItems *ID>" or "s<SetItems *ID>"
                     (the row number the host reads at item data +0x34)
+  deck/itemnames.tsv  item names per game language for the same keys (base items by namestr, uniques and sets by index)
 These files hold game text, so they only ever live in the player's own import pack.
 """
 import json
@@ -18,7 +19,7 @@ from pathlib import Path
 
 # Column i = game language number i (dm_i18n.h: 0 enUS 1 deDE 2 esES ... 12 ptBR)
 LANGS = ('enUS', 'deDE', 'esES', 'frFR', 'itIT', 'koKR', 'plPL', 'ruRU', 'zhCN', 'zhTW', 'esMX', 'jaJP', 'ptBR')
-GENDER_TAG = re.compile(r'^(?:\[[fm][sp]\])+')   # Spanish grammatical-gender marker at the start of a name
+GENDER_TAG = re.compile(r'^(?:\[[a-z]{2}\])+')   # grammatical-gender marker at the start of a name ([fs] Spanish, [ns] German, ...)
 
 
 def _clean(text):
@@ -39,6 +40,33 @@ def level_table(levels, strings):
         entry = by_key.get(key)
         names = [_clean(entry.get(lang)) for lang in LANGS] if entry else [_clean(key)] + [''] * (len(LANGS) - 1)
         out.append('\t'.join([ident] + names))
+    return '\n'.join(out) + '\n'
+
+
+COLOUR_CODE = re.compile('ÿc.')   # the game's in-string colour switch (ÿc + one character)
+
+
+def item_name_table(base, unique_rows, set_rows, strings):
+    """Item names per game language for the Deck's item sheet: key (item code, "u<row>", "s<row>", as in items.tsv) + the 13
+    language columns. Base items by their namestr; uniques and sets by their index. Magic and rare names are not here (made of affixes)."""
+    by_key = {}
+    for entry in strings:
+        by_key.setdefault(entry.get('Key'), entry)
+    want = []
+    for rows in base.values():
+        for r in rows:
+            if r.get('code'):
+                want.append((r['code'], r.get('namestr') or r['code']))
+    for prefix, rows in (('u', unique_rows), ('s', set_rows)):
+        for r in rows:
+            ident = (r.get('*ID') or '').strip()
+            if ident.isdigit() and r.get('index'):
+                want.append((prefix + ident, r['index']))
+    out = ['\t'.join(('key',) + LANGS)]
+    for key, skey in want:
+        entry = by_key.get(skey)
+        if entry:
+            out.append('\t'.join([key] + [_clean(COLOUR_CODE.sub('', entry.get(lang) or '')) for lang in LANGS]))
     return '\n'.join(out) + '\n'
 
 
@@ -102,8 +130,14 @@ def _stage_icons(romfs, target):
     sprites = {p[len(root):-len('.sprite')] for p in index if p.startswith(root) and p.endswith('.sprite')}
     base = {c: annot_strings.excel(romfs, f + '.txt') for c, f in (('armor', 'armor'), ('weapon', 'weapons'), ('misc', 'misc'))}
     js = lambda n: json.loads(read('data/hd/items/%s.json' % n).decode('utf-8-sig'))
-    icons = icon_map(base, js('items'), js('uniques'), js('sets'),
-                     annot_strings.excel(romfs, 'uniqueitems.txt'), annot_strings.excel(romfs, 'setitems.txt'), sprites)
+    unique_rows, set_rows = annot_strings.excel(romfs, 'uniqueitems.txt'), annot_strings.excel(romfs, 'setitems.txt')
+    icons = icon_map(base, js('items'), js('uniques'), js('sets'), unique_rows, set_rows, sprites)
+    strings = []
+    for name in ('item-names.json', 'item-runes.json'):
+        path = [p for p in index if p.endswith('/lng/strings/' + name)]
+        if path:
+            strings += json.loads(read(path[0]).decode('utf-8-sig'))
+    (target / 'itemnames.tsv').write_text(item_name_table(base, unique_rows, set_rows, strings), encoding='utf-8', newline='\n')
     out = target / 'items'
     out.mkdir(parents=True, exist_ok=True)
     for path in sorted(set(icons.values())):
