@@ -793,6 +793,35 @@ static void cube_diag_tick(uint64_t G, uint64_t player) {   // 合成请求后 2
 // All three "who is the controlled player" sites go by it: the per-tick feature entry hud_tick, the state dump state_dump, the position check poschk. A corpse left in the player table after the character dies is also a player-type unit with "mode ≠ 0 and coordinates",
 // so counting units present reports "living player + own corpse" as non-unique. That is a stale measuring criterion, not two players on the field
 static uint32_t local_player_id(void) { uint32_t slot = 8, lid = 0xffffffffu; module_t *mm = main_mod(); if (mm && tk_rd((uint64_t)mm->base + 0x2d20e4c, &slot, 4) && slot < 8) tk_rd((uint64_t)mm->base + 0x2d60380 + 4 * slot, &lid, 4); return lid; }
+// Bottom-screen Deck, Map tab: town portals (object 59) and red portals (object 60) in the player's area, from the server's object table
+// (G+0x2a30: 128 buckets, next = +0x158): every live portal, near or far, which the client only knows near the player. Once a second (25
+// ticks); an area holds few objects. Object coordinates are the static path's +0x10 / +0x14 (w_unit_xy in dm_world.c), its room the path's
+// first field (w_same_room), and room → area as for the player: +0x18 → +0x90 → +0x1f8
+static _Atomic uint32_t g_portal_seq; static dm_portal_view g_portal_pub;
+static void portal_scan(uint64_t G, int area) {
+    static uint32_t at; uint32_t tq = 0;
+    if (!tk_rd(G + 0x170, &tq, 4) || tq - at < 25u) return;
+    at = tq;
+    dm_portal_view v; memset(&v, 0, sizeof v);
+    for (int b = 0; b < 128 && area > 0 && v.n < DM_PORTAL_MAX; b++) {
+        uint64_t u = 0; if (!tk_rd(G + 0x2a30 + 8 * b, &u, 8)) continue;
+        for (int k = 0; u && k < 512 && v.n < DM_PORTAL_MAX; k++) {
+            uint32_t cl = 0, no = 0; uint64_t p = 0, r1 = 0, r2 = 0, lvl = 0; int32_t c[2] = {0};
+            if (tk_rd(u + 4, &cl, 4) && (cl == 59 || cl == 60) && tk_rd(u + 0x38, &p, 8) && p && tk_rd(p, &r1, 8) && r1 && tk_rd(r1 + 0x18, &r2, 8) && r2
+                && tk_rd(r2 + 0x90, &lvl, 8) && lvl && tk_rd(lvl + 0x1f8, &no, 4) && (int)no == area && tk_rd(p + 0x10, c, 8)) {
+                v.x[v.n] = c[0]; v.y[v.n] = c[1]; v.cls[v.n] = (int)cl; v.n++;
+            }
+            if (!tk_rd(u + 0x158, &u, 8)) break;
+        }
+    }
+    static int last = -1; if (v.n != last) { last = v.n; LOG("Deck portals: area %d, %d portal(s)%s%d,%d", area, v.n, v.n ? " first at " : "", v.x[0], v.y[0]); }
+    atomic_fetch_add(&g_portal_seq, 1); g_portal_pub = v; atomic_fetch_add(&g_portal_seq, 1);
+}
+int dm_portals(dm_portal_view *v) {
+    for (int t = 0; t < 4; t++) { uint32_t a = atomic_load(&g_portal_seq); if (a & 1) continue; *v = g_portal_pub; if (atomic_load(&g_portal_seq) == a) return v->n; }
+    v->n = 0; return 0;
+}
+
 static void hud_tick(uint64_t G) {        // 每拍：受控玩家等级 / 本级经验‰ / 腰带四列件数 / 回城次数 + 当前人数档 → g_hud（前端 dm_hud_get） | Every tick: controlled player's level / current-level experience ‰ / item counts of the four belt columns / town portal count + current /players setting → g_hud (front end dm_hud_get)
     dm_hud_info h = {0};
     uint64_t player = 0, inv = 0, u = 0, next = 0;
@@ -1010,6 +1039,7 @@ static void hud_tick(uint64_t G) {        // 每拍：受控玩家等级 / 本�
     { void dm_pouch_srv_tick(uint8_t *, uint64_t, uint64_t); if (main) DM_PROF(1, "s.pouch", dm_pouch_srv_tick((uint8_t *)main->base, G, player)); }
     { void dm_cloudmerge_srv_tick(uint8_t *, uint64_t, uint64_t); if (main) DM_PROF(1, "s.cloudmerge", dm_cloudmerge_srv_tick((uint8_t *)main->base, G, player)); }   // iCloud 收件箱局内并回（dm_cloudmerge.c）；不在局内 player 为 0   // 百宝囊收 / 放、存放的系统提示（dm_pouch.c）；不在局内 player 为 0   // 编年史仓库存取（dm_vault.c）；同上 | iCloud inbox in-game merge (dm_cloudmerge.c); player is 0 when not in game   // System notices for pouch take / put and deposit (dm_pouch.c); player is 0 when not in game   // Chronicle stash take / store (dm_vault.c); same as above
     if (main && player) DM_PROF(1, "s.kills", dm_kills_tick(G, player, (uint8_t *)main->base)); dm_ipf_frame(1);   // 刷怪积分牌（dm_kills.c）：在首领连战之后，连战本关的首领它已记好 id | Kill board (dm_kills.c): runs after boss rush, which has already recorded the id of the boss of the current boss rush stage
+    { void dm_inv_tick(uint8_t *, uint64_t); if (main) dm_inv_tick((uint8_t *)main->base, player); }   // bottom-screen Deck Bag tab (dm_inv.c): reads only while the tab is showing
     cube_diag_tick(G, player);   // 合成读数 | Transmute readout
     cam_threats_tick(G, player);
     if (main && player) seek_tp_step(G, player, main);
@@ -1017,6 +1047,7 @@ static void hud_tick(uint64_t G) {        // 每拍：受控玩家等级 / 本�
     dm_hud_info ha = h, hb = g_hud; ha.x = ha.y = hb.x = hb.y = 0;   // 坐标每步都变，不算「变化」（否则走几步就把 200 行记满） | Coordinates change on every step and do not count as a "change" (otherwise a few steps would fill up the 200 lines)
     if (memcmp(&ha, &hb, sizeof ha) && logged < 200) { logged++;   // 只在变化时记一行（前 200 次）：真机 / Mac 核对读数 | Log a line only on change (first 200 times): readout for cross-checking real device / Mac
         LOG("dm_hud：区域 %d (%d,%d) Lv %d 经验 %d‰ 生命 %d/%d 法力 %d/%d 腰带 %d/%d/%d/%d 回城 %d 人数档 %d 点数 %d 新任务 %d%s%s", h.area, h.x, h.y, h.level, h.exp_permille, h.hp, h.hp_max, h.mp, h.mp_max, h.belt[0], h.belt[1], h.belt[2], h.belt[3], h.portal, h.players, h.points, h.quest_unread, h.dead ? " 已死亡" : "", h.valid ? "" : "（未读到玩家）"); }
+    portal_scan(G, h.valid ? h.area : 0);
     g_hud = h; dm_hud_publish(&h);
 }
 

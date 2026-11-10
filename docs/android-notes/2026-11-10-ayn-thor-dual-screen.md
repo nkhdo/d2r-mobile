@@ -135,3 +135,31 @@ Tests: plain-Java tests for pure logic (names, bag grid hit-testing, compass mat
 ### Slice 1 status: area name (done)
 
 On the Thor with a rebuilt pack: the strip shows "Blood Moor" in gold on its own line under the life and mana bars (the middle column is about 290 px wide, too narrow for names such as "Fortaleza de la Piedra Ecuménica Nivel 1", so the name sits under the bars rather than after the level). The real pack's table has 137 areas in all 13 languages. The frame-time check was waived for this slice by the user: the name is one `drawText`, redrawn only when the area or language changes.
+
+### Slice 2 status: Bag tab, read only (done)
+
+- Pack: `deck/items/` holds 415 pictures (4 MB) at the game's native 49 px per cell, and `deck/items.tsv` 1255 keys (item codes, `u<row>`, `s<row>`), from `hd/items/items.json`, `uniques.json`, `sets.json` and the `hd/global/ui/items/` sprites. Kept native rather than the 64 px agreed in Q13: the Deck scales them, so upscaling would only grow the pack.
+- Host: `dm_inv.c` reads the server player's item chain on the server tick, only while the Bag tab shows (`dm_inv_want`), and publishes a list with a generation number; the Deck redraws only when it changes.
+- On the Thor, a new character: the log line `Deck bag: 8 items: hp1/L0,0 ... tsc/B9,3 ... ssd/W4,0 1x3 ... buc/W5,0 2x2` matches the game, and the screenshot shows the short sword and buckler in the hand slots, two scrolls at the bag's right edge and four healing potions on the belt's bottom row.
+- Not checked yet (the test character has none): unique and set pictures (row read from item data +0x34, the offset the vault table uses) and the unidentified tint.
+
+### Slice 3 status: item sheet (done)
+
+- Pack: `deck/itemnames.tsv`, 1242 names in all 13 languages from `item-names.json` / `item-runes.json` (base items by namestr, uniques and sets by index; gender markers such as `[fs]` and `[ns]` and colour codes removed). Magic and rare names are built from affixes and are not included: the sheet shows the base name.
+- Host: `dm_inv.c` adds use and belt flags from the game's own item-type tests; the sheet's buttons go to `dm_item_use`, `dm_belt_put`, `dm_inv_sort(0)`, which already queue to the game thread.
+- On the Thor (adb taps on display 4): a belt potion's sheet showed "Minor Healing Potion" with Use and Close; Use logged `使用：物品 id 1（hp1）已调原版使用` and the bag list went from 8 to 7 items. The identify scroll's sheet showed Use, To belt, Sort bag, Close; To belt put it in the empty first belt column. Sort bag logged `整理：页 0 已调原版整理`.
+- Bug found on the device and fixed: touch codes for "outside the sheet" (399) fell inside the item range (300+), so tapping empty space read past the item list and crashed. The ranges are now apart (items 1000+).
+
+## 9. Re-plan: Main, Map, Skills (2026-11-10)
+
+After slice 3 the user found the Bag tab unnecessary: the game's own inventory does the same job better, and a second copy of the belt was confusing. A look at what a second screen is good for (glanceable state the game hides or puts behind a menu, and things the controller makes slow) gave three tabs:
+
+- **Main.** The game's HUD drawn with its own art (globes, gold frame, Exocet and Formal fonts, exported from the player's files into `deck/ui/`), a compact potion row instead of a second belt, the page buttons in the escape-menu style. Where the HUD's belt boxes would be: run stats (`RunStats.java`: time in this game, % of a level per hour, time to the next level). Above the bar, the mercenary's life (host `merc_step`, every 6 frames, the same lookup the mercenary auto-feed uses).
+- **Map.** The goal compass from slice 5, moved to its own tab with a radar and a list of up to six goals (`GoalCompass.java`, names from `deck/goals.tsv`). Towns are skipped by the map marker (`w_map_mark_step`, levels 1, 40, 75, 103, 109), so the tab shows its empty note there.
+- **Skills.** Read-only: the skills bound to A/B/X/Y/R/ZR, plain and with ZL held, for the weapon set in hand. Host `skillbar_step` reads the controller slot table and the binding table every frame; icons are the touch layer's own skill atlases, names from `deck/skills.tsv` plus `ui-controller.json` for controller-only actions (Interact, Automap, Loot to Cube).
+
+The Bag UI, the item sheet and its actions were removed; `BagModel` stays only to decode the item list for the belt pictures. Spending skill points from the Deck was dropped: the game's skill menu is one tap away.
+
+### Status
+
+On the Thor (Rogue Encampment, new character): Main shows the HUD, "Game 0:06", "XP -/h" and the potion row; Skills shows A = Attack and ZL + A = Scroll of Town Portal with icons; Map shows the empty note, as expected in town. No crashes. Not checked yet: the mercenary bar (the test character has none), the XP rate after a minute of play, and the compass outside town. The frame-time check stays waived. Buffs and their time left are not shown: nothing in the host reads state durations yet.

@@ -24,6 +24,10 @@ public class DeckNamesTest {
         check("unknown area has no name", "", n.area(500, 0));
         check("no table at all", "", DeckNames.parse("").area(1, 0));
         check("CRLF line ends", "Blood Moor", DeckNames.parse(tsv.replace("\n", "\r\n")).area(2, 0));
+        DeckNames items = DeckNames.parse("key\tenUS\tdeDE\n" + "u0\tThe Gnasher\tder Knirscher\n" + "hax\tHand Axe\n");
+        check("item key, German", "der Knirscher", items.name("u0", 1));
+        check("item key, falls back to English", "Hand Axe", items.name("hax", 1));
+        check("unknown item key", "", items.name("zzz", 0));
         System.out.println("DeckNamesTest OK (" + cases + " cases)");
     }
 }

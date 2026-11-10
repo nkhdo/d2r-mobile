@@ -501,4 +501,15 @@ dmDeckPlayers	人数 %d	Players %d	Jugadores %d		Jogadores %d	Игроки: %d	�
 dmDeckPoints	有点数可加	Points to spend	Puntos por asignar		Pontos a distribuir	Есть очки	포인트 있음	底屏 Deck 角标：未分配属性 / 技能点（ThorDeck.java）
 dmDeckQuest	新任务	New quest	Nueva misión		Nova missão	Новое задание	새 퀘스트	底屏 Deck 角标（ThorDeck.java）
 dmDeckDead	已死亡	Dead	Muerto		Morto	Погиб	사망	底屏 Deck：角色死亡时（ThorDeck.java）
+dmDeckTabMain	主页	Main	Principal		Principal	Главная	메인	底屏 Deck 标签页（ThorDeck.java）
 dmDeckIdle	进入游戏后，这里显示角色状态和快捷按钮	Character status and shortcuts appear here in game	Aquí verás el estado y los atajos al jugar		Status e atalhos aparecem aqui durante o jogo	Здесь появятся состояние и быстрые кнопки	게임 중 여기에 캐릭터 상태와 단축 버튼이 표시됩니다	底屏 Deck：还没进局时（ThorDeck.java）
+dmDeckRun	本局 %s	Game %s	Partida %s		Partida %s	Игра %s	게임 %s	Bottom-screen Deck, run stats in the HUD bar (ThorDeck.java)
+dmDeckXpRate	经验 %s/时	XP %s/h	EXP %s/h		EXP %s/h	Опыт %s/ч	경험치 %s/시	Bottom-screen Deck, run stats in the HUD bar (ThorDeck.java)
+dmDeckNextLv	升级 %s	Level up %s	Subir nivel %s		Subir nível %s	Уровень через %s	레벨업 %s	Bottom-screen Deck, run stats in the HUD bar (ThorDeck.java)
+dmDeckMerc	佣兵	Merc	Mercenario		Mercenário	Наёмник	용병	Bottom-screen Deck, mercenary's life in the HUD bar (ThorDeck.java)
+dmDeckFps	%s 帧	%s FPS	%s FPS		%s FPS	%s FPS	%s FPS	Bottom-screen Deck, frames per second in the HUD bar (ThorDeck.java)
+dmDeckNoGoals	这里没有标出的目标	No marked goals here	No hay objetivos marcados aquí		Nenhum objetivo marcado aqui	Здесь нет отмеченных целей	여기에는 표시된 목표가 없습니다	Bottom-screen Deck, Map tab goal compass (ThorDeck.java)
+dmDeckGoalAway	%d 格	%d away	a %d		a %d	в %d	%d 거리	Bottom-screen Deck, Map tab goal compass (ThorDeck.java)
+dmDeckSkillsNormal	按键	Buttons	Botones		Botões	Кнопки	버튼	Bottom-screen Deck, Skills tab (ThorDeck.java)
+dmDeckSkillsZl	按住 ZL	Hold ZL	Mantén ZL		Segure ZL	Удерживая ZL	ZL 누른 채	Bottom-screen Deck, Skills tab (ThorDeck.java)
+dmDeckSkillsHint	在游戏的技能菜单里更改按键技能	Change bindings in the game's skill menu	Cambia las asignaciones en el menú de habilidades del juego		Altere as atribuições no menu de habilidades do jogo	Назначения меняются в меню навыков игры	키 배정은 게임의 스킬 메뉴에서 바꿉니다	Bottom-screen Deck, Skills tab (ThorDeck.java)
