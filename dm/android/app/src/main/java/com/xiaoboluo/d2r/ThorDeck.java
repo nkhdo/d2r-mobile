@@ -83,6 +83,7 @@ final class ThorDeck extends View {
     private BagModel.Item[] bag = new BagModel.Item[0];
     private final int[] bagRaw = new int[1 + 128 * BagModel.INTS];
     private int bagGen = -1;
+    private final Bitmap[] beltSeen = new Bitmap[4];   // per belt column, the last picture of its own item (beltBottle)
     private DeckIcons icons;
     private DeckArt art;
     // touch target codes, in ranges that cannot overlap: Main cells 0–11, picker 99–107, tabs 200+
@@ -484,9 +485,15 @@ final class ThorDeck extends View {
     // a belt column's bottom-row item: its own picture from the item list (scrolls and other potions too), else the picture for its
     // kind, and how many the column holds
     private void beltBottle(Canvas c, int col, RectF r, float countSize) {
-        int kind = Math.max(0, Math.min(4, hud[H_KIND + col]));
+        // the item list and the HUD snapshot change at different moments: drinking the last bottle, the list can be empty while the
+        // snapshot still says "red", and the stand-in picture for "red" (a higher-tier potion) flashed. So: nothing once the count is 0,
+        // else the column's own item, else the last own item it showed, and the stand-in only before any was seen
+        int kind = hud[H_BELT + col] > 0 ? Math.max(0, Math.min(4, hud[H_KIND + col])) : 0;
         Bitmap b = null;
         if (kind != 0) for (BagModel.Item it : bag) if (it.where == BagModel.BELT && it.x == col) { b = icons().get(it); break; }
+        if (kind == 0) beltSeen[col] = null;
+        else if (b != null) beltSeen[col] = b;
+        else b = beltSeen[col];
         if (b == null && KIND_PICTURE[kind] != null) b = icons().load(KIND_PICTURE[kind]);
         if (b != null) picture(c, b, r, 2.2f);
         else if (kind != 0) { fill.setColor(KIND_COLOUR[kind]); c.drawCircle(r.centerX(), r.centerY(), Math.min(r.width(), r.height()) * 0.3f, fill); }
