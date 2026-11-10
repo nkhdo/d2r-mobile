@@ -106,7 +106,8 @@ class GoalNames(unittest.TestCase):
     STRINGS = {
         'levels': [{'Key': "Tal Rasha's Tomb", 'enUS': "Tal Rasha's Tomb", 'deDE': '[ms]Tal Rashas Grab'}],
         'monsters': [{'Key': 'Bloodraven', 'enUS': 'Blood Raven', 'zhCN': '血鸦'}],
-        'objects': [{'Key': 'Waypoint', 'enUS': 'Waypoint', 'frFR': 'Point de passage'}],
+        'objects': [{'Key': 'Waypoint', 'enUS': 'Waypoint', 'frFR': 'Point de passage'}, {'Key': 'portal', 'enUS': 'Portal'}],
+        'skills': [{'Key': 'skillan219', 'enUS': 'Town Portal', 'ruRU': 'Портал в город'}],
     }
 
     def table(self):
@@ -120,6 +121,11 @@ class GoalNames(unittest.TestCase):
 
     def test_waypoint_is_goal_255(self):
         self.assertEqual(self.table()['255'][deck.LANGS.index('frFR')], 'Point de passage')
+
+    def test_portals_are_goals_254_and_253(self):
+        t = self.table()
+        self.assertEqual(t['254'][deck.LANGS.index('ruRU')], 'Портал в город')
+        self.assertEqual(t['253'][0], 'Portal')
 
     def test_labels_without_a_string_are_left_out(self):
         self.assertNotIn('2', self.table())

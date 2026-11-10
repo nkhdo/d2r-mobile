@@ -62,6 +62,7 @@ def skill_table(skills, skilldesc, strings):
 
 
 WAYPOINT_GOAL = 255   # dm_world.h DM_MG_WP
+TOWN_PORTAL_GOAL, RED_PORTAL_GOAL = 254, 253   # deck_jni.c: portals the Deck adds to the goals (GoalCompass.java)
 
 
 def goal_labels():
@@ -76,14 +77,16 @@ def goal_labels():
 
 
 def goal_table(labels, strings):
-    """Names of the map goals (dm_map_goals) per game language: key = goal label number, plus 255 = waypoint.
+    """Names of the map goals (dm_map_goals) per game language: key = goal label number, plus 255 = waypoint, 254 = town portal (the
+    skill's name) and 253 = red portal.
     labels: [(strings file, key)]; strings: {file name: entries of lng/strings/<file>.json}."""
     by_file = {}
     for name, entries in strings.items():
         m = by_file.setdefault(name, {})
         for e in entries:
             m.setdefault(e.get('Key'), e)
-    want = list(enumerate(labels)) + [(WAYPOINT_GOAL, ('objects', 'Waypoint'))]
+    want = list(enumerate(labels)) + [(WAYPOINT_GOAL, ('objects', 'Waypoint')), (TOWN_PORTAL_GOAL, ('skills', 'skillan219')),
+                                      (RED_PORTAL_GOAL, ('objects', 'portal'))]
     out = ['\t'.join(('key',) + LANGS)]
     for n, (name, key) in want:
         e = by_file.get(name, {}).get(key)
@@ -209,7 +212,7 @@ def _stage_icons(romfs, target):
     lines = ['%s\t%s' % (k, icon_file(v)) for k, v in sorted(icons.items())]
     (target / 'items.tsv').write_text('\n'.join(lines) + '\n', encoding='utf-8', newline='\n')
     labels, strings = goal_labels(), {}
-    for name in sorted({f for f, _ in labels} | {'objects'}):
+    for name in sorted({f for f, _ in labels} | {'objects', 'skills'}):
         path = [p for p in index if p.endswith('/lng/strings/%s.json' % name)]
         if path:
             strings[name] = json.loads(read(path[0]).decode('utf-8-sig'))

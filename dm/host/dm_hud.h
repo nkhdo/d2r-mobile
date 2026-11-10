@@ -31,6 +31,11 @@ static inline int dm_hud_player_mode_dead(unsigned mode) { return mode == 0 || m
 // Area numbers of the five act towns (levels.txt Id): Rogue Encampment 1, Lut Gholein 40, Kurast Docks 75, Pandemonium Fortress 103, Harrogath 109
 static inline int dm_hud_area_is_town(int area) { return area == 1 || area == 40 || area == 75 || area == 103 || area == 109; }
 static inline int dm_hud_bar_visible(const dm_hud_info *h, int navigation, int blocked) { return h->valid && !h->dead && !navigation && !blocked; }
+// Bottom-screen Deck, Map tab: the town portals (cls 59) and red portals (cls 60) in the player's area, in world cells (diag.c, from the
+// server's object table once a second; any thread). Returns the count
+enum { DM_PORTAL_MAX = 4 };
+typedef struct { int n, x[DM_PORTAL_MAX], y[DM_PORTAL_MAX], cls[DM_PORTAL_MAX]; } dm_portal_view;
+int dm_portals(dm_portal_view *v);
 void dm_hud_get(dm_hud_info *out);
 uint32_t dm_hud_held(void);
 void dm_hud_set_held(uint32_t id);   // 游戏主线程：客户端手上物品 id（0 = 空），dm_hud_get 的 holding 取它 | Game main thread: id of the item in the client's hand (0 = empty); the holding field of dm_hud_get takes it

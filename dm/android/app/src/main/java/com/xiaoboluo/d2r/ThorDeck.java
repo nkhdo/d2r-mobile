@@ -335,11 +335,12 @@ final class ThorDeck extends View {
     }
 
     // ---- Map tab ----
-    private static final int GOAL_QUEST = 0xFFC7A04A, GOAL_TOMB = 0xFFE04030, GOAL_WAYPOINT = 0xFF7FA8FF, GOAL_EXIT = 0xFFE8D9B0;
+    private static final int GOAL_QUEST = 0xFFC7A04A, GOAL_TOMB = 0xFFE04030, GOAL_WAYPOINT = 0xFF7FA8FF, GOAL_EXIT = 0xFFE8D9B0, GOAL_PORTAL = 0xFF5EC8F0;
     private static final int GOALS_SHOWN = 6;
     private static final float BADGE_H = 46;   // the badge row under the info bar, in 1240-wide pixels
 
     private int goalColour(int art) {
+        if (art == GoalCompass.TOWN_PORTAL) return GOAL_PORTAL;
         return art >= GoalCompass.LEVEL ? GOAL_EXIT : art == GoalCompass.WAYPOINT ? GOAL_WAYPOINT : art >= GoalCompass.SYMBOL ? GOAL_TOMB : GOAL_QUEST;
     }
 

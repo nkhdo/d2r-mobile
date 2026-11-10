@@ -63,7 +63,7 @@ JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeBag(JNIEnv *env, jc
 }
 
 // Map tab (GoalCompass.java): out = n, player x, player y, then x, y, art per goal (dm_map_goals: quest goals, waypoints and real exits of
-// the current area, in world cells). Returns n, -1 if out is too short
+// the current area, in world cells, then its town portals = 254 and red portals = 253). Returns n, -1 if out is too short
 JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeGoals(JNIEnv *env, jclass cls, jintArray out) {
     (void)cls;
     if ((*env)->GetArrayLength(env, out) < 3 + 3 * DM_MAP_GOAL_MAX) return -1;
@@ -73,6 +73,12 @@ JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeGoals(JNIEnv *env, 
     jint v[3 + 3 * DM_MAP_GOAL_MAX];
     v[0] = n; v[1] = g.px; v[2] = g.py;
     for (int i = 0; i < n; i++) { v[3 + 3 * i] = g.x[i]; v[4 + 3 * i] = g.y[i]; v[5 + 3 * i] = g.art[i]; }
+    // then the town portals (254) and red portals (253) in the area, from the server's object table; with no map goals, the player's
+    // cell comes from the HUD snapshot (the server's player: the same world cells)
+    dm_portal_view pv; int np = dm_portals(&pv);
+    if (np > 0 && n == 0) { dm_hud_info h; dm_hud_get(&h); v[1] = h.x; v[2] = h.y; }
+    for (int i = 0; i < np && n < DM_MAP_GOAL_MAX; i++, n++) { v[3 + 3 * n] = pv.x[i]; v[4 + 3 * n] = pv.y[i]; v[5 + 3 * n] = pv.cls[i] == 59 ? 254 : 253; }
+    v[0] = n;
     (*env)->SetIntArrayRegion(env, out, 0, 3 + 3 * n, v);
     return n;
 }

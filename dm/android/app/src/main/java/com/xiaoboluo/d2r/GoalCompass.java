@@ -7,10 +7,10 @@ import java.util.Arrays;
 // nearest first. The game's fixed angled view draws world +x down-right and +y down-left, so a goal's screen direction is
 // (dx - dy, (dx + dy) / 2), normalised.
 final class GoalCompass {
-    static final int WAYPOINT = 255, LEVEL = 256, SYMBOL = 64, SYMBOLS = 7;
+    static final int WAYPOINT = 255, TOWN_PORTAL = 254, RED_PORTAL = 253, LEVEL = 256, SYMBOL = 64, SYMBOLS = 7;
 
     static final class Goal {
-        int art;              // the host's goal number: < 64 label, 64–70 true tomb symbol, 255 waypoint, 256 + level = exit
+        int art;              // the host's goal number: < 64 label, 64–70 true tomb symbol, 253 red portal, 254 town portal, 255 waypoint, 256 + level = exit
         double dist, sx, sy;  // distance in world cells; unit direction on screen (x right, y down; 0, 0 when standing on it)
     }
 
