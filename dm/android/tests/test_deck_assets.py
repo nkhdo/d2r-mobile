@@ -86,6 +86,20 @@ class ItemIcons(unittest.TestCase):
         self.assertEqual(deck.icon_file('weapon/axe/hand_axe'), 'weapon_axe_hand_axe.png')
 
 
+class SkillNames(unittest.TestCase):
+    SKILLS = [{'*Id': '0', 'skilldesc': 'attack'}, {'*Id': '54', 'skilldesc': 'teleport'}, {'*Id': '99', 'skilldesc': ''},
+              {'*Id': '', 'skilldesc': 'x'}]
+    DESC = [{'skilldesc': 'attack', 'str name': 'StrSkill0'}, {'skilldesc': 'teleport', 'str name': 'skillname54'}]
+    STRINGS = [{'Key': 'StrSkill0', 'enUS': 'Attack', 'zhCN': '攻击'}, {'Key': 'skillname54', 'enUS': 'Teleport', 'deDE': '[ms]Teleportieren'}]
+
+    def test_skill_names_by_id(self):
+        t = {r[0]: r[1:] for r in rows(deck.skill_table(self.SKILLS, self.DESC, self.STRINGS))[1:]}
+        self.assertEqual(t['0'][deck.LANGS.index('zhCN')], '攻击')
+        self.assertEqual(t['54'][1], 'Teleportieren')
+        self.assertNotIn('99', t)
+        self.assertEqual(rows(deck.skill_table(self.SKILLS, self.DESC, self.STRINGS))[0], ['id'] + list(deck.LANGS))
+
+
 class GoalNames(unittest.TestCase):
     # label number -> (strings file, key), as gen_map_goal_art.py LABELS
     LABELS = [('levels', "Tal Rasha's Tomb"), ('monsters', 'Bloodraven'), ('objects', 'NoSuchKey')]

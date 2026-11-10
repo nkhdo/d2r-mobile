@@ -24,6 +24,8 @@ import java.util.Arrays;
 //     Players) and a row of the four belt columns as potion buttons (tap = drink the bottom-row bottle, long press = feed the mercenary).
 //   Map: a goal compass for the current area (GoalCompass.java): the host's map goals (quest goals, the true tomb, waypoints, real
 //     exits) on a radar turned like the game's view, and a list nearest first with an arrow, the game's name and the distance.
+//   Skills: the skills bound to the controller buttons, as the game's own icons and names (SkillBar.java): the four face buttons as a
+//     diamond plus R and ZR, and the same again with ZL held. Read-only: bindings are changed in the game's skill menu.
 // The host's item list (BagModel.java) is read while the Deck shows, for the belt's own pictures. Item management stays in the
 // game's own inventory (the Inventory button): the bottom screen is for glancing and one-tap actions.
 // All text goes through the string table (nativeText). SecondScreen reads a snapshot every 100 ms and passes it to update, which redraws
@@ -41,6 +43,7 @@ final class ThorDeck extends View {
     static native void nativeBagWant(boolean on);
     static native int nativeBag(int[] out);
     static native int nativeGoals(int[] out);
+    static native int nativeSkills(int[] out);
 
     private static final long LONG_PRESS_MS = 500;
     // twelve cells: 0–3 the four function pages, 4 portal, 5 map, 6 swap, 7 players, 8–11 the four belt columns
@@ -67,8 +70,8 @@ final class ThorDeck extends View {
     private final Runnable[] longPress = new Runnable[MAX_POINTERS];
     private boolean picking;   // the players 1–8 picker is open
     // tabs. Kept across shows of the Deck (a new view is made each time the bottom screen comes back)
-    private static final int TAB_MAIN = 0, TAB_MAP = 1, TAB_COUNT = 2, TAB_BASE = 200;
-    private static final String[] TAB_LABEL = { "dmDeckTabMain", "dmDeckMap" };
+    private static final int TAB_MAIN = 0, TAB_MAP = 1, TAB_SKILLS = 2, TAB_COUNT = 3, TAB_BASE = 200;
+    private static final String[] TAB_LABEL = { "dmDeckTabMain", "dmDeckMap", "dmDeckSkills" };
     private static int tab = TAB_MAIN;
     private final RectF[] tabRect = new RectF[TAB_COUNT];
     private BagModel.Item[] bag = new BagModel.Item[0];
@@ -88,6 +91,12 @@ final class ThorDeck extends View {
     private DeckNames goalNames;
     private final RectF radar = new RectF(), list = new RectF();
     private final android.graphics.Path arrow = new android.graphics.Path();
+    // Skills tab: the bindings as last read (nativeSkills), skill names (deck/skills.tsv) and the game's skill icon atlases
+    private final int[] skillRaw = new int[12 * SkillBar.INTS], skillLast = new int[12 * SkillBar.INTS];
+    private SkillBar.Slot[] skills = new SkillBar.Slot[0];
+    private DeckNames skillNames;
+    private final Bitmap[] skillAtlas = new Bitmap[9];
+    private final boolean[] skillAtlasTried = new boolean[9];
     private DeckNames names;   // area names from the import pack (deck/levels.tsv); loaded once, null until then
 
     // An import pack made before the Deck had area names has no deck/levels.tsv: the name line then stays empty
@@ -167,6 +176,7 @@ final class ThorDeck extends View {
         }
         drawTabs(c);
         if (tab == TAB_MAP) { drawMap(c); return; }
+        if (tab == TAB_SKILLS) { drawSkills(c); return; }
         drawHud(c);
         boolean on = actionsEnabled();
         for (int i = 0; i < B_COUNT; i++) drawCell(c, i, on);
@@ -379,6 +389,71 @@ final class ThorDeck extends View {
         text.setTextAlign(Paint.Align.CENTER); text.setTypeface(art.label(hud[H_LANG]));
     }
 
+    // ---- Skills tab ----
+    private Bitmap skillAtlas(int a) {
+        if (a < 0 || a >= skillAtlas.length) return null;
+        if (!skillAtlasTried[a]) {
+            skillAtlasTried[a] = true;
+            File f = new File(getContext().getFilesDir(), "dm/overlay/touchart/dm_native_skill_" + a + ".png");
+            if (f.isFile() && f.length() <= 8 * 1024 * 1024) skillAtlas[a] = android.graphics.BitmapFactory.decodeFile(f.getAbsolutePath());
+        }
+        return skillAtlas[a];
+    }
+
+    private String skillName(int id) {
+        if (skillNames == null) {
+            String tsv = "";
+            File f = new File(getContext().getFilesDir(), "dm/overlay/deck/skills.tsv");
+            try {
+                if (f.isFile() && f.length() <= 1024 * 1024) tsv = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+            } catch (java.io.IOException | SecurityException e) { tsv = ""; }
+            skillNames = DeckNames.parse(tsv);
+        }
+        return skillNames.name(String.valueOf(id), hud[H_LANG]);
+    }
+
+    // one bound skill: its icon in a dark square (empty square when nothing is bound), the button's name in the corner, the skill's name under it
+    private void drawSkill(Canvas c, SkillBar.Slot s, String face, float cx, float cy, float size, float nameW) {
+        float k = getWidth() / 1240f;
+        tmp.set(cx - size / 2, cy - size / 2, cx + size / 2, cy + size / 2);
+        fill.setColor(0xC0000000); c.drawRect(tmp, fill);
+        Bitmap a = s == null ? null : skillAtlas(s.atlas);
+        if (a != null && s.w > 0) { src.set(s.x, s.y, s.x + s.w, s.y + s.h); c.drawBitmap(a, src, tmp, bitmapPaint); }
+        line.setColor(s != null && s.id >= 0 ? GOLD : 0x608C7340); c.drawRect(tmp, line);
+        text.setTypeface(art.label(hud[H_LANG]));
+        text.setTextAlign(Paint.Align.LEFT); text.setColor(TEXT); text.setTextSize(26 * k);
+        c.drawText(face, tmp.left + 6 * k, tmp.top - text.ascent() + 4 * k, text);
+        if (s != null && s.id >= 0) {
+            text.setTypeface(art.name(hud[H_LANG]));
+            String n = skillName(s.id);
+            label(c, n.isEmpty() ? "#" + s.id : n, cx, tmp.bottom + 22 * k, 24 * k, nameW, XP);
+        }
+        text.setTextAlign(Paint.Align.CENTER); text.setTypeface(art.label(hud[H_LANG]));
+    }
+
+    private void drawSkills(Canvas c) {
+        float w = getWidth(), h = getHeight(), k = w / 1240f, pad = 18 * k, gap = 14 * k, top = tabRect[0].bottom + gap;
+        float pw = (w - 2 * pad - gap) / 2, size = 116 * k, d = 160 * k;
+        for (int set = 0; set < 2; set++) {
+            float l = pad + set * (pw + gap), cx = l + pw / 2;
+            tmp2.set(l, top, l + pw, h - pad - 60 * k);
+            fill.setColor(0x90000000); c.drawRect(tmp2, fill); line.setColor(0x808C7340); c.drawRect(tmp2, line);
+            label(c, t(set == 0 ? "dmDeckSkillsNormal" : "dmDeckSkillsZl"), cx, top + 36 * k, 34 * k, pw * 0.9f, TEXT);
+            // the shoulders on top, then the four face buttons as a diamond
+            float sy = top + 90 * k + size / 2;
+            for (int f = 4; f < 6; f++) {
+                float x = cx + (f == 4 ? -1 : 1) * d * 0.8f;
+                drawSkill(c, slot(set * 6 + f), SkillBar.FACE_NAME[f], x, sy, size, d * 1.5f);
+            }
+            float dy = sy + size / 2 + 60 * k + d + size / 2;
+            for (int f = 0; f < 4; f++)
+                drawSkill(c, slot(set * 6 + f), SkillBar.FACE_NAME[f], cx + SkillBar.FACE_DX[f] * d, dy + SkillBar.FACE_DY[f] * d, size, d * 1.1f);
+        }
+        label(c, t("dmDeckSkillsHint"), w / 2, h - pad - 28 * k, 26 * k, w - 2 * pad, DIM);
+    }
+
+    private SkillBar.Slot slot(int i) { return i < skills.length ? skills[i] : null; }
+
     // a belt column's bottom-row item: its own picture from the item list (scrolls and other potions too), else the picture for its
     // kind, and how many the column holds
     private void beltBottle(Canvas c, int col, RectF r, float countSize) {
@@ -440,7 +515,19 @@ final class ThorDeck extends View {
     @Override protected void onDetachedFromWindow() { nativeBagWant(false); super.onDetachedFromWindow(); }
 
     // called with every snapshot (SecondScreen, 10 Hz)
-    void poll() { pollBag(); pollGoals(); }
+    void poll() { pollBag(); pollGoals(); pollSkills(); }
+
+    // Skills tab: redraw when a binding changes
+    private void pollSkills() {
+        if (tab != TAB_SKILLS) return;
+        int n = nativeSkills(skillRaw);
+        if (n < 0) return;
+        if (n == 0) java.util.Arrays.fill(skillRaw, -1);
+        if (Arrays.equals(skillRaw, skillLast)) return;
+        System.arraycopy(skillRaw, 0, skillLast, 0, skillRaw.length);
+        skills = SkillBar.decode(skillRaw, n);
+        invalidate();
+    }
 
     // the host's item list (for the belt's pictures): redraw if it changed
     private void pollBag() {

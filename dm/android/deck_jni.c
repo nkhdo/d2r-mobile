@@ -7,6 +7,7 @@
 #include "../host/dm_i18n.h"
 #include "../host/dm_inv.h"
 #include "../host/dm_world.h"
+#include "dm_touch_native_art.h"
 
 void dm_tp_request(void);          // dm_freetp.c
 void dm_ui_map_full(int on);       // dm_cursor.c
@@ -69,6 +70,23 @@ JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeGoals(JNIEnv *env, 
     for (int i = 0; i < n; i++) { v[3 + 3 * i] = g.x[i]; v[4 + 3 * i] = g.y[i]; v[5 + 3 * i] = g.art[i]; }
     (*env)->SetIntArrayRegion(env, out, 0, 3 + 3 * n, v);
     return n;
+}
+
+// Skills tab (SkillBar.java): for faces A, B, X, Y, R, ZR and then the same with ZL held, 6 ints each: skill id (-1 = empty), icon atlas
+// (overlay touchart/dm_native_skill_<atlas>.png; -1 = none) and the frame's x, y, width, height in it. Returns 12, 0 when not in a run, -1 if out is too short
+JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeSkills(JNIEnv *env, jclass cls, jintArray out) {
+    (void)cls;
+    if ((*env)->GetArrayLength(env, out) < 12 * 6) return -1;
+    int32_t ids[12]; if (!dm_skillbar_get(ids)) return 0;
+    jint v[12 * 6];
+    for (int i = 0; i < 12; i++) {
+        jint *o = v + 6 * i; o[0] = ids[i]; o[1] = -1; o[2] = o[3] = o[4] = o[5] = 0;
+        if (ids[i] < 0) continue;
+        dm_ta_glyph g = dm_ta_skill((uint32_t)ids[i]); dm_ta_frame fr;
+        if (g.status == DM_TA_GLYPH && dm_ta_frame_at(g.atlas, g.normal_frame, &fr)) { o[1] = g.atlas; o[2] = fr.x; o[3] = fr.y; o[4] = fr.width; o[5] = fr.height; }
+    }
+    (*env)->SetIntArrayRegion(env, out, 0, 12 * 6, v);
+    return 12;
 }
 
 // action numbers match A_* in ThorDeck.java

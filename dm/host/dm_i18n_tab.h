@@ -510,4 +510,7 @@ static const struct { const char *k, *zh, *en, *es, *mx, *pt, *ru, *ko; } k_dm_i
     { "dmDeckNextLv", "升级 %s", "Level up %s", "Subir nivel %s", "Subir nivel %s", "Subir nível %s", "Уровень через %s", "레벨업 %s" },
     { "dmDeckNoGoals", "这里没有标出的目标", "No marked goals here", "No hay objetivos marcados aquí", "No hay objetivos marcados aquí", "Nenhum objetivo marcado aqui", "Здесь нет отмеченных целей", "여기에는 표시된 목표가 없습니다" },
     { "dmDeckGoalAway", "%d 格", "%d away", "a %d", "a %d", "a %d", "в %d", "%d 거리" },
+    { "dmDeckSkillsNormal", "按键", "Buttons", "Botones", "Botones", "Botões", "Кнопки", "버튼" },
+    { "dmDeckSkillsZl", "按住 ZL", "Hold ZL", "Mantén ZL", "Mantén ZL", "Segure ZL", "Удерживая ZL", "ZL 누른 채" },
+    { "dmDeckSkillsHint", "在游戏的技能菜单里更改按键技能", "Change bindings in the game's skill menu", "Cambia las asignaciones en el menú de habilidades del juego", "Cambia las asignaciones en el menú de habilidades del juego", "Altere as atribuições no menu de habilidades do jogo", "Назначения меняются в меню навыков игры", "키 배정은 게임의 스킬 메뉴에서 바꿉니다" },
 };

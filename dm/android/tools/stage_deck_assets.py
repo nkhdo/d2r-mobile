@@ -9,6 +9,7 @@ Writes into the import pack's overlay folder, before its manifest is written:
                     (the row number the host reads at item data +0x34)
   deck/goals.tsv    map goal names per game language (the goal compass): key = the host's goal label number (dm_world.c, labels from
                     gen_map_goal_art.py), 255 = waypoint
+  deck/skills.tsv   skill names per game language by skills.txt *Id (the Skills tab; icons come from overlay touchart/, native_art)
   deck/ui/*.png     the game's own panel art the Deck is drawn with (UI_ART below), and deck/ui/exocet.otf / formal.ttf, the game's fonts
 These files hold game text, so they only ever live in the player's own import pack.
 """
@@ -42,6 +43,21 @@ def level_table(levels, strings):
         entry = by_key.get(key)
         names = [_clean(entry.get(lang)) for lang in LANGS] if entry else [_clean(key)] + [''] * (len(LANGS) - 1)
         out.append('\t'.join([ident] + names))
+    return '\n'.join(out) + '\n'
+
+
+def skill_table(skills, skilldesc, strings):
+    """Skill names per game language by skills.txt *Id (the ids in the game's controller binding table): skills.txt skilldesc ->
+    skilldesc.txt 'str name' -> lng/strings/skills.json. Skills without a description or string are left out."""
+    by_key, desc = {}, {r.get('skilldesc'): r.get('str name') for r in skilldesc}
+    for e in strings:
+        by_key.setdefault(e.get('Key'), e)
+    out = ['\t'.join(('id',) + LANGS)]
+    for r in skills:
+        ident = (r.get('*Id') or '').strip()
+        e = by_key.get(desc.get(r.get('skilldesc') or ''))
+        if ident.isdigit() and e:
+            out.append('\t'.join([ident] + [_clean(e.get(lang)) for lang in LANGS]))
     return '\n'.join(out) + '\n'
 
 
@@ -198,6 +214,10 @@ def _stage_icons(romfs, target):
         if path:
             strings[name] = json.loads(read(path[0]).decode('utf-8-sig'))
     (target / 'goals.tsv').write_text(goal_table(labels, strings), encoding='utf-8', newline='\n')
+    path = [p for p in index if p.endswith('/lng/strings/skills.json')]
+    skill_strings = json.loads(read(path[0]).decode('utf-8-sig')) if path else []
+    (target / 'skills.tsv').write_text(skill_table(annot_strings.excel(romfs, 'skills.txt'), annot_strings.excel(romfs, 'skilldesc.txt'),
+                                                   skill_strings), encoding='utf-8', newline='\n')
     _stage_ui(read, target)
     return len(icons), len(set(icons.values()))
 
