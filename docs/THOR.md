@@ -8,7 +8,7 @@ The Deck is made for controller play with the Thor's built-in gamepad. Touching 
 
 | Area | Contents |
 |---|---|
-| Status strip (top) | Life and mana bars with numbers, level and experience bar. Badges for **Town**, **Points to spend** and **New quest**. **Dead** replaces the badges while your character is dead |
+| Status strip (top) | Life and mana bars with numbers, level and experience bar, and the name of the area you are in (in the game's language; taken from your own game files when the import pack is made, so a pack made before this feature shows no name). Badges for **Town**, **Points to spend** and **New quest**. **Dead** replaces the badges while your character is dead |
 | Row 1 | **Inventory**, **Character**, **Skills**, **Quests**: opens that page of the game's menu. Tap again to close it |
 | Row 2 | **Portal** (with your town portal count), **Map** (full-screen map on and off), **Swap weapons**, **Players** (tap to pick 1–8) |
 | Row 3 | The four belt columns, coloured by the potion in the bottom row (red, blue, purple for rejuvenation), with how many are left. **Tap** drinks it; **hold** gives it to your mercenary |
@@ -39,7 +39,7 @@ Any Android device with a second display that Android treats as a presentation d
 ## Known limits
 
 - Opening a page presses the controller's menu button for you and then jumps to the page, so the menu's last page can flash for a moment. It can fail while another window of the game is open, such as a vendor or the stash.
-- No area name, item pictures, inventory grid or map yet.
+- No item pictures, inventory grid or map yet.
 - Tested on the Thor with the Snapdragon 8 Gen 2. The Thor Lite (Snapdragon 865) has not been tested.
 
 Background, workarounds and test notes: [android-notes/2026-11-10-ayn-thor-dual-screen.md](android-notes/2026-11-10-ayn-thor-dual-screen.md).

@@ -30,7 +30,7 @@
 # It does the same as d2rm_pack.py (the iOS shell): the game program is rewritten for the Android target, and the shaders become the bundles Vulkan uses (dm/gfx/tools/dmsh_vk.py) instead of a Metal library.
 # HarmonyOS: d2rm_android.py --target ohos <game files directory> <output directory> writes <output directory>/harmony/dm/: the game program is rewritten for HarmonyOS (out/ cannot be shared with Android), the shader bundles are the same as Android's,
 #   plus ui-art/ (9 skill-button labels lbl_* and 9 skill silhouettes sil_*, taken from the bottom-bar art generator's output); copy the dm folder into a "D2R Mobile" folder on the phone next to the data folder with the game resources, and pick that folder when the app asks to import.
-import hashlib, os, shutil, struct, subprocess, sys, time
+import hashlib, json, os, shutil, struct, subprocess, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__)); DM = os.path.dirname(HERE); IOS = os.path.join(DM, 'ios'); GT = os.path.join(DM, 'gfx', 'tools')
 sys.path.insert(0, HERE); from d2rm_pack import ROOT, PY, MODS, say, die, run, step   # 共用 iOS 壳工具的执行与跳步框架（含 Windows 换行处理） | the run-and-skip framework shared with the iOS shell tool (including the Windows line-ending handling)
@@ -167,7 +167,9 @@ def main():
     # Android has no iCloud (only iOS / Mac cloud_ios.m reads that Custom page row): DM_OVERLAY_NO_ICLOUD=1 makes touch_layout.py leave the row out
     run([PY, os.path.join(IOS, 'tools', 'gen_romfs_overlay.py'), romfs, os.path.join(stage, 'overlay')], cwd=IOS, env=dict({'DM_ROMFS_SRC': romfs}, **({'DM_OVERLAY_NO_ICLOUD': '1', 'DM_OVERLAY_ANDROID': '1'} if T == 'android' else {})), log=os.path.join(stage, 'gen_overlay.log'), what='生成覆盖层')
     sys.path.insert(0, os.path.join(DM, 'android', 'tools')); import stage_touch_assets
-    hud = os.path.join(IOS, 'Gen', 'assets', 'NativeHUD', 'v4', 'hud_v4_ui')
+    if T == 'android':   # bottom-screen Deck (dual-screen handhelds): area names from the player's files; must land before the manifest is written below
+        import stage_deck_assets; say('Deck: %s' % json.dumps(stage_deck_assets.stage(romfs, os.path.join(stage, 'overlay'))))
+    hud =os.path.join(IOS, 'Gen', 'assets', 'NativeHUD', 'v4', 'hud_v4_ui')
     stage_touch_assets.stage(os.path.join(gen, 'TouchArt'), hud, os.path.join(stage, 'overlay'))
     if T == 'ohos':   # 鸿蒙前端从 ui-art/ 取技能键标签与技能剪影（剪影是彩色原图，银灰在绘制时做，同 iOS） | the HarmonyOS front end takes the skill-button labels and skill silhouettes from ui-art/ (the silhouettes are the colour originals; the silver is applied when drawing, as on iOS)
         os.makedirs(os.path.join(stage, 'ui-art'))

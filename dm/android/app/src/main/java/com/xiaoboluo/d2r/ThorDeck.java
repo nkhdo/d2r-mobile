@@ -8,6 +8,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.MotionEvent;
 import android.view.View;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 
 // Bottom-screen Deck: status and large buttons on the second screen of dual-screen handhelds (for controller play; SecondScreen.java handles showing and hiding). A status strip on top (life / mana / level and experience / badges),
@@ -17,7 +20,7 @@ import java.util.Arrays;
 final class ThorDeck extends View {
     // snapshot indices, matching deck_jni.c
     static final int H_VALID = 0, H_LEVEL = 1, H_EXP = 2, H_HP = 3, H_HP_MAX = 4, H_MP = 5, H_MP_MAX = 6, H_BELT = 7, H_KIND = 11, H_PORTAL = 15,
-        H_PLAYERS = 16, H_POINTS = 17, H_QUEST = 18, H_DEAD = 19, H_TOWN = 20, H_SWITCH = 21, H_MAP_FULL = 22, H_COUNT = 23;
+        H_PLAYERS = 16, H_POINTS = 17, H_QUEST = 18, H_DEAD = 19, H_TOWN = 20, H_SWITCH = 21, H_MAP_FULL = 22, H_AREA = 23, H_LANG = 24, H_COUNT = 25;
     // action numbers, matching deck_jni.c
     static final int A_DRINK = 0, A_FEED_MERC = 1, A_PORTAL = 2, A_MAP = 3, A_SWAP = 4, A_TAB = 5, A_PLAYERS = 6;
     static native int nativeHud(int[] out);
@@ -44,6 +47,18 @@ final class ThorDeck extends View {
     private final boolean[] longFired = new boolean[MAX_POINTERS];
     private final Runnable[] longPress = new Runnable[MAX_POINTERS];
     private boolean picking;   // the players 1–8 picker is open
+    private DeckNames names;   // area names from the import pack (deck/levels.tsv); loaded once, null until then
+
+    // An import pack made before the Deck had area names has no deck/levels.tsv: the name line then stays empty
+    private DeckNames names() {
+        if (names != null) return names;
+        String tsv = "";
+        File f = new File(getContext().getFilesDir(), "dm/overlay/deck/levels.tsv");
+        try {
+            if (f.isFile() && f.length() <= 1024 * 1024) tsv = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+        } catch (java.io.IOException | SecurityException e) { tsv = ""; }
+        return names = DeckNames.parse(tsv);
+    }
 
     ThorDeck(Context context) {
         super(context);
@@ -111,6 +126,14 @@ final class ThorDeck extends View {
         tmp.right = mx + mw * Math.min(1000, Math.max(0, hud[H_EXP])) / 1000f; fill.setColor(XP); c.drawRoundRect(tmp, bar / 4, bar / 4, fill);
         // right: badges (replaced by one red word on death)
         float rx = mx + mw + w * 0.04f; text.setTextSize(sh * 0.17f);
+        // under the bars, across the left and middle columns: the area name in the game's language, cut with … when too long
+        String area = names().area(hud[H_AREA], hud[H_LANG]);
+        if (!area.isEmpty()) {
+            float room = rx - w * 0.04f - strip.left;
+            int fit = text.breakText(area, true, room, null);
+            if (fit < area.length()) area = area.substring(0, Math.max(0, text.breakText(area, true, room - text.measureText("…"), null))) + "…";
+            text.setColor(GOLD); c.drawText(area, strip.left, strip.bottom - sh * 0.05f, text);
+        }
         if (hud[H_DEAD] != 0) { text.setColor(DEAD); text.setTextSize(sh * 0.3f); c.drawText(t("dmDeckDead"), rx, strip.top + sh * 0.6f, text); }
         else {
             float by = y1 + bar * 0.8f;

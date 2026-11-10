@@ -118,3 +118,20 @@ Measured on the Thor (QCS8550, Android 13), with the debug app built from this b
 - **Real pack and APK from this branch** (`b1ab75e`): import pack made with `dm/tools/d2rm_android.py` from the Switch 3.3.94012 game files (product `3.3.94012-r45`), APK built with headers generated from the same files. On the Thor the app starts, the Custom page shows **Bottom-screen Deck (dual screen)**, and Apply hides the Deck (80 ms after Apply) and shows it again (85 ms). Earlier device checks ran on a test build that kept main's two fingerprinted files.
 - **Release app and debug app on one device.** Both read the import pack from `Download/S2X/D2R Mobile/android`. A pack from this branch there would make the release app re-import it and then refuse to start. So the fork's pack was copied straight into the debug app's `files/dm/` with `run-as`, and the shared folder was renamed to `android.r45` so neither app re-imports.
 - An import pack made from other source is rejected by this build: the overlay fingerprint covers `dm/i18n/ui_text.tsv` and `dm/ios/tools/touch_layout.py`, and both change here.
+
+## 8. Phase 2 plan (agreed 2026-11-10)
+
+Branch `thor/phase2-panels`, one PR per slice, each stacked on the one before (PR #1 first). Every slice keeps the Phase 1 perf gate: frame-time median within 0.5 ms of Deck off, no new stalls.
+
+1. **Area name** on the status strip. The import pack carries `deck/levels.tsv`: levels.txt Ids with the level names from the player's own `lng/strings/levels.json`, in all 13 game languages (`dm/android/tools/stage_deck_assets.py`). The Deck picks the column by the game's language number (`dm_lang_index`), falling back to English. Nothing of the game's text goes into the repo or the APK.
+2. **Bag tab, read only.** The Deck gets a tab row: Main (today's strip and buttons, plus the goal compass), Bag, later Skills. A new host reader `dm_inv_snapshot` lists the bag, equipped items and belt once per server tick (id, code, container, cell x/y/w/h, quality, unidentified, unique/set index), read by Java only while Bag is open. Item pictures come from the pack (`deck/` icons from the player's own sprites, one cell = 64 px, with a code → file map); coloured cells are the fallback. The Main page's Inventory button keeps opening the game's own inventory. Stash and cube come later.
+3. **Bag actions:** tap an item → a sheet with its icon and name (quality colour) and Use / To belt / Sort bag, through `dm_item_use`, `dm_belt_put`, `dm_inv_sort`. Equip, drop and drag come later, if at all.
+4. **Skills tab:** the class's three trees with icons, skill levels and unspent points; tap + confirm spends a point through the existing allocation calls.
+5. **Goal compass** on Main instead of a real map: up to three goals from `dm_map_goals`, arrow and distance, turned to match the game's view; hidden with no goals. The full map is shelved.
+6. **Screen swap is dropped.**
+
+Tests: plain-Java tests for pure logic (names, bag grid hit-testing, compass maths), Python tests for the pack exporters, and Thor log/screenshot checks for host readers of live game memory.
+
+### Slice 1 status: area name (done)
+
+On the Thor with a rebuilt pack: the strip shows "Blood Moor" in gold on its own line under the life and mana bars (the middle column is about 290 px wide, too narrow for names such as "Fortaleza de la Piedra Ecuménica Nivel 1", so the name sits under the bars rather than after the level). The real pack's table has 137 areas in all 13 languages. The frame-time check was waived for this slice by the user: the name is one `drawText`, redrawn only when the area or language changes.

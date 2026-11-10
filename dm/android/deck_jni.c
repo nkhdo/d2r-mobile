@@ -13,7 +13,7 @@ void dm_ui_open_tab(int tab);
 
 // snapshot indices match H_* in ThorDeck.java
 enum { H_VALID, H_LEVEL, H_EXP, H_HP, H_HP_MAX, H_MP, H_MP_MAX, H_BELT, H_KIND = H_BELT + 4, H_PORTAL = H_KIND + 4,
-       H_PLAYERS, H_POINTS, H_QUEST, H_DEAD, H_TOWN, H_SWITCH, H_MAP_FULL, H_COUNT };
+       H_PLAYERS, H_POINTS, H_QUEST, H_DEAD, H_TOWN, H_SWITCH, H_MAP_FULL, H_AREA, H_LANG, H_COUNT };
 
 JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeHud(JNIEnv *env, jclass cls, jintArray out) {
     (void)cls;
@@ -25,6 +25,7 @@ JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeHud(JNIEnv *env, jc
     for (int i = 0; i < 4; i++) { v[H_BELT + i] = h.belt[i]; v[H_KIND + i] = kind[i]; }
     v[H_PORTAL] = h.portal; v[H_PLAYERS] = h.players; v[H_POINTS] = h.points; v[H_QUEST] = h.quest_unread; v[H_DEAD] = h.dead;
     v[H_TOWN] = dm_hud_area_is_town(h.area); v[H_SWITCH] = dm_custom_get("deck"); v[H_MAP_FULL] = dm_ui_map_is_full();
+    v[H_AREA] = h.area; v[H_LANG] = dm_lang_index();   // area name looked up in Java from the pack (deck/levels.tsv), in the game's language
     (*env)->SetIntArrayRegion(env, out, 0, H_COUNT, v);
     return H_COUNT;
 }
