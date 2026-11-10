@@ -19,7 +19,7 @@ import java.util.Arrays;
 // Bottom-screen Deck: status and large buttons on the second screen of dual-screen handhelds (for controller play; SecondScreen.java
 // handles showing and hiding), drawn with the game's own panel art and fonts from the import pack (DeckArt.java; flat panels without it).
 // A tab row on top switches between:
-//   Main: the game's HUD bar (life and mana globes, area name, level and experience, portal count, badges above it; where its belt
+//   Main: the game's HUD bar (life and mana globes, area name, level and experience, portal count, badges and the mercenary's life above it; where its belt
 //     boxes were, run stats: time in this game, experience per hour and time to the next level, RunStats.java), 8 large buttons (Inventory, Character, Skills, Quests / Portal, Map, Swap weapons,
 //     Players) and a row of the four belt columns as potion buttons (tap = drink the bottom-row bottle, long press = feed the mercenary).
 //   Map: a goal compass for the current area (GoalCompass.java): the host's map goals (quest goals, the true tomb, waypoints, real
@@ -34,7 +34,7 @@ import java.util.Arrays;
 final class ThorDeck extends View {
     // snapshot indices, matching deck_jni.c
     static final int H_VALID = 0, H_LEVEL = 1, H_EXP = 2, H_HP = 3, H_HP_MAX = 4, H_MP = 5, H_MP_MAX = 6, H_BELT = 7, H_KIND = 11, H_PORTAL = 15,
-        H_PLAYERS = 16, H_POINTS = 17, H_QUEST = 18, H_DEAD = 19, H_TOWN = 20, H_SWITCH = 21, H_MAP_FULL = 22, H_AREA = 23, H_LANG = 24, H_WSET = 25, H_COUNT = 26;
+        H_PLAYERS = 16, H_POINTS = 17, H_QUEST = 18, H_DEAD = 19, H_TOWN = 20, H_SWITCH = 21, H_MAP_FULL = 22, H_AREA = 23, H_LANG = 24, H_WSET = 25, H_MERC_HP = 26, H_MERC_MAX = 27, H_COUNT = 28;
     // action numbers, matching deck_jni.c
     static final int A_DRINK = 0, A_FEED_MERC = 1, A_PORTAL = 2, A_MAP = 3, A_SWAP = 4, A_TAB = 5, A_PLAYERS = 6;
     static native int nativeHud(int[] out);
@@ -280,8 +280,22 @@ final class ThorDeck extends View {
         text.setTypeface(art.name(hud[H_LANG]));
         label(c, "×" + hud[H_PORTAL], tmp.centerX() + tmp.height() * 0.35f, tmp.centerY(), tmp.height() * 0.7f, tmp.width() * 0.55f, TEXT);
         text.setTypeface(art.label(hud[H_LANG]));
-        // above the bar, between the globes: badges (one red word on death)
-        float bx = getWidth() / 2f, by = hy(55);
+        // above the bar, between the globes: badges on the left half (one red word on death), the mercenary's life on the right half
+        float by = hy(55);
+        if (hud[H_MERC_MAX] > 0) {
+            float ml = hx(860), mr = hx(1250), mh = 22 * s, frac = Math.min(1f, Math.max(0f, hud[H_MERC_HP] / (float) hud[H_MERC_MAX]));
+            String m = t("dmDeckMerc");
+            text.setTextAlign(Paint.Align.LEFT); text.setTextSize(30 * s); text.setColor(TEXT);
+            c.drawText(m, ml, by - (text.descent() + text.ascent()) / 2, text);
+            float bl = ml + text.measureText(m) + 14 * s;
+            if (bl < mr) {
+                tmp.set(bl, by - mh / 2, mr, by + mh / 2); fill.setColor(0xC0000000); c.drawRect(tmp, fill);
+                tmp.right = bl + (mr - bl) * frac; fill.setColor(frac < 0.3f ? DEAD : LIFE); c.drawRect(tmp, fill);
+                tmp.right = mr; line.setColor(0xA08C7340); c.drawRect(tmp, line);
+            }
+            text.setTextAlign(Paint.Align.CENTER);
+        }
+        float bx = hud[H_MERC_MAX] > 0 ? hx(590) : getWidth() / 2f;
         if (hud[H_DEAD] != 0) label(c, t("dmDeckDead"), bx, by, 48 * s, hx(1150) - hx(430), DEAD);
         else {
             String[] word = new String[3]; int[] col = new int[3]; int n = 0;

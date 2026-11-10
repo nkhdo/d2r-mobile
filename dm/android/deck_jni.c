@@ -16,7 +16,7 @@ void dm_ui_open_tab(int tab);
 
 // snapshot indices match H_* in ThorDeck.java
 enum { H_VALID, H_LEVEL, H_EXP, H_HP, H_HP_MAX, H_MP, H_MP_MAX, H_BELT, H_KIND = H_BELT + 4, H_PORTAL = H_KIND + 4,
-       H_PLAYERS, H_POINTS, H_QUEST, H_DEAD, H_TOWN, H_SWITCH, H_MAP_FULL, H_AREA, H_LANG, H_WSET, H_COUNT };
+       H_PLAYERS, H_POINTS, H_QUEST, H_DEAD, H_TOWN, H_SWITCH, H_MAP_FULL, H_AREA, H_LANG, H_WSET, H_MERC_HP, H_MERC_MAX, H_COUNT };
 
 JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeHud(JNIEnv *env, jclass cls, jintArray out) {
     (void)cls;
@@ -29,7 +29,8 @@ JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeHud(JNIEnv *env, jc
     v[H_PORTAL] = h.portal; v[H_PLAYERS] = h.players; v[H_POINTS] = h.points; v[H_QUEST] = h.quest_unread; v[H_DEAD] = h.dead;
     v[H_TOWN] = dm_hud_area_is_town(h.area); v[H_SWITCH] = dm_custom_get("deck"); v[H_MAP_FULL] = dm_ui_map_is_full();
     v[H_AREA] = h.area; v[H_LANG] = dm_lang_index();   // area name looked up in Java from the pack (deck/levels.tsv), in the game's language
-    v[H_WSET] = dm_swapskill_wset();   // weapon set in hand: 0 = I, 1 = II, -1 = not known yet
+    v[H_WSET] = dm_swapskill_wset();
+    { int mh = 0, mm = 0; dm_merc_life(&mh, &mm); v[H_MERC_HP] = mh; v[H_MERC_MAX] = mm; }   // 0 / 0 = no mercenary or dead   // weapon set in hand: 0 = I, 1 = II, -1 = not known yet
     (*env)->SetIntArrayRegion(env, out, 0, H_COUNT, v);
     return H_COUNT;
 }
