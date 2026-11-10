@@ -98,8 +98,7 @@ final class SecondScreen implements DisplayManager.DisplayListener {
             WindowManager.LayoutParams lp = w.getAttributes();
             lp.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
             lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
-            w.setAttributes(lp);
-            w.setDecorFitsSystemWindows(false);
+            w.setAttributes(lp);   // 目标 SDK 36 起窗口一律铺满（edge-to-edge），不用再 setDecorFitsSystemWindows | from target SDK 36 windows are always edge-to-edge, so setDecorFitsSystemWindows is no longer needed
         }
         p.setOnDismissListener(x -> {
             // 我们收的时候先清了引用；这里还指着它 = 系统自己收的（显示屏闪断、配置变动）：清掉，下一拍按 DeckGate 重新挂

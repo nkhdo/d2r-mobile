@@ -97,3 +97,23 @@ Not planned: moving the touch layout's controls to the bottom screen. The Thor h
   - the panel hides on Home and returns on resume;
   - the IME setting from section 3, item 8;
   - frame time on the top screen with the panel up, against the panel off, on both the Pro and the Lite.
+
+## 7. Phase 1 status (2026-11-10)
+
+Built on branch `thor/phase1-deck`. Player-facing description: [THOR.md](../THOR.md).
+
+Measured on the Thor (QCS8550, Android 13), with the debug app built from this branch:
+
+- The Deck appears on display 4 at the full 1240 × 1080: hiding the system bars on the Presentation window removes the 55 px nav-bar inset. The idle screen shows before a game starts, and the status strip and buttons show in game.
+- **Frame time, town, 60 s each.** Sampled from SurfaceFlinger's per-frame present times for the game's SurfaceView (`dumpsys SurfaceFlinger --latency`, every 0.5 s):
+  - Deck on: median 16.70 ms, p99 16.71 ms, 0 frames over 33 ms.
+  - Deck off (`deck=0` in `files/sw_custom.txt`): median 16.71 ms, p99 16.71 ms, 1 frame over 33 ms.
+  - Both runs hold the 60 fps cap, so the cap hides any small cost. **The 2-minute fight comparison is still to do.**
+- Still to check by hand on the Thor:
+  - each button's effect in controller mode, especially the `+` / `R` tab stepping;
+  - potion colours and counts with real potions;
+  - the gamepad after touching the bottom screen;
+  - B never closing the Deck;
+  - Home and resume;
+  - the name dialog.
+- An import pack made from other source is rejected by this build: the overlay fingerprint covers `dm/i18n/ui_text.tsv` and `dm/ios/tools/touch_layout.py`, and both change here.

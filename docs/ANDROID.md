@@ -112,4 +112,6 @@ A short message on the screen says what was imported and what was skipped. If no
 | This import pack does not match this version of the app | Redo step 1 with the source of the same release as the APK |
 | The import did not finish | Usually not enough free space; free about 1 GB and open the App again |
 
+On a dual-screen handheld such as the AYN Thor, the bottom screen shows the Deck: see [THOR.md](THOR.md).
+
 To build the APK yourself from source, or for the layout of the Android source, see [dm/android/README.md](../dm/android/README.md).

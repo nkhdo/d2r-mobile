@@ -112,4 +112,6 @@ APK 与导入包不是同一版本时，App 会提示「导入包与这版 App �
 | 导入包与这版 App 不配套 | 用与 APK 同一版本的源码重做第一步 |
 | 导入没有完成 | 多半是手机空间不够，腾出约 1 GB 再打开 |
 
+AYN Thor 等双屏掌机：底屏的 Deck 见 [THOR.md](THOR.md)（英文）。
+
 想自己从源码编 APK、或了解安卓版的源码结构，见 [dm/android/README.zh-CN.md](../dm/android/README.zh-CN.md)。

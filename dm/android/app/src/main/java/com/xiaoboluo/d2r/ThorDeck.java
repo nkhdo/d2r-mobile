@@ -148,6 +148,8 @@ final class ThorDeck extends View {
         else if (i == B_PLAYERS) label = String.format(t("dmDeckPlayers"), hud[H_PLAYERS]);
         else label = "×" + hud[H_BELT + col];
         text.setColor(on ? TEXT : DIM); text.setTextSize(r.height() * (belt ? 0.34f : 0.2f));
+        float fit = r.width() * 0.88f, tw = text.measureText(label);   // 长的字（西语、俄语等）缩到格子里 | shrink long labels (Spanish, Russian, etc.) to fit the cell
+        if (tw > fit) text.setTextSize(text.getTextSize() * fit / tw);
         float ty = r.centerY() - (text.descent() + text.ascent()) / 2;
         c.drawText(label, r.centerX(), ty, text);
         if (i == B_PORTAL || (i == B_MAP && hud[H_MAP_FULL] != 0)) {   // 回城次数 / 全屏地图开着 | portal count / full map is on
