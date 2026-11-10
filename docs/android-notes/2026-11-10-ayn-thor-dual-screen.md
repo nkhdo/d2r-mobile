@@ -108,7 +108,11 @@ Measured on the Thor (QCS8550, Android 13), with the debug app built from this b
 - **Frame time, town, 60 s each.** Sampled from SurfaceFlinger's per-frame present times for the game's SurfaceView (`dumpsys SurfaceFlinger --latency`, every 0.5 s):
   - Deck on: median 16.70 ms, p99 16.71 ms, 0 frames over 33 ms.
   - Deck off (`deck=0` in `files/sw_custom.txt`): median 16.71 ms, p99 16.71 ms, 1 frame over 33 ms.
-  - Both runs hold the 60 fps cap, so the cap hides any small cost. **The 2-minute fight comparison is still to do.**
+  - Both runs hold the 60 fps cap, so the cap hides any small cost.
+- **Frame time, fight, 120 s each** (same sampling, a fight with many monsters on screen):
+  - Deck on: 7247 frames, median 16.71 ms, p99 16.71 ms, 2 frames over 33 ms, 59.8 fps.
+  - Deck off: 7245 frames, median 16.71 ms, p99 16.71 ms, 1 frame over 33 ms, 59.8 fps.
+  - Passes the agreed test (median within 0.5 ms, no new stalls): one or two isolated frames over 33 ms show up with the Deck off too, so they are noise rather than the Deck.
 - Still to check by hand on the Thor:
   - each button's effect in controller mode, especially the `+` / `R` tab stepping;
   - potion colours and counts with real potions;
