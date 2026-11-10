@@ -5,6 +5,7 @@
 #include "../host/dm_actions.h"
 #include "../host/dm_custom.h"
 #include "../host/dm_i18n.h"
+#include "../host/dm_inv.h"
 
 void dm_tp_request(void);          // dm_freetp.c
 void dm_ui_map_full(int on);       // dm_cursor.c
@@ -28,6 +29,29 @@ JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeHud(JNIEnv *env, jc
     v[H_AREA] = h.area; v[H_LANG] = dm_lang_index();   // area name looked up in Java from the pack (deck/levels.tsv), in the game's language
     (*env)->SetIntArrayRegion(env, out, 0, H_COUNT, v);
     return H_COUNT;
+}
+
+// Bag tab (BagModel.java): the host reads the player's items on the server tick only while the tab asks for them
+JNIEXPORT void JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeBagWant(JNIEnv *env, jclass cls, jboolean on) { (void)env; (void)cls; dm_inv_want(on); }
+
+// out[0] = list generation (changes whenever the list changes), then 5 ints per item (BagModel.decode). Returns the item count, -1 if out is too short
+JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeBag(JNIEnv *env, jclass cls, jintArray out) {
+    (void)cls;
+    enum { INTS = 5 };
+    if ((*env)->GetArrayLength(env, out) < 1 + DM_INV_MAX * INTS) return -1;
+    static dm_inv_item items[DM_INV_MAX]; static jint v[1 + DM_INV_MAX * INTS];   // only ever called from the Deck's UI thread
+    int gen = 0, n = dm_inv_get(items, DM_INV_MAX, &gen);
+    v[0] = gen;
+    for (int i = 0; i < n; i++) {
+        const dm_inv_item *it = &items[i]; jint *o = v + 1 + i * INTS;
+        o[0] = (jint)it->id;
+        o[1] = (unsigned char)it->code[0] | (unsigned char)it->code[1] << 8 | (unsigned char)it->code[2] << 16;
+        o[2] = it->where | it->quality << 8 | it->unid << 16 | (jint)((uint32_t)it->loc << 24);
+        o[3] = (uint8_t)it->x | (uint8_t)it->y << 8 | (uint8_t)it->w << 16 | (jint)((uint32_t)(uint8_t)it->h << 24);
+        o[4] = it->row;
+    }
+    (*env)->SetIntArrayRegion(env, out, 0, 1 + n * INTS, v);
+    return n;
 }
 
 // action numbers match A_* in ThorDeck.java

@@ -135,3 +135,10 @@ Tests: plain-Java tests for pure logic (names, bag grid hit-testing, compass mat
 ### Slice 1 status: area name (done)
 
 On the Thor with a rebuilt pack: the strip shows "Blood Moor" in gold on its own line under the life and mana bars (the middle column is about 290 px wide, too narrow for names such as "Fortaleza de la Piedra Ecuménica Nivel 1", so the name sits under the bars rather than after the level). The real pack's table has 137 areas in all 13 languages. The frame-time check was waived for this slice by the user: the name is one `drawText`, redrawn only when the area or language changes.
+
+### Slice 2 status: Bag tab, read only (done)
+
+- Pack: `deck/items/` holds 415 pictures (4 MB) at the game's native 49 px per cell, and `deck/items.tsv` 1255 keys (item codes, `u<row>`, `s<row>`), from `hd/items/items.json`, `uniques.json`, `sets.json` and the `hd/global/ui/items/` sprites. Kept native rather than the 64 px agreed in Q13: the Deck scales them, so upscaling would only grow the pack.
+- Host: `dm_inv.c` reads the server player's item chain on the server tick, only while the Bag tab shows (`dm_inv_want`), and publishes a list with a generation number; the Deck redraws only when it changes.
+- On the Thor, a new character: the log line `Deck bag: 8 items: hp1/L0,0 ... tsc/B9,3 ... ssd/W4,0 1x3 ... buc/W5,0 2x2` matches the game, and the screenshot shows the short sword and buckler in the hand slots, two scrolls at the bag's right edge and four healing potions on the belt's bottom row.
+- Not checked yet (the test character has none): unique and set pictures (row read from item data +0x34, the offset the vault table uses) and the unidentified tint.

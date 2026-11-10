@@ -503,5 +503,8 @@ static const struct { const char *k, *zh, *en, *es, *mx, *pt, *ru, *ko; } k_dm_i
     { "dmDeckPoints", "有点数可加", "Points to spend", "Puntos por asignar", "Puntos por asignar", "Pontos a distribuir", "Есть очки", "포인트 있음" },
     { "dmDeckQuest", "新任务", "New quest", "Nueva misión", "Nueva misión", "Nova missão", "Новое задание", "새 퀘스트" },
     { "dmDeckDead", "已死亡", "Dead", "Muerto", "Muerto", "Morto", "Погиб", "사망" },
+    { "dmDeckTabMain", "主页", "Main", "Principal", "Principal", "Principal", "Главная", "메인" },
+    { "dmDeckTabBag", "背包", "Bag", "Bolsa", "Bolsa", "Bolsa", "Сумка", "가방" },
+    { "dmDeckBelt", "腰带", "Belt", "Cinturón", "Cinturón", "Cinto", "Пояс", "허리띠" },
     { "dmDeckIdle", "进入游戏后，这里显示角色状态和快捷按钮", "Character status and shortcuts appear here in game", "Aquí verás el estado y los atajos al jugar", "Aquí verás el estado y los atajos al jugar", "Status e atalhos aparecem aqui durante o jogo", "Здесь появятся состояние и быстрые кнопки", "게임 중 여기에 캐릭터 상태와 단축 버튼이 표시됩니다" },
 };

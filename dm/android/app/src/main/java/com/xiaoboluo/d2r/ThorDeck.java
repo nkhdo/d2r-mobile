@@ -1,6 +1,7 @@
 package com.xiaoboluo.d2r;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
@@ -17,6 +18,8 @@ import java.util.Arrays;
 // 4 x 3 large buttons below: Inventory, Character, Skills, Quests / Portal, Map, Swap weapons, Players / the four belt columns (tap = drink the bottom-row bottle, long press = feed the mercenary).
 // Drawn on the canvas only (no game art); all text goes through the string table (nativeText). SecondScreen reads a snapshot every 100 ms and passes it to update, which redraws only on change; press feedback is drawn at once.
 // A touch takes effect on release, and CANCEL means undo: right after the bottom screen appears, the first touch arrives as DOWN then CANCEL
+// A tab row on top switches between Main (the above) and Bag (read only: worn items, the bag grid and the belt, with the player's own item
+// pictures; BagModel.java). The host reads the items only while Bag is showing.
 final class ThorDeck extends View {
     // snapshot indices, matching deck_jni.c
     static final int H_VALID = 0, H_LEVEL = 1, H_EXP = 2, H_HP = 3, H_HP_MAX = 4, H_MP = 5, H_MP_MAX = 6, H_BELT = 7, H_KIND = 11, H_PORTAL = 15,
@@ -26,6 +29,8 @@ final class ThorDeck extends View {
     static native int nativeHud(int[] out);
     static native void nativeAction(int action, int arg);
     static native String nativeText(String key);
+    static native void nativeBagWant(boolean on);
+    static native int nativeBag(int[] out);
 
     private static final long LONG_PRESS_MS = 500;
     // twelve cells: 0–3 the four function pages, 4 portal, 5 map, 6 swap, 7 players, 8–11 the four belt columns
@@ -33,6 +38,8 @@ final class ThorDeck extends View {
     private static final String[] TAB_KEY = { "dmDeckInventory", "dmDeckCharacter", "dmDeckSkills", "dmDeckQuests" };
     private static final int BG = 0xFF0E0B08, PANEL = 0xFF1C1712, PRESSED = 0xFF3A2E1C, GOLD = 0xFF8C7340, TEXT = 0xFFE8D9B0, DIM = 0xFF6B6250,
         LIFE = 0xFFB0202A, MANA = 0xFF2A4FC0, XP = 0xFFC7A04A, DEAD = 0xFFE04030;
+    // item quality colours (1 low ... 8 crafted), as the game colours item names
+    private static final int[] QUALITY_COLOUR = { 0xFF6B6250, 0xFF8A8A8A, 0xFFB8B8B8, 0xFFB8B8B8, 0xFF6F6FFF, 0xFF1EC81E, 0xFFE8E85A, 0xFFC7A04A, 0xFFE89A2A };
     private static final int[] KIND_COLOUR = { 0xFF2A2520, LIFE, MANA, 0xFF8A3AB0, 0xFF6B6B6B };   // empty / red / blue / purple / other
 
     private final int[] hud = new int[H_COUNT];
@@ -47,6 +54,19 @@ final class ThorDeck extends View {
     private final boolean[] longFired = new boolean[MAX_POINTERS];
     private final Runnable[] longPress = new Runnable[MAX_POINTERS];
     private boolean picking;   // the players 1–8 picker is open
+    // tabs: 0 Main, 1 Bag. Kept across shows of the Deck (a new view is made each time the bottom screen comes back)
+    private static final int TAB_MAIN = 0, TAB_BAG = 1, TAB_COUNT = 2, TAB_BASE = 200;
+    private static final String[] TAB_LABEL = { "dmDeckTabMain", "dmDeckTabBag" };
+    private static int tab = TAB_MAIN;
+    private final RectF[] tabRect = new RectF[TAB_COUNT];
+    private BagModel.Layout bagLayout;
+    private BagModel.Item[] bag = new BagModel.Item[0];
+    private final int[] bagRaw = new int[1 + 128 * BagModel.INTS];
+    private int bagGen = -1;
+    private DeckIcons icons;
+    private final android.graphics.Rect src = new android.graphics.Rect();
+    private final RectF dst = new RectF();
+    private final Paint bitmapPaint = new Paint(Paint.FILTER_BITMAP_FLAG);
     private DeckNames names;   // area names from the import pack (deck/levels.tsv); loaded once, null until then
 
     // An import pack made before the Deck had area names has no deck/levels.tsv: the name line then stays empty
@@ -64,6 +84,7 @@ final class ThorDeck extends View {
         super(context);
         for (int i = 0; i < B_COUNT; i++) cell[i] = new RectF();
         for (int i = 0; i < 8; i++) pick[i] = new RectF();
+        for (int i = 0; i < TAB_COUNT; i++) tabRect[i] = new RectF();
         Arrays.fill(downCell, -1);
         line.setStyle(Paint.Style.STROKE);
         text.setColor(TEXT);
@@ -84,8 +105,11 @@ final class ThorDeck extends View {
     private static String t(String key) { return nativeText(key); }
 
     @Override protected void onSizeChanged(int w, int h, int ow, int oh) {
-        float k = w / 1240f, gap = 14 * k, pad = 18 * k;
-        strip.set(pad, pad, w - pad, h * 0.22f);
+        float k = w / 1240f, gap = 14 * k, pad = 18 * k, tabH = 76 * k, tw = (w - 2 * pad - 2 * gap) / 3;
+        for (int i = 0; i < TAB_COUNT; i++) tabRect[i].set(pad + i * (tw + gap), pad, pad + i * (tw + gap) + tw, pad + tabH);
+        float body = pad + tabH + gap;
+        strip.set(pad, body, w - pad, body + h * 0.2f);
+        bagLayout = new BagModel.Layout(pad, body, w - 2 * pad, h - body - pad, gap);
         float top = strip.bottom + gap, cw = (w - 2 * pad - 3 * gap) / 4, ch = (h - pad - top - 2 * gap) / 3;
         for (int i = 0; i < B_COUNT; i++) {
             int r = i / 4, c = i % 4; float x = pad + c * (cw + gap), y = top + r * (ch + gap);
@@ -105,10 +129,78 @@ final class ThorDeck extends View {
             c.drawText(t("dmDeckIdle"), getWidth() / 2f, h / 2f, text);
             return;
         }
+        drawTabs(c);
+        if (tab == TAB_BAG) { drawBag(c); return; }
         drawStrip(c);
         boolean on = actionsEnabled();
         for (int i = 0; i < B_COUNT; i++) drawCell(c, i, on);
         if (picking) drawPicker(c);
+    }
+
+    private void drawTabs(Canvas c) {
+        for (int i = 0; i < TAB_COUNT; i++) {
+            RectF r = tabRect[i]; float rad = r.height() * 0.2f;
+            fill.setColor(pressed(TAB_BASE + i) || i == tab ? PRESSED : PANEL); c.drawRoundRect(r, rad, rad, fill);
+            line.setColor(i == tab ? XP : DIM); c.drawRoundRect(r, rad, rad, line);
+            text.setColor(i == tab ? TEXT : DIM); text.setTextSize(r.height() * 0.45f);
+            c.drawText(t(TAB_LABEL[i]), r.centerX(), r.centerY() - (text.descent() + text.ascent()) / 2, text);
+        }
+    }
+
+    // ---- Bag tab ----
+    private void setTab(int t) {
+        if (t == tab) return;
+        tab = t; picking = false; cancelAll();
+        nativeBagWant(tab == TAB_BAG); bagGen = -1;
+        invalidate();
+    }
+
+    @Override protected void onAttachedToWindow() { super.onAttachedToWindow(); nativeBagWant(tab == TAB_BAG); }
+    @Override protected void onDetachedFromWindow() { nativeBagWant(false); super.onDetachedFromWindow(); }
+
+    // called with every snapshot (SecondScreen, 10 Hz): while Bag shows, take the host's item list and redraw if it changed
+    void pollBag() {
+        if (tab != TAB_BAG) return;
+        int n = nativeBag(bagRaw);
+        if (n < 0 || bagRaw[0] == bagGen) return;
+        bagGen = bagRaw[0];
+        bag = BagModel.decode(Arrays.copyOfRange(bagRaw, 1, bagRaw.length), n);
+        invalidate();
+    }
+
+    private void drawBag(Canvas c) {
+        BagModel.Layout l = bagLayout; if (l == null) return;
+        if (icons == null) icons = new DeckIcons(getContext());
+        float rad = l.slot * 0.08f;
+        fill.setColor(PANEL); line.setColor(DIM);
+        for (int i = 0; i < l.slots(); i++) { float[] r = l.slotRect(i); tmp.set(r[0], r[1], r[2], r[3]); c.drawRoundRect(tmp, rad, rad, fill); c.drawRoundRect(tmp, rad, rad, line); }
+        tmp.set(l.gridX, l.gridY, l.gridX + BagModel.GRID_W * l.cell, l.gridY + BagModel.GRID_H * l.cell); c.drawRect(tmp, fill);
+        for (int x = 0; x <= BagModel.GRID_W; x++) c.drawLine(l.gridX + x * l.cell, l.gridY, l.gridX + x * l.cell, tmp.bottom, line);
+        for (int y = 0; y <= BagModel.GRID_H; y++) c.drawLine(l.gridX, l.gridY + y * l.cell, tmp.right, l.gridY + y * l.cell, line);
+        tmp.set(l.beltX, l.beltY, l.beltX + 4 * l.beltCell, l.beltY + BagModel.BELT_ROWS * l.beltCell); c.drawRect(tmp, fill);
+        for (int x = 0; x <= 4; x++) c.drawLine(l.beltX + x * l.beltCell, l.beltY, l.beltX + x * l.beltCell, tmp.bottom, line);
+        for (int y = 0; y <= BagModel.BELT_ROWS; y++) c.drawLine(l.beltX, l.beltY + y * l.beltCell, tmp.right, l.beltY + y * l.beltCell, line);
+        text.setColor(DIM); text.setTextAlign(Paint.Align.LEFT); text.setTextSize(l.beltCell * 0.4f);
+        c.drawText(t("dmDeckBelt"), tmp.right + l.gap * 2, l.beltY + l.beltCell * 0.6f, text);
+        text.setTextAlign(Paint.Align.CENTER);
+        for (BagModel.Item it : bag) {
+            float[] r = l.rect(it); if (r == null) continue;
+            tmp.set(r[0], r[1], r[2], r[3]); tmp.inset(2, 2);
+            int q = QUALITY_COLOUR[Math.max(0, Math.min(8, it.quality))];
+            fill.setColor(it.unid ? 0x40B0202A : (q & 0x00FFFFFF) | 0x30000000); c.drawRect(tmp, fill);
+            Bitmap b = icons.get(it);
+            if (b != null) {
+                // keep the picture's shape: fit it inside the item's area, centred
+                float s = Math.min(tmp.width() / b.getWidth(), tmp.height() / b.getHeight()), bw = b.getWidth() * s, bh = b.getHeight() * s;
+                src.set(0, 0, b.getWidth(), b.getHeight());
+                dst.set(tmp.centerX() - bw / 2, tmp.centerY() - bh / 2, tmp.centerX() + bw / 2, tmp.centerY() + bh / 2);
+                c.drawBitmap(b, src, dst, bitmapPaint);
+            } else {
+                text.setColor(q); text.setTextSize(Math.min(tmp.width(), tmp.height()) * 0.3f);
+                c.drawText(it.code, tmp.centerX(), tmp.centerY() - (text.descent() + text.ascent()) / 2, text);
+            }
+            if (it.quality >= 4) { line.setColor(it.unid ? DEAD : q); c.drawRect(tmp, line); }
+        }
     }
 
     private void drawStrip(Canvas c) {
@@ -189,6 +281,8 @@ final class ThorDeck extends View {
     }
 
     private int hit(float x, float y) {
+        for (int i = 0; i < TAB_COUNT; i++) if (tabRect[i].contains(x, y)) return TAB_BASE + i;
+        if (tab == TAB_BAG) return -1;   // read only for now
         if (picking) { for (int i = 0; i < 8; i++) if (pick[i].contains(x, y)) return PICK_BASE + i; return PICK_BASE - 1; }   // outside the picker = close it
         for (int i = 0; i < B_COUNT; i++) if (cell[i].contains(x, y)) return i;
         return -1;
@@ -200,7 +294,7 @@ final class ThorDeck extends View {
         case MotionEvent.ACTION_DOWN: case MotionEvent.ACTION_POINTER_DOWN:
             if (id >= MAX_POINTERS || !actionsEnabled()) return true;
             downCell[id] = hit(e.getX(idx), e.getY(idx)); longFired[id] = false;
-            if (downCell[id] >= B_BELT && downCell[id] < B_COUNT) handler.postDelayed(longPress[id], LONG_PRESS_MS);
+            if (tab == TAB_MAIN && downCell[id] >= B_BELT && downCell[id] < B_COUNT) handler.postDelayed(longPress[id], LONG_PRESS_MS);
             invalidate(); return true;
         case MotionEvent.ACTION_UP: case MotionEvent.ACTION_POINTER_UP:
             if (id >= MAX_POINTERS) return true;
@@ -230,6 +324,7 @@ final class ThorDeck extends View {
     }
 
     private void commit(int d) {
+        if (d >= TAB_BASE) { setTab(d - TAB_BASE); return; }
         if (d >= PICK_BASE) { nativeAction(A_PLAYERS, d - PICK_BASE + 1); picking = false; return; }
         if (d < 4) nativeAction(A_TAB, d);
         else if (d == B_PORTAL) nativeAction(A_PORTAL, 0);

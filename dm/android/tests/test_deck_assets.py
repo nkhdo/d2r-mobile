@@ -50,5 +50,41 @@ class LevelNames(unittest.TestCase):
         self.assertEqual(third[2:], [''] * 12)
 
 
+class ItemIcons(unittest.TestCase):
+    BASE = {'weapon': [{'code': 'hax'}, {'code': '9ha'}], 'armor': [{'code': 'cap'}], 'misc': [{'code': 'rin'}, {'code': 'zzz'}]}
+    ITEMS = [{'hax': {'asset': 'axe/hand_axe'}}, {'9ha': {'asset': 'axe/hatchet'}}, {'cap': {'asset': 'helmet/cap'}},
+             {'rin': {'asset': 'ring/ring'}}, {'zzz': {'asset': 'nothing/here'}}]
+    UNIQUES = [{'the_gnasher': {'normal': 'axe/the_gnasher'}}, {'nagelring': {'normal': 'ring/nagelring_missing'}}]
+    SETS = [{'civerbs_icon': {'normal': 'ring/ring'}}]
+    UROWS = [{'index': 'The Gnasher', 'code': 'hax', '*ID': '0'}, {'index': 'Nagelring', 'code': 'rin', '*ID': '1'},
+             {'index': 'Not An Item', 'code': 'qqq', '*ID': '2'}]
+    SROWS = [{'index': "Civerb's Icon", 'item': 'rin', '*ID': '7'}]
+    SPRITES = {'weapon/axe/hand_axe', 'weapon/axe/the_gnasher', 'armor/helmet/cap', 'misc/ring/ring'}
+
+    def icons(self):
+        return deck.icon_map(self.BASE, self.ITEMS, self.UNIQUES, self.SETS, self.UROWS, self.SROWS, self.SPRITES)
+
+    def test_base_codes_map_to_their_category_sprite(self):
+        m = self.icons()
+        self.assertEqual(m['hax'], 'weapon/axe/hand_axe')
+        self.assertEqual(m['cap'], 'armor/helmet/cap')
+        self.assertEqual(m['rin'], 'misc/ring/ring')
+
+    def test_codes_without_a_sprite_are_left_out(self):
+        m = self.icons()
+        self.assertNotIn('9ha', m)
+        self.assertNotIn('zzz', m)
+
+    def test_unique_and_set_rows_use_their_own_picture_or_the_base_one(self):
+        m = self.icons()
+        self.assertEqual(m['u0'], 'weapon/axe/the_gnasher')   # own picture, name key normalised like the game's json
+        self.assertEqual(m['u1'], 'misc/ring/ring')           # own picture missing: base picture
+        self.assertNotIn('u2', m)                             # base code unknown
+        self.assertEqual(m['s7'], 'misc/ring/ring')           # apostrophe dropped from "Civerb's Icon"
+
+    def test_file_names_are_flat_and_safe(self):
+        self.assertEqual(deck.icon_file('weapon/axe/hand_axe'), 'weapon_axe_hand_axe.png')
+
+
 if __name__ == '__main__':
     unittest.main()

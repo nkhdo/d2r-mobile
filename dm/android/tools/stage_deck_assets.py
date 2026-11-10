@@ -4,11 +4,15 @@
 Writes into the import pack's overlay folder, before its manifest is written:
   deck/levels.tsv   area names per game language: header "id" + the 13 language columns in the game's
                     language-number order (dm_i18n.h g_dm_lang), one row per levels.txt Id.
+  deck/items/*.png  inventory pictures from the player's own item sprites, at the game's native 49 px per cell
+  deck/items.tsv    key -> picture file: key = item code ("hax"), "u<UniqueItems *ID>" or "s<SetItems *ID>"
+                    (the row number the host reads at item data +0x34)
 These files hold game text, so they only ever live in the player's own import pack.
 """
 import json
 import os
 import re
+import struct
 import sys
 from pathlib import Path
 
@@ -38,6 +42,89 @@ def level_table(levels, strings):
     return '\n'.join(out) + '\n'
 
 
+def _json_map(entries):
+    out = {}
+    for entry in entries:
+        out.update(entry)
+    return out
+
+
+def _name_key(index):
+    """UniqueItems / SetItems index -> the key used in hd/items/uniques.json and sets.json (as gen_vault_table.py)."""
+    return re.sub(r'[^a-z0-9]+', '_', index.lower().replace("'", '')).strip('_')
+
+
+def icon_map(base, items, uniques, sets, unique_rows, set_rows, sprites):
+    """base: {category: rows of armor / weapons / misc .txt}; items / uniques / sets: hd/items/*.json entries;
+    unique_rows / set_rows: UniqueItems / SetItems rows; sprites: 'category/asset' paths that exist (lowercase).
+    Returns {key: 'category/asset'} for every key whose picture exists."""
+    cat = {r['code']: c for c, rows in base.items() for r in rows if r.get('code')}
+    item_asset = {code: (v or {}).get('asset') for code, v in _json_map(items).items()}
+
+    def find(code, own):
+        if code not in cat:
+            return None
+        for asset in (own, item_asset.get(code)):
+            if asset and '%s/%s' % (cat[code], asset.lower()) in sprites:
+                return '%s/%s' % (cat[code], asset.lower())
+        return None
+
+    out = {}
+    for code in cat:
+        path = find(code, None)
+        if path:
+            out[code] = path
+    for prefix, rows, field, j in (('u', unique_rows, 'code', _json_map(uniques)), ('s', set_rows, 'item', _json_map(sets))):
+        for r in rows:
+            ident = (r.get('*ID') or '').strip()
+            if not ident.isdigit():
+                continue
+            path = find(r.get(field, ''), (j.get(_name_key(r.get('index', ''))) or {}).get('normal'))
+            if path:
+                out[prefix + ident] = path
+    return out
+
+
+def icon_file(path):
+    return re.sub(r'[^a-z0-9]+', '_', path.lower()).strip('_') + '.png'
+
+
+def _stage_icons(romfs, target):
+    import annot_strings, romfs_art, touch_layout
+    from PIL import Image
+    index = {}   # one pass over the CASC manifest (romfs_art.read scans it per file, too slow for hundreds of pictures)
+    for line in open(os.path.join(romfs, 'data', 'build_manifest.psv'), encoding='utf-8'):
+        f = line.rstrip('\n').split('|')
+        if len(f) >= 11 and not line.startswith('#'):
+            index[f[9].lower().split(':', 1)[-1]] = f
+    read = lambda p: touch_layout._read_entry(romfs, index[p])
+    root = 'data/hd/global/ui/items/'
+    sprites = {p[len(root):-len('.sprite')] for p in index if p.startswith(root) and p.endswith('.sprite')}
+    base = {c: annot_strings.excel(romfs, f + '.txt') for c, f in (('armor', 'armor'), ('weapon', 'weapons'), ('misc', 'misc'))}
+    js = lambda n: json.loads(read('data/hd/items/%s.json' % n).decode('utf-8-sig'))
+    icons = icon_map(base, js('items'), js('uniques'), js('sets'),
+                     annot_strings.excel(romfs, 'uniqueitems.txt'), annot_strings.excel(romfs, 'setitems.txt'), sprites)
+    out = target / 'items'
+    out.mkdir(parents=True, exist_ok=True)
+    for path in sorted(set(icons.values())):
+        raw = read(root + path + '.sprite')
+        if raw[:4] != b'SpA1':
+            raise SystemExit('stage_deck_assets: %s is not a sprite' % path)
+        ver, fw, w, h = struct.unpack_from('<HHII', raw, 4)
+        if ver == 61:
+            im = romfs_art.dxt5(raw, w, h)
+        elif ver == 31:
+            im = Image.frombytes('RGBA', (w, h), raw[40:40 + w * h * 4])
+        else:
+            raise SystemExit('stage_deck_assets: %s has unknown sprite version %d' % (path, ver))
+        if 0 < fw < im.width:
+            im = im.crop((0, 0, fw, im.height))   # several frames side by side: keep the first
+        im.save(out / icon_file(path), optimize=True)
+    lines = ['%s\t%s' % (k, icon_file(v)) for k, v in sorted(icons.items())]
+    (target / 'items.tsv').write_text('\n'.join(lines) + '\n', encoding='utf-8', newline='\n')
+    return len(icons), len(set(icons.values()))
+
+
 def stage(romfs, overlay):
     """Read levels.txt and the level strings from the player's RomFS and write deck/ into the overlay."""
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'ios' / 'tools'))
@@ -48,7 +135,8 @@ def stage(romfs, overlay):
     target.mkdir(parents=True, exist_ok=True)
     table = level_table(levels, json.loads(text))
     (target / 'levels.tsv').write_text(table, encoding='utf-8', newline='\n')
-    return {'deck_levels': table.count('\n') - 1}
+    keys, pictures = _stage_icons(romfs, target)
+    return {'deck_levels': table.count('\n') - 1, 'deck_item_keys': keys, 'deck_item_pictures': pictures}
 
 
 if __name__ == '__main__':
