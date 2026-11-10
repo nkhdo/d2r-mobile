@@ -38,7 +38,7 @@ Any Android device with a second display that Android treats as a presentation d
 
 ## Known limits
 
-- Opening a page presses the controller's menu and tab buttons for you, so it takes a moment. It can fail while another window of the game is open, such as a vendor or the stash.
+- Opening a page presses the controller's menu button for you and then jumps to the page, so the menu's last page can flash for a moment. It can fail while another window of the game is open, such as a vendor or the stash.
 - No area name, item pictures, inventory grid or map yet.
 - Tested on the Thor with the Snapdragon 8 Gen 2. The Thor Lite (Snapdragon 865) has not been tested.
 

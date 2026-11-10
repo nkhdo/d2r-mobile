@@ -113,11 +113,6 @@ Measured on the Thor (QCS8550, Android 13), with the debug app built from this b
   - Deck on: 7247 frames, median 16.71 ms, p99 16.71 ms, 2 frames over 33 ms, 59.8 fps.
   - Deck off: 7245 frames, median 16.71 ms, p99 16.71 ms, 1 frame over 33 ms, 59.8 fps.
   - Passes the agreed test (median within 0.5 ms, no new stalls): one or two isolated frames over 33 ms show up with the Deck off too, so they are noise rather than the Deck.
-- Still to check by hand on the Thor:
-  - each button's effect in controller mode, especially the `+` / `R` tab stepping;
-  - potion colours and counts with real potions;
-  - the gamepad after touching the bottom screen;
-  - B never closing the Deck;
-  - Home and resume;
-  - the name dialog.
+- **Checked by hand on the Thor** (controller mode, 2026-11-10): every button, potion colours and counts, the gamepad after touching the bottom screen, B never closing the Deck, Home and resume, and the name dialog (the Deck hides while it is open). All fine.
+- **Opening a page.** The first version pressed `+` and then stepped with `R`, and the player could see it scroll through the pages. It now presses `+` once and jumps with the function page's own page switch (`main+0x405898`, the same call used for tapping a top tab). Page numbers measured on the Thor: Quests 1, Character 2, Inventory 3, Skill tree 4. The Deck re-learns them whenever it sees a target panel, and still falls back to `R`. The menu shows its last page for a frame or two before the jump.
 - An import pack made from other source is rejected by this build: the overlay fingerprint covers `dm/i18n/ui_text.tsv` and `dm/ios/tools/touch_layout.py`, and both change here.
