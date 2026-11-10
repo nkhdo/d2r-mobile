@@ -510,5 +510,6 @@ static const struct { const char *k, *zh, *en, *es, *mx, *pt, *ru, *ko; } k_dm_i
     { "dmDeckToBelt", "放进腰带", "To belt", "Al cinturón", "Al cinturón", "Para o cinto", "На пояс", "허리띠로" },
     { "dmDeckSort", "整理背包", "Sort bag", "Ordenar bolsa", "Ordenar bolsa", "Organizar bolsa", "Упорядочить", "가방 정리" },
     { "dmDeckClose", "关闭", "Close", "Cerrar", "Cerrar", "Fechar", "Закрыть", "닫기" },
+    { "dmDeckBagHint", "点一件物品", "Tap an item", "Toca un objeto", "Toca un objeto", "Toque em um item", "Нажмите на предмет", "아이템을 누르세요" },
     { "dmDeckIdle", "进入游戏后，这里显示角色状态和快捷按钮", "Character status and shortcuts appear here in game", "Aquí verás el estado y los atajos al jugar", "Aquí verás el estado y los atajos al jugar", "Status e atalhos aparecem aqui durante o jogo", "Здесь появятся состояние и быстрые кнопки", "게임 중 여기에 캐릭터 상태와 단축 버튼이 표시됩니다" },
 };

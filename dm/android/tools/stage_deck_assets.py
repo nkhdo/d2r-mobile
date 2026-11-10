@@ -8,6 +8,7 @@ Writes into the import pack's overlay folder, before its manifest is written:
   deck/items.tsv    key -> picture file: key = item code ("hax"), "u<UniqueItems *ID>" or "s<SetItems *ID>"
                     (the row number the host reads at item data +0x34)
   deck/itemnames.tsv  item names per game language for the same keys (base items by namestr, uniques and sets by index)
+  deck/ui/*.png     the game's own panel art the Deck is drawn with (UI_ART below), and deck/ui/exocet.otf / formal.ttf, the game's fonts
 These files hold game text, so they only ever live in the player's own import pack.
 """
 import json
@@ -117,9 +118,65 @@ def icon_file(path):
     return re.sub(r'[^a-z0-9]+', '_', path.lower()).strip('_') + '.png'
 
 
-def _stage_icons(romfs, target):
-    import annot_strings, romfs_art, touch_layout
+# The Deck's look, from the game's own UI sprites (hd/global/ui/...): output name -> (sprite, frame or None, crop box or None).
+# Frames are the sprite's side-by-side cells (frame width in the sprite header).
+UI_ART = {
+    'tab_off': ('controller/panel/controller_top_tab_3tabs', 0, None),
+    'tab_on': ('controller/panel/controller_top_tab_3tabs', 1, None),
+    'button': ('controller/panel/escapemenu/escapeoptions_button', 0, None),
+    'button_down': ('controller/panel/escapemenu/escapeoptions_button', 1, None),
+    'button_off': ('controller/panel/escapemenu/escapeoptions_button', 2, None),
+    'modal': ('controller/panel/modal/ui-console-modal', None, None),
+    'hud': ('controller/hud/hudbase', None, None),
+    'globe': ('panel/hud_02/healthmanaanimation/healthidle/4k/globe_health_man_idle', 0, None),
+    'expbar': ('controller/hud/expbar', None, None),
+    'inventory': ('controller/panel/inventorypanel/v2/inventorybg', 0, None),
+    'beltrow': ('panel/hud_02/belt_popped_row', None, None),
+    'stone': ('controller/panel/mainpanelbg', None, (2225, 120, 2815, 755)),   # plain stone inside the right-hand frame
+    'doll_head': ('panel/inventory/inventory_paperdoll_headarmor', None, None),
+    'doll_neck': ('panel/inventory/inventory_paperdoll_amulet', None, None),
+    'doll_torso': ('panel/inventory/inventory_paperdoll_chestarmor', None, None),
+    'doll_weapon': ('panel/inventory/inventory_paperdoll_weapon', None, None),
+    'doll_shield': ('panel/inventory/inventory_paperdoll_shield', None, None),
+    'doll_ring': ('panel/inventory/inventory_paperdoll_ring', None, None),
+    'doll_belt': ('panel/inventory/inventory_paperdoll_belt', None, None),
+    'doll_glove': ('panel/inventory/inventory_paperdoll_glove', None, None),
+    'doll_boots': ('panel/inventory/inventory_paperdoll_boots', None, None),
+}
+UI_FONTS = {'exocet.otf': 'exocetblizzardot-medium.otf', 'formal.ttf': 'formal436bt.ttf'}
+
+
+def _decode_sprite(raw, path):
+    """A .sprite file -> (RGBA image of the whole sheet, frame width)."""
+    import romfs_art
     from PIL import Image
+    if raw[:4] != b'SpA1':
+        raise SystemExit('stage_deck_assets: %s is not a sprite' % path)
+    ver, fw, w, h = struct.unpack_from('<HHII', raw, 4)
+    if ver == 61:
+        return romfs_art.dxt5(raw, w, h), fw
+    if ver == 31:
+        return Image.frombytes('RGBA', (w, h), raw[40:40 + w * h * 4]), fw
+    raise SystemExit('stage_deck_assets: %s has unknown sprite version %d' % (path, ver))
+
+
+def _stage_ui(read, target):
+    out = target / 'ui'
+    out.mkdir(parents=True, exist_ok=True)
+    for name, (sprite, frame, box) in sorted(UI_ART.items()):
+        im, fw = _decode_sprite(read('data/hd/global/ui/%s.sprite' % sprite), sprite)
+        if frame is not None and 0 < fw <= im.width:
+            im = im.crop((frame * fw, 0, (frame + 1) * fw, im.height))
+        if box:
+            im = im.crop(box)
+        im.save(out / (name + '.png'), optimize=True)
+    for name, font in UI_FONTS.items():
+        (out / name).write_bytes(read('data/hd/ui/fonts/' + font))
+    return len(UI_ART) + len(UI_FONTS)
+
+
+def _stage_icons(romfs, target):
+    import annot_strings, touch_layout
     index = {}   # one pass over the CASC manifest (romfs_art.read scans it per file, too slow for hundreds of pictures)
     for line in open(os.path.join(romfs, 'data', 'build_manifest.psv'), encoding='utf-8'):
         f = line.rstrip('\n').split('|')
@@ -141,21 +198,13 @@ def _stage_icons(romfs, target):
     out = target / 'items'
     out.mkdir(parents=True, exist_ok=True)
     for path in sorted(set(icons.values())):
-        raw = read(root + path + '.sprite')
-        if raw[:4] != b'SpA1':
-            raise SystemExit('stage_deck_assets: %s is not a sprite' % path)
-        ver, fw, w, h = struct.unpack_from('<HHII', raw, 4)
-        if ver == 61:
-            im = romfs_art.dxt5(raw, w, h)
-        elif ver == 31:
-            im = Image.frombytes('RGBA', (w, h), raw[40:40 + w * h * 4])
-        else:
-            raise SystemExit('stage_deck_assets: %s has unknown sprite version %d' % (path, ver))
+        im, fw = _decode_sprite(read(root + path + '.sprite'), path)
         if 0 < fw < im.width:
             im = im.crop((0, 0, fw, im.height))   # several frames side by side: keep the first
         im.save(out / icon_file(path), optimize=True)
     lines = ['%s\t%s' % (k, icon_file(v)) for k, v in sorted(icons.items())]
     (target / 'items.tsv').write_text('\n'.join(lines) + '\n', encoding='utf-8', newline='\n')
+    _stage_ui(read, target)
     return len(icons), len(set(icons.values()))
 
 

@@ -51,27 +51,44 @@ public class BagModelTest {
         check("worn item: nothing to do", "[]", acts(items[2]));
         check("potion already in the belt: use only", "[" + use + "]", acts(items[5]));
 
-        // content 1200 x 1000 at (0, 100)
-        BagModel.Layout l = new BagModel.Layout(0, 100, 1200, 1000, 12);
-        float s = l.cell;   // one bag cell
+        // the game's inventory panel (507 x 700 art) drawn at (10, 100), scale 1.4; the upper belt rows in a 480-wide column at (740, 120)
+        BagModel.Layout l = new BagModel.Layout(10, 100, 1.4f, 740, 120, 480);
+        float k = 1.4f, c = 49 * k;
         float[] r = l.rect(items[0]);
-        near("bag item left = grid left + 2 cells", l.gridX + 2 * s, r[0]);
-        near("bag item top = grid top + 1 cell", l.gridY + s, r[1]);
-        near("bag item width = 2 cells", 2 * s, r[2] - r[0]);
-        near("bag item height = 3 cells", 3 * s, r[3] - r[1]);
-        check("grid is 10 cells wide and fits", true, l.gridX + 10 * s <= 1200.01f);
-        check("worn row sits above the grid", true, l.rect(items[2])[3] <= l.gridY);
-        check("head and left ring have different slots", false, l.rect(items[2])[0] == l.rect(items[3])[0]);
+        near("bag item left = panel grid x 9 + 2 cells", 10 + (9 + 2 * 49) * k, r[0]);
+        near("bag item top = panel grid y 425 + 1 cell", 100 + (425 + 49) * k, r[1]);
+        near("bag item width = 2 cells", 2 * c, r[2] - r[0]);
+        near("bag item height = 3 cells", 3 * c, r[3] - r[1]);
+        r = l.rect(items[2]);
+        near("worn helm in the panel's helm box (x 196)", 10 + 196 * k, r[0]);
+        near("worn helm box top (y 0)", 100, r[1]);
+        r = l.rect(items[3]);
+        near("left ring in the right-hand ring box (x 319)", 10 + 319 * k, r[0]);
         check("other weapon set is not drawn", null, l.rect(items[4]));
-        float[] belt = l.rect(items[5]);   // slot 5 = column 1, row 1 (drawn from the bottom up, as in the game)
-        check("belt below the grid", true, belt[1] >= l.gridY + 4 * s);
-        near("belt column 1", l.beltX + l.beltCell, belt[0]);
-        check("everything fits in the content height", true, l.beltY + 4 * l.beltCell <= 1100.01f);
+        float rowH = 480 * 56f / 246, slot = 480 / 4f;
+        float[] belt = l.rect(items[5]);   // slot 5 = column 1, row 1: the lowest of the three upper rows on the right
+        near("belt row 1 column 1, x", 740 + slot, belt[0]);
+        near("belt row 1, y (rows 3, 2, 1 top to bottom)", 120 + 2 * rowH, belt[1]);
+        BagModel.Item low = BagModel.decode(pack(item(17, "hp2", BagModel.BELT, 2, 0, 0, 2, 0, 1, 1, -1)), 1)[0];
+        r = l.rect(low);   // bottom row: the panel's four gold boxes (column 2 = x 255)
+        near("belt row 0 in the panel's gold box", 10 + 255 * k, r[0]);
+        near("gold boxes at y 351", 100 + 351 * k, r[1]);
+        near("panel width", 507 * k, l.panelW);
 
-        check("touch on the sword's lower-right cell", 0, l.itemAt(items, l.gridX + 3.5f * s, l.gridY + 3.5f * s));
-        check("touch on an empty bag cell", -1, l.itemAt(items, l.gridX + 0.5f * s, l.gridY + 0.5f * s));
-        check("touch on the worn cap", 2, l.itemAt(items, (l.rect(items[2])[0] + l.rect(items[2])[2]) / 2, (l.rect(items[2])[1] + l.rect(items[2])[3]) / 2));
+        check("touch on the sword's lower-right cell", 0, l.itemAt(items, 10 + (9 + 3.5f * 49) * k, 100 + (425 + 3.5f * 49) * k));
+        check("touch on an empty bag cell", -1, l.itemAt(items, 10 + (9 + 0.5f * 49) * k, 100 + (425 + 0.5f * 49) * k));
+        check("touch on the worn helm", 2, l.itemAt(items, 10 + 250 * k, 100 + 50 * k));
         check("touch outside everything", -1, l.itemAt(items, 5, 5));
+
+        // weapon set tabs I / II on the strips above the two hand columns (left strip x 4..119, right x 389..503, y 44..66)
+        r = l.box(BagModel.weaponTab(0, 1));
+        near("left strip, tab II starts half way", 10 + (4 + 115 / 2f) * k, r[0]);
+        near("tab top", 100 + 44 * k, r[1]);
+        check("tap on the left strip's I", 0, l.weaponTabAt(10 + 20 * k, 100 + 55 * k));
+        check("tap on the right strip's II", 1, l.weaponTabAt(10 + 480 * k, 100 + 55 * k));
+        check("tap a little above a strip still counts", 0, l.weaponTabAt(10 + 400 * k, 100 + 20 * k));
+        check("tap in the helm box is no tab", -1, l.weaponTabAt(10 + 250 * k, 100 + 55 * k));
+        check("tap in the weapon box is no tab", -1, l.weaponTabAt(10 + 60 * k, 100 + 100 * k));
         check("short list", 0, BagModel.decode(new int[3], 1).length);
         System.out.println("BagModelTest OK (" + cases + " cases)");
     }
