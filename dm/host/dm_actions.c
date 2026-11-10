@@ -63,6 +63,10 @@ void dm_belt_expand(int on) { atomic_store(&g_beltx, on ? 1 : 0); }
 static _Atomic int g_belt_use;
 void dm_belt_use(int col, int row) { if (col >= 0 && col < 4 && row >= 0 && row < 4) atomic_store(&g_belt_use, 1 + row * 4 + col); }
 void dm_belt_use_merc(int col, int row) { if (col >= 0 && col < 4 && row >= 0 && row < 4) atomic_store(&g_belt_use, 0x100 | (1 + row * 4 + col)); }   // 腰带双击展开后上面几排：手柄没有这几格的键，走下面 g_use 的原版喂雇佣兵分支 | the upper rows after the belt is expanded by double-tap: the controller has no button for these cells, so go through the original game's feed-mercenary branch of g_use below
+static _Atomic int g_belt_kind[4];   // snapshot for dm_belt_kinds
+void dm_belt_kinds(int out[4]) { for (int i = 0; i < 4; i++) out[i] = atomic_load(&g_belt_kind[i]); }
+static _Atomic int g_deck_swap;   // weapon swap requested by the bottom-screen Deck (taken by swapskill_pump)
+void dm_swap_request(void) { atomic_store(&g_deck_swap, 1); }
 static _Atomic int g_use_merc;   // 这一次 g_use 指定喂雇佣兵（腰带双击）：雇佣兵不在 / 已死 / 这瓶不能喂 = 不喂也不自己喝 | this time g_use is designated to feed the mercenary (belt double-tap): mercenary absent / dead / this bottle cannot be fed = neither feed nor drink it oneself
 int dm_belt_rows(int *expanded) { int v = atomic_load(&g_belt_state); if (expanded) *expanded = v >> 8 & 1; return v & 0xff; }
 static _Atomic int g_sort = -1, g_rname;
@@ -443,6 +447,10 @@ static void swapskill_pump(uint8_t *b, uint64_t pl) {
     { static int tree_from = -1; int dm_ui_swaptab_take(void), dm_ui_skilltree_open(void);
       if (dm_ui_swaptab_take()) { if (ph == SS_IDLE && w >= 0 && !busy && !dead) { if (tree_from < 0) tree_from = w; swap0(w); LOG("副手组技能：拍 %u 技能树里点 I / II 页签 → 换武器（当前组 %d）", t, w); } else LOG("副手组技能：技能树页签这一下没换（%s）", ph != SS_IDLE ? "连招进行中" : busy ? "动作中" : "读不到当前武器组"); }
       if (tree_from >= 0 && !dm_ui_skilltree_open() && ph == SS_IDLE) { if (w >= 0 && w != tree_from) { from = tree_from; tback = t; tries = 1; swap0(w); atomic_store(&g_ss_phase, SS_BACK); LOG("副手组技能：拍 %u 关技能树 → 切回打开时的第 %d 组", t, from); } tree_from = -1; } }
+    // The bottom-screen Deck's weapon swap button: the same guards as the tab code above; if it cannot swap right away (mid-action etc.) retry every frame, and give up after about 30 frames so it does not swap unexpectedly later
+    { static int pend; if (atomic_exchange(&g_deck_swap, 0)) pend = 30;
+      if (pend > 0) { if (ph == SS_IDLE && w >= 0 && !busy && !dead) { swap0(w); pend = 0; LOG("weapon swap: frame %u, bottom-screen Deck swapped weapons (current set %d)", t, w); }
+                      else if (--pend == 0) LOG("weapon swap: bottom-screen Deck swap did not happen (%s), giving up", ph != SS_IDLE ? "combo in progress" : busy ? "mid-action" : dead ? "dead" : "current weapon set unreadable"); } }
     switch (ph) {
     case SS_REQ: { int s = atomic_load(&g_ss_slot); id = *(int32_t *)(b + 0x2d5f0c0 + 28 * s); item = *(int32_t *)(b + 0x2d5f0c0 + 28 * s + 4);
         if (atomic_load(&g_ss_kind[s]) & 4) {   // 两组都有：这一下把绑定的物品 id 临时指到当前组那个来源（原版选技能要「技能号 + 物品 id」都对上），松手后改回 | Both sets have it: for this press, temporarily point the binding's item id at the source in the current set (the original skill selection needs both "skill id + item id" to match), and change it back after release
@@ -777,6 +785,13 @@ void dm_actions_pump(void) {
             if (*(uint32_t *)(it + 0xc) == 2 && pp && (int)(*(uint32_t *)(pp + 0x10) + 4 * *(uint32_t *)(pp + 0x14)) == bu - 1) uid = *(uint32_t *)(it + 8); it = *(uint64_t *)(d + 0xb0); }
         LOG("腰带：%s第 %d 排第 %d 列 → %s（物品 id %u）", bm ? "喂雇佣兵 " : "喝", (bu - 1) / 4, (bu - 1) % 4, uid ? "有药" : "空格，不动", uid);
         if (uid) { atomic_store(&g_use_merc, bm); atomic_store(&g_use, uid); } } }
+    // bottom-screen Deck: what the bottom-row bottle of each belt column is (kinds as in dm_beltauto.c kind_rank), looked at about every 15 frames
+    { static unsigned fr; if (++fr % 15 == 0) { int k[4] = {0}; uint64_t inv = pl ? *(uint64_t *)(pl + 0x90) : 0, it = inv && *(uint32_t *)inv == 0x01020304 ? *(uint64_t *)(inv + 0x10) : 0;
+        for (int n = 0; it && n < 512; n++) { uint64_t d = *(uint64_t *)(it + 0x10), pp = *(uint64_t *)(it + 0x38); if (!d) break;
+            if (*(uint32_t *)(it + 0xc) == 2 && pp && *(uint32_t *)(pp + 0x14) == 0 && *(uint32_t *)(pp + 0x10) < 4) { uint32_t c = ((uint32_t (*)(uint64_t))(b + 0x570260))(it); char s4[4]; memcpy(s4, &c, 4);
+                k[*(uint32_t *)(pp + 0x10)] = s4[0] == 'h' && s4[1] == 'p' ? 1 : s4[0] == 'm' && s4[1] == 'p' ? 2 : s4[0] == 'r' && s4[1] == 'v' ? 3 : 4; }
+            it = *(uint64_t *)(d + 0xb0); }
+        for (int i = 0; i < 4; i++) atomic_store(&g_belt_kind[i], k[i]); } }
     { int tk = atomic_exchange(&g_test_use, 0); if (tk && pl) { uint64_t inv = *(uint64_t *)(pl + 0x90), it = inv && *(uint32_t *)inv == 0x01020304 ? *(uint64_t *)(inv + 0x10) : 0; uint32_t uid = 0;
         for (int k = 0; it && k < 512 && !uid; k++) { uint64_t d = *(uint64_t *)(it + 0x10); if (!d) break; int (*ty)(uint64_t, int) = (void *)(b + 0x574bc0); uint32_t code = ((uint32_t (*)(uint64_t))(b + 0x570260))(it);
             if (tk == 5 ? *(uint32_t *)(it + 0xc) == 2 : (*(uint32_t *)(it + 0xc) == 0 && *(uint8_t *)(d + 0x55) == 0 && (tk == 1 ? ty(it, 9) : tk == 2 ? ty(it, 0x16) : tk == 3 ? ty(it, 0x12) : tk == 6 ? (code == 0x206b6269 || code == 0x20637369) : code == 0x20786f62))) uid = *(uint32_t *)(it + 8); it = *(uint64_t *)(d + 0xb0); }

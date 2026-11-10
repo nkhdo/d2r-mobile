@@ -113,6 +113,7 @@ uint32_t dm_ui_hit_id(void);   /* 最近一次命中的加点类按钮：属性�
 int dm_ui_bind_active(void); uint64_t dm_ui_auto_release(void);   /* 取手柄处用：此刻要从玩家输入里松开的键 | Used where the controller is read: the keys to release from the player's input right now */ int dm_ui_bind_skill_hit(float *nx, float *ny);   /* 最近一次命中（吸附后）落在加点类按钮上：1 = 技能树的技能图标，2 = 属性页的「+」；带归一化坐标 | The most recent hit (after snapping) landed on a point-spending button: 1 = a skill icon in the skill tree, 2 = a '+' on the attributes page; comes with normalized coordinates */
 void dm_ui_bind_cancel(void);
 void dm_ui_map_full(int on);
+void dm_ui_open_tab(int tab);   // bottom-screen Deck: open / close one page of the function page (0 inventory 1 character 2 skill tree 3 quests); closes it if already open. Presses + / R / B for the player (dm_cursor.c ui_tab_pump). Callable from any thread
 int dm_ui_map_is_full(void);
 // 面板态（前端判的：局内开着任何非常驻面板 / 对话菜单 / 死亡弹窗）：on = 1 时全屏地图先让成小地图，关掉面板回到玩家要的那档（触屏模式；任意线程调）
 // Panel state (judged by the front end: in a run, any non-resident panel / dialog menu / death dialog open): with on = 1 the full-screen map first steps aside to the minimap, and after the panels close it returns to what the player wants (touch mode; callable from any thread)

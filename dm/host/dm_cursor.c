@@ -2294,6 +2294,37 @@ static void ui_mercpg_pump(module_t *m, uint64_t root, uint64_t fr) {
     if (tries) { uint64_t dt = fr - pressed; int moved = dm && cur >= 0 && cur != page; if (!((moved && dt >= 7) || dt >= 24)) return; }
     page = cur; pressed = fr; dm_ui_key_pulse(dm ? DM_BTN_R : DM_BTN_PLUS, 4); tries++;
 }
+// The bottom-screen Deck's Inventory / Character / Skills / Quests buttons: press + to open the function page, and once it is open call the function page's own page-switch function main+0x405898(panel, target page, direction) to go straight to the target page (same as the direct switch for tapping a top tab),
+// instead of pressing R page by page (the flipping is visible; feedback on the device: "it opens the last page, then scrolls through to the target"). The page numbers default to the ones measured on the device (quests 1, character 2, inventory 3, skill tree 4),
+// and whenever the function page is open and a target panel is visible, its page number is recorded (the hidden mercenary page also takes a number and numbers can change without a mercenary, so it is checked every time); only if the jump does not land does it fall back to pressing R. Runs in both controller and touch mode.
+// Target page already open = a second tap closes it (press B, the controller's back). Arrival is judged by the target panel widget being visible (widget names as elsewhere in this file)
+static _Atomic int g_opentab;   // request: tab + 1; 0 = none
+void dm_ui_open_tab(int tab) { if (tab >= 0 && tab < 4) atomic_store(&g_opentab, tab + 1); }
+static void ui_tab_pump(uint64_t root, uint64_t fr) {
+    static const char *const panel[4] = { "PlayerInventoryExpansionLayout", "CharacterStatsPanel", "SkillsTreePanel", "QuestLogPanelExpansion" };
+    static int pageof[4] = { 3, 2, 4, 1 };   // each target's page number in the function page: defaults measured on the Thor, recorded when seen
+    static int on, tab, tries, page, jumped; static uint64_t pressed;
+    module_t *sm = main_module(); uint64_t us = ui_find(root, "UISwitcher", 0);
+    int dm = us && *(uint8_t *)(us + 0x50), direct = dm && sm && *(uint64_t *)(*(uint64_t *)us + 0x28) == (uint64_t)sm->base + 0x404fd8;
+    if (direct) { int cur = *(int32_t *)(us + 0x1b8);   // record page numbers
+        for (int k = 0; k < 4; k++) if (cur >= 0 && pageof[k] != cur && bd_open(root, panel[k])) { LOG("bottom-screen Deck: %s is on function page %d (recorded as %d)", panel[k], cur, pageof[k]); pageof[k] = cur; } }
+    int req = atomic_exchange(&g_opentab, 0);
+    if (req) { tab = req - 1;
+        if (bd_open(root, panel[tab])) { dm_ui_key_pulse(DM_BTN_B, 4); on = 0; LOG("bottom-screen Deck: %s already open -> press B to close", panel[tab]); return; }
+        on = 1; tries = 0; page = -1; pressed = 0; jumped = 0; }
+    if (!on) return;
+    if (bd_open(root, panel[tab])) { LOG("bottom-screen Deck: %s open (%d key presses%s)", panel[tab], tries, jumped ? ", direct page jump" : ""); on = 0; return; }
+    if (tries >= 9) { LOG("【红】bottom-screen Deck: %d key presses and %s still not open, giving up", tries, panel[tab]); on = 0; return; }
+    int cur = dm ? bd_top_tab(root) : -1;
+    if (direct && !jumped) {   // function page just opened: switch straight to the target page
+        int at = *(int32_t *)(us + 0x1b8), n = *(int32_t *)(us + 0x188), to = pageof[tab];
+        jumped = 1; pressed = fr; page = cur;
+        if (to >= 0 && (n <= 0 || to < n) && to != at) { ((void (*)(uint64_t, int, int))(sm->base + 0x405898))(us, to, to > at); LOG("bottom-screen Deck: function page %d -> %d (direct jump, now %d)", at, to, *(int32_t *)(us + 0x1b8)); }
+        return; }
+    if (tries) { uint64_t dt = fr - pressed; int moved = dm && cur >= 0 && cur != page; if (!((moved && dt >= 7) || dt >= 24)) return; }
+    if (jumped && fr - pressed < 12) return;   // give the direct switch a few frames
+    page = cur; pressed = fr; dm_ui_key_pulse(dm ? DM_BTN_R : DM_BTN_PLUS, 4); tries++;
+}
 // 个人仓库页码（个人仓库 2–5 页，dm_pages.c）：写在自己的文字控件 TouchPgPage_Text 里（布局 wide_stash.py），文字照原版共享页页码的写法：
 // 原版写共享页页码（0x3963e4 内 0x397098–0x39714c）= 格式串 0x7f5630({"SharedStashPage", 15}) → 0x399130(缓冲, 格式, 第几页, 共几页) → 0x136e5c(文字控件 +0x88, 缓冲, 长) → 0xadc434(文字控件) 重排；
 // 原先借原版共享页那块（SharedStashTabContainer）并强制它可见、改它的字——违反「我们的功能不改原版控件状态」，已改
@@ -2881,7 +2912,7 @@ void dm_ui_mouse_pump(void) {   // 游戏取手柄处调（hle_hid fill，主线
                 else fix = 0; }
             if (th) { ui_auto_key(th); tnext = fr + 8; } } } }
     { module_t *pm = main_module(); uint64_t proot = 0; if (pm) { memcpy(&proot, pm->base + 0x2f05458, 8); int32_t pw = *(int32_t *)(pm->base + 0x211da38), phh = *(int32_t *)(pm->base + 0x211da3c);
-        static uint64_t pf = UINT64_MAX; if (proot && pw > 0 && phh > 0 && pf != fr) { pf = fr; { static int dd; const char *dn; if (!dd && (dn = getenv("DM_UI_DUMP")) && atomic_load(&g_taps_base) && fr >= atomic_load(&g_taps_base) + (getenv("DM_UI_DUMP_AT") ? atoi(getenv("DM_UI_DUMP_AT")) : 45)) { dd = 1; ui_dump(proot, 0, dn, 0, pm); } } int tm = ui_touch_mode(); if (tm) ui_wtap_pump(pm, proot, pw, phh); if (tm) ui_long_pump(); ui_target_pump(pm, fr); if (tm) ui_use_pump(); if (tm) ui_buy_pump(pw, phh); ui_item_pump(proot, pw, phh); ui_ptr_pump(pm, proot, pw, phh); if (tm) ui_drag_pump(pm, proot, pw, phh); UI_MOUSE_ITEM_PUMPS(pm, proot, pw, phh); { int lu = atomic_load(&g_load_up); dm_uiscreen_set_ingame(ui_panel(proot, "HUDPanel") && !(lu < 0 ? ui_find(proot, "LoadScreenPanel", 0) != 0 : lu)); } ui_safe_pump(pm, proot, fr); ui_lift_pump(proot, fr); ui_note_dock_pump(proot); ui_trove_tabs_pump(pm, proot, fr); ui_minimap_pump(pm, proot, pw, phh, fr); ui_map_pump(pm, proot); ui_map_geom_pump(pm, proot); ui_boss_pct_pump(pm, proot); ui_npcdlg_pump(proot); ui_map_center(pm, proot, *(volatile int32_t *)(pm->base + 0x2d5c748)); if (tm) ui_bind_pump(proot, fr); if (tm) swaptab_pump(proot); if (tm) ui_mercpg_pump(pm, proot, fr); ui_widestash_pump(proot); mv_audit_pump(proot, fr); ui_pages_pump(pm, proot); } } }
+        static uint64_t pf = UINT64_MAX; if (proot && pw > 0 && phh > 0 && pf != fr) { pf = fr; { static int dd; const char *dn; if (!dd && (dn = getenv("DM_UI_DUMP")) && atomic_load(&g_taps_base) && fr >= atomic_load(&g_taps_base) + (getenv("DM_UI_DUMP_AT") ? atoi(getenv("DM_UI_DUMP_AT")) : 45)) { dd = 1; ui_dump(proot, 0, dn, 0, pm); } } int tm = ui_touch_mode(); if (tm) ui_wtap_pump(pm, proot, pw, phh); if (tm) ui_long_pump(); ui_target_pump(pm, fr); if (tm) ui_use_pump(); if (tm) ui_buy_pump(pw, phh); ui_item_pump(proot, pw, phh); ui_ptr_pump(pm, proot, pw, phh); if (tm) ui_drag_pump(pm, proot, pw, phh); UI_MOUSE_ITEM_PUMPS(pm, proot, pw, phh); { int lu = atomic_load(&g_load_up); dm_uiscreen_set_ingame(ui_panel(proot, "HUDPanel") && !(lu < 0 ? ui_find(proot, "LoadScreenPanel", 0) != 0 : lu)); } ui_safe_pump(pm, proot, fr); ui_lift_pump(proot, fr); ui_note_dock_pump(proot); ui_trove_tabs_pump(pm, proot, fr); ui_minimap_pump(pm, proot, pw, phh, fr); ui_map_pump(pm, proot); ui_map_geom_pump(pm, proot); ui_boss_pct_pump(pm, proot); ui_npcdlg_pump(proot); ui_map_center(pm, proot, *(volatile int32_t *)(pm->base + 0x2d5c748)); if (tm) ui_bind_pump(proot, fr); if (tm) swaptab_pump(proot); if (tm) ui_mercpg_pump(pm, proot, fr); ui_tab_pump(proot, fr); ui_widestash_pump(proot); mv_audit_pump(proot, fr); ui_pages_pump(pm, proot); } } }
     if (atomic_load(&g_fe_name_open) && atomic_load(&g_ut_phase) == 2) {   // 起名页：点输入框（底板 / 文本框）= 重新弹系统键盘，不发鼠标点击 | naming page: tapping the input box (backplate / text box) = pop up the system keyboard again, no mouse click is sent
         module_t *nm = main_module(); uint64_t nroot = 0; if (nm) memcpy(&nroot, nm->base + 0x2f05458, 8); uint64_t pn = nroot ? ui_find(nroot, "CharacterCreateNamePanel", 0) : 0;
         if (pn && nm) { int32_t w = *(int32_t *)(nm->base + 0x211da38), h = *(int32_t *)(nm->base + 0x211da3c); uint64_t v = atomic_load(&g_ut_xy);
@@ -3387,6 +3418,6 @@ void dm_ui_cache_mode_leave(void) {
     // 在途的触摸请求（触屏专属的泵切到手柄后不再跑，留着会在切回触屏时突然落地）和保持中的悬停 / 没发完的指针事件
     // In-flight touch requests (the touch-only pumps no longer run after switching to the controller, and leaving them would make them land suddenly on switching back to touch) plus a held hover / pointer events not yet fully sent
     atomic_store(&g_wtap, 0); atomic_store(&g_buy_at, 0); atomic_store(&g_tap_req, 0); atomic_store(&g_use_req, 0); atomic_store(&g_long_req, 0); atomic_store(&g_ident_req, 0);
-    atomic_store(&g_dg_kind, 0); atomic_store(&g_bd_state, 0); atomic_store(&g_swaptab_tap, 0); atomic_store(&g_mercpg, 0);
+    atomic_store(&g_dg_kind, 0); atomic_store(&g_bd_state, 0); atomic_store(&g_swaptab_tap, 0); atomic_store(&g_mercpg, 0); atomic_store(&g_opentab, 0);
     atomic_store(&g_up_hold, 0); atomic_store(&g_up_r, atomic_load(&g_up_w));
 }

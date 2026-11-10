@@ -97,6 +97,8 @@ public class DmActivity extends Activity implements SurfaceHolder.Callback, Disp
     private CamSensor camSensor;
     private CamButtons camButtons;
     private CamThreats camThreats;
+    // bottom-screen Deck (second screen of dual-screen handhelds; does nothing on devices without a presentation display): created once the game is up
+    private SecondScreen secondScreen;
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -403,6 +405,7 @@ public class DmActivity extends Activity implements SurfaceHolder.Callback, Disp
             camButtons = new CamButtons(this); gameFrame.addView(camButtons, new FrameLayout.LayoutParams(-1, -1)); }
         if (camButtons != null) camButtons.start();
         if (camThreats != null) camThreats.start();
+        if (secondScreen == null) secondScreen = new SecondScreen(this, resumed, hasWindowFocus());
         nativeFocus(3);
     }
 
@@ -453,8 +456,10 @@ public class DmActivity extends Activity implements SurfaceHolder.Callback, Disp
             .setPositiveButton(R.string.dmConfirm, null).setNegativeButton(R.string.dmCancel, (d, which) -> {})
             .create();
         inputDialog = dialog;
+        if (secondScreen != null) secondScreen.textEntry(true);   // AYN's ime_show_on_second opens the keyboard on the bottom screen: the Deck steps aside
         dialog.setOnDismissListener(d -> {
             if (inputDialog == dialog) inputDialog = null;
+            if (secondScreen != null) secondScreen.textEntry(false);
             if (!finished[0]) { finished[0] = true; nativeTextResult(id, false, ""); }
             if (resumed) immersive();
         });
@@ -524,12 +529,12 @@ public class DmActivity extends Activity implements SurfaceHolder.Callback, Disp
     @Override public void onDisplayAdded(int id) { updateRefresh(); }
     @Override public void onDisplayRemoved(int id) { updateRefresh(); }
     @Override public void onDisplayChanged(int id) { updateRefresh(); }
-    @Override protected void onResume() { super.onResume(); resumed = true; immersive(); startHost(); updateRefresh(); if (started) { nativeFocus(3); if (touchOverlay != null && bootFailure == 0) applyPadMode(PadInput.isPadMode()); if (camSensor != null) camSensor.start(nativeCamSensor()); if (camButtons != null) camButtons.start(); if (camThreats != null) camThreats.start(); } }
-    @Override protected void onPause() { resumed = false; if (camSensor != null) camSensor.stop(); if (camButtons != null) camButtons.stop(); if (camThreats != null) camThreats.stop(); if (inputDialog != null) inputDialog.dismiss(); releaseTouches(); PadInput.reset(); if (touchOverlay != null) touchOverlay.setInputEnabled(false); if (started) nativeFocus(0); super.onPause(); }
+    @Override protected void onResume() { super.onResume(); resumed = true; immersive(); startHost(); updateRefresh(); if (started) { nativeFocus(3); if (touchOverlay != null && bootFailure == 0) applyPadMode(PadInput.isPadMode()); if (camSensor != null) camSensor.start(nativeCamSensor()); if (camButtons != null) camButtons.start(); if (camThreats != null) camThreats.start(); } if (secondScreen != null) secondScreen.resumed(true); }
+    @Override protected void onPause() { resumed = false; if (camSensor != null) camSensor.stop(); if (camButtons != null) camButtons.stop(); if (camThreats != null) camThreats.stop(); if (inputDialog != null) inputDialog.dismiss(); releaseTouches(); PadInput.reset(); if (touchOverlay != null) touchOverlay.setInputEnabled(false); if (started) nativeFocus(0); if (secondScreen != null) secondScreen.resumed(false); super.onPause(); }
     @Override protected void onStart() { super.onStart(); if (started) nativeFocus(2); }
     @Override protected void onStop() { if (started) nativeFocus(1); com.xiaoboluo.d2r.widget.HeroWidgetProvider.requestUpdate(this); super.onStop(); }
-    @Override protected void onDestroy() { if (displays != null) displays.unregisterDisplayListener(this); if (inputDialog != null) inputDialog.dismiss(); if (current.get() == this) current.clear(); super.onDestroy(); }
-    @Override public void onWindowFocusChanged(boolean f) { super.onWindowFocusChanged(f); if (f) immersive(); else releaseTouches(); }
+    @Override protected void onDestroy() { if (displays != null) displays.unregisterDisplayListener(this); if (inputDialog != null) inputDialog.dismiss(); if (current.get() == this) current.clear(); if (secondScreen != null) secondScreen.destroy(); super.onDestroy(); }
+    @Override public void onWindowFocusChanged(boolean f) { super.onWindowFocusChanged(f); if (f) immersive(); else releaseTouches(); if (secondScreen != null) secondScreen.focused(f); }
 
     @Override public void surfaceCreated(SurfaceHolder h) {}
     @Override public void surfaceChanged(SurfaceHolder h, int format, int w, int ht) {

@@ -1,5 +1,7 @@
 # D2R Mobile
 
+> **This fork adds dual-screen handheld support (AYN Thor).** On the Android version, the bottom screen becomes the **Deck**: life, mana, level and experience, plus big touch buttons for the inventory, character, skill and quest pages, town portal, map, weapon swap, player count and your belt potions. The game stays on the top screen and keeps the built-in controller. See [Dual-screen handhelds](#dual-screen-handhelds-the-deck-this-fork) below and [docs/THOR.md](docs/THOR.md).
+
 **An open-source compatibility layer for Diablo II: Resurrected with the Reign of the Warlock expansion, for iOS, macOS, Android and HarmonyOS.** It brings the Nintendo Switch release you bought, expansion included, to iPhone, iPad and Mac in full: the original game code runs natively, every control is rebuilt for touch, the frame rate holds at 60 fps, and you are in a game one second after the main menu. There is now a native macOS version as well (first version): on an Apple silicon Mac it starts on double-click and works with keyboard, mouse and gamepad. **Since v2.0 there is an Android version** (community port): the same game program executes natively on ARM64 Android phones, with the graphics reimplemented on Vulkan; on a Snapdragon 8+ Gen 1 phone the camp and the Den of Evil and Cow Level fights all run at a median 60 fps (see "Android" below); a HarmonyOS version runs on the same engine (community port: an unsigned shell from the Releases page that you re-sign yourself, nothing to build; see "HarmonyOS"). Apple TV 4K (3rd generation, A15) has a community port (developer preview) that has reached the character-selection screen only on its author's device; see the device table below.
 
 This is not a tech demo that "sort of runs". It is a mobile version polished for daily play, from your first character all the way through the endgame.
@@ -210,6 +212,17 @@ Minimum: ARM64, Android 12 (API 31) or later, and a GPU with Vulkan 1.1.
 
 Progress, the measurements from every round and the remaining work are in [docs/ANDROID_COLLABORATION.md](docs/ANDROID_COLLABORATION.md) and [docs/android-notes/](docs/android-notes/). The HarmonyOS version is in the next section.
 
+### Dual-screen handhelds: the Deck (this fork)
+
+On a dual-screen Android handheld such as the AYN Thor, the game plays on the top screen and the **Deck** fills the bottom screen:
+
+- **Status strip:** life and mana bars with numbers, level and experience, and badges for Town, Points to spend, New quest and Dead.
+- **Buttons:** Inventory, Character, Skills and Quests (tap again to close), Portal with your scroll count, the full-screen map, weapon swap, a 1–8 player-count picker, and the four belt columns coloured by potion (tap to drink, hold to give it to your mercenary).
+
+It is made for the Thor's built-in controller. Touching the bottom screen never takes the gamepad away from the game, and the Deck steps aside for Home, the name keyboard and the AYN launcher. A **Bottom-screen Deck (dual screen)** switch on the options' Custom page turns it off (on by default, applies at once). On the Thor with a Snapdragon 8 Gen 2, frame times with the Deck on matched those with it off: a median of 16.7 ms both in town and in a 2-minute fight.
+
+**The APK on the upstream Releases page does not include the Deck.** Build the APK ([dm/android/README.md](dm/android/README.md)) and make the import pack (`dm/tools/d2rm_android.py`) from **this fork's** source. An import pack made from other source is rejected. Details, when the Deck hides, and known limits are in [docs/THOR.md](docs/THOR.md). Design and test notes are in [docs/android-notes/2026-11-10-ayn-thor-dual-screen.md](docs/android-notes/2026-11-10-ayn-thor-dual-screen.md).
+
 ## HarmonyOS (new in v2.0)
 
 The HarmonyOS NEXT app (`dm/harmony`) is by [@biglawine](https://github.com/biglawine) ([#114](https://github.com/jhaizhou-ops/d2r-mobile/pull/114)) and uses the same host and the same Vulkan engine as Android. Measured by the author on a Mate 90 Pro Max (Maleoon 955): 59.7 fps holding the joystick in the Rogue Encampment, display interval p50 16.6 / p99 18.1 ms.
@@ -232,6 +245,7 @@ Minimum: **an A14 / M1 chip or later** — the graphics layer needs Metal 3, whi
 | **Apple TV 4K (3rd generation, A15)** | Community port ([@yinqingyan](https://github.com/yinqingyan), contributed under the MIT License with the author's consent), developer preview | Build as in [dm/tvos/README.md](dm/tvos/README.md) and copy the game files and the Legacy Device Pack into the app; real hardware only, the Simulator cannot run it; saves live in the Caches directory, which the system may purge | Reached the character-selection screen on real hardware; entering the game, full controller mapping and saves are not verified yet, and the maintainers have not tested it on real hardware |
 | **HarmonyOS phones** (HarmonyOS NEXT, API 26) | Playable (community port) | The unsigned shell from the Releases page, re-signed with your own debug certificate, plus a runtime pack made from your own game files, see [docs/HARMONYOS.md](docs/HARMONYOS.md) | Verified by the author on a Mate 90 Pro Max: re-sign, install, import, into a game, save and exit |
 | **Android phones** (ARM64, Android 12 or later, Vulkan 1.1) | Playable (community port) | The release page's APK + an import pack made from your own game files, see [docs/ANDROID.md](docs/ANDROID.md) | Measured by the port's authors: Redmi K50 Ultra median 60 fps; OnePlus 13 playable, with occasional black squares flashing for an instant; played on a vivo X200 Ultra |
+| **Dual-screen Android handhelds** (AYN Thor) | Playable, with the bottom-screen Deck (this fork) | An APK and import pack built from this fork's source, see [docs/THOR.md](docs/THOR.md) | Tested on an AYN Thor (Snapdragon 8 Gen 2, Android 13); the Thor Lite (Snapdragon 865) is untested |
 | **Intel Macs** | Not supported | — | — |
 
 **What the dialogs in the App mean**
