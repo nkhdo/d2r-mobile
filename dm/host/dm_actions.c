@@ -364,6 +364,47 @@ static _Atomic uint64_t g_ss_map[6];       // 6 个面：手柄位 | 普通格 <
 static _Atomic uint32_t g_ss_equipped[16]; static _Atomic int g_ss_neq;   // 身上穿着的物品 id（两组都算） | Ids of the items being worn (both sets counted)
 void dm_swapskill_srv_wset(int w) { atomic_store(&g_ss_srv_wset, w); }
 int dm_swapskill_wset(void) { return atomic_load(&g_ss_srv_wset); }
+
+// Bottom-screen Deck skill bar (ThorDeck.java Skills tab): the skill bound to each controller face, read every frame on the game thread
+// the same way as dm_padmode.c / dm_freetp.c: face -> slot table main+0x2d13cbc (6 x {logical key, normal slot, alternate slot = ZL held}),
+// slot -> binding table main+0x2d5f0c0 (28 bytes per slot, +0 skill id; the second weapon set is 16 slots on, and an empty set II slot
+// falls back to set I, as the game does with "Weapon Swap Separate Skill Buttons" off). Faces in the order A, B, X, Y, R, ZR; -1 = empty.
+static _Atomic int32_t g_sb[12]; static _Atomic int g_sb_ok;
+static void skillbar_step(uint8_t *b, uint64_t pl) {
+    if (!b || !pl) { atomic_store(&g_sb_ok, 0); return; }
+    static const uint32_t face[6] = { 0x2000, 0x1000, 0x8000, 0x4000, 0x200, 0x800 };
+    int bank = atomic_load(&g_ss_srv_wset) == 1 ? 16 : 0;
+    for (int f = 0; f < 6; f++) {
+        int32_t id[2] = { -1, -1 };
+        for (int i = 0; i < 6; i++) {
+            uint32_t lg, sl[2]; memcpy(&lg, b + 0x2d13cbc + 12 * i, 4); memcpy(sl, b + 0x2d13cbc + 12 * i + 4, 8);
+            if (lg != face[f]) continue;
+            for (int k = 0; k < 2; k++) if (sl[k] < 12) {
+                memcpy(&id[k], b + 0x2d5f0c0 + (uint64_t)(bank + sl[k]) * 28, 4);
+                if (id[k] == -1 && bank) memcpy(&id[k], b + 0x2d5f0c0 + (uint64_t)sl[k] * 28, 4);
+            }
+        }
+        atomic_store(&g_sb[f], id[0]); atomic_store(&g_sb[6 + f], id[1]);
+    }
+    atomic_store(&g_sb_ok, 1);
+}
+// Bottom-screen Deck: the mercenary's life, found and read the same way as the mercenary auto-feed (auto_merc_pot): the client unit list
+// [0x2d33528] entry of type 7 owned by the player with [+0x20] == 0, then the server-side unit's true life (dm_diag_srv_merc). 0 / 0 = no
+// mercenary, or dead
+static _Atomic int g_merc_hp, g_merc_max;
+static void merc_step(uint8_t *b, uint64_t pl) {
+    int v = 0, mx = 0, healing = 0;
+    if (b && pl) {
+        uint32_t mid = 0xffffffffu;
+        for (uint64_t e = *(uint64_t *)(b + 0x2d33528); e; e = *(uint64_t *)(e + 0x30))
+            if (*(uint32_t *)(e + 4) == 7 && *(uint32_t *)(e + 0xc) == *(uint32_t *)(pl + 8) && !*(uint32_t *)(e + 0x20)) { mid = *(uint32_t *)(e + 8); break; }
+        int dm_diag_srv_merc(uint32_t id, int *hp, int *mx, int *healing);
+        if (mid == 0xffffffffu || !dm_diag_srv_merc(mid, &v, &mx, &healing)) v = mx = 0;
+    }
+    atomic_store(&g_merc_hp, v); atomic_store(&g_merc_max, mx);
+}
+void dm_merc_life(int *hp, int *mx) { *hp = atomic_load(&g_merc_hp); *mx = atomic_load(&g_merc_max); }
+int dm_skillbar_get(int32_t out[12]) { for (int i = 0; i < 12; i++) out[i] = atomic_load(&g_sb[i]); return atomic_load(&g_sb_ok); }
 int dm_swapskill_busy(void) { return atomic_load(&g_ss_phase) != SS_IDLE; }   // 副手组技能的连招在进行（增益自动补 dm_autobuff.c 这时不自己换武器） | an off-hand-set skill combo is in progress (buff auto-recast dm_autobuff.c does not swap weapons itself meanwhile)
 static _Atomic uint32_t g_ss_itemsig; uint32_t dm_swapskill_itemsig(void) { return atomic_load(&g_ss_itemsig); }   // 客户端技能链表里物品给的技能（技能号、物品 id）的指纹 | Fingerprint of the item-granted skills (skill id, item id) in the client skill linked list
 int dm_swapskill_slot(int slot, int *charges) {   // 1 = 技能在另一组（画「II」），2 = 充能技能（画次数），4 = 当前组也有同号技能（按下用当前组那个，不换武器）；可叠加 | 1 = the skill is in the other set (draw "II"), 2 = charged skill (draw the count), 4 = the current set also has a skill with the same id (a press uses the one in the current set, no weapon swap); can be combined
@@ -829,7 +870,9 @@ void dm_actions_pump(void) {
         if (n < 0) { n = 0; const char *e = getenv("DM_TEST_C2S"); while (e && *e && n < 8) { q[n].at = strtoull(e, NULL, 10); const char *c = strchr(e, ':'); if (!c) break; c++; int l = 0; unsigned v;
                 while (l < 32 && sscanf(c, "%2x", &v) == 1 && c[0] != ';' && c[1] != ';' && c[1]) { q[n].pk[l++] = (uint8_t)v; c += 2; } q[n].len = l; n++; e = strchr(c, ';'); if (e) e++; } }
         uint64_t f = dm_guest_frame(); for (int i = 0; pl && i < n; i++) if (q[i].at && f >= q[i].at) { q[i].at = 0; ((void (*)(const uint8_t *, int))(b + 0x2ceab0))(q[i].pk, q[i].len); LOG("测试 DM_TEST_C2S：帧 %llu 发包 %02x（长 %d）", (unsigned long long)f, q[i].pk[0], q[i].len); } }
-    { void dm_freetp_client_step(uint8_t *, uint64_t); DM_PROF(0, "a.freetp_client", dm_freetp_client_step(b, pl)); }   // 免费回城：客户端玩家挂回城技能、读 ZR 那格空不空 | Free town portal: attach the town portal skill to the client player and read whether the ZR slot is empty
+    { void dm_freetp_client_step(uint8_t *, uint64_t); DM_PROF(0, "a.freetp_client", dm_freetp_client_step(b, pl)); }
+    DM_PROF(0, "a.skillbar", skillbar_step(b, pl));   // bottom-screen Deck: the skills bound to the controller faces
+    { static unsigned n; if (++n % 6 == 0) DM_PROF(0, "a.deck_merc", merc_step(b, pl)); }   // and the mercenary's life, ten times a second   // 免费回城：客户端玩家挂回城技能、读 ZR 那格空不空 | Free town portal: attach the town portal skill to the client player and read whether the ZR slot is empty
     dm_custom_ui_pump(root); DM_PROF(0, "a.auto_pot", auto_pot_pump(b, pl)); DM_PROF(0, "a.swapskill", swapskill_pump(b, pl)); { void dm_kills_ui_pump(void); DM_PROF(0, "a.kills_ui", dm_kills_ui_pump()); } { void dm_rift_ui_pump(void); DM_PROF(0, "a.rift_ui", dm_rift_ui_pump()); } { void dm_vault_ui_pump(void); DM_PROF(0, "a.vault_ui", dm_vault_ui_pump()); }
     uint32_t use = atomic_exchange(&g_use, 0); int force_merc = use ? atomic_exchange(&g_use_merc, 0) : 0;
     if (use && pl) { uint64_t it = ((uint64_t (*)(uint64_t, uint32_t, uint32_t, uint32_t))(b + 0x45f5f0))((uint64_t)(uintptr_t)(b + 0x2d603a0 + 4 * 0x400), use & 0x7f, use, 4);

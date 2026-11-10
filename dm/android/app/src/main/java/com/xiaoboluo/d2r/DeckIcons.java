@@ -41,7 +41,7 @@ final class DeckIcons {
         return b != null || it.pictureKey().equals(it.code) ? b : load(it.code);
     }
 
-    private Bitmap load(String key) {
+    Bitmap load(String key) {
         if (cache.containsKey(key)) return cache.get(key);
         Bitmap b = null;
         String name = files().get(key);
