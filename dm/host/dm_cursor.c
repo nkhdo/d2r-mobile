@@ -2294,24 +2294,39 @@ static void ui_mercpg_pump(module_t *m, uint64_t root, uint64_t fr) {
     if (tries) { uint64_t dt = fr - pressed; int moved = dm && cur >= 0 && cur != page; if (!((moved && dt >= 7) || dt >= 24)) return; }
     page = cur; pressed = fr; dm_ui_key_pulse(dm ? DM_BTN_R : DM_BTN_PLUS, 4); tries++;
 }
-// 底屏 Deck 的物品栏 / 角色 / 技能 / 任务键：同上「开佣兵页」的开法（按 + 开功能页，再按 R 翻到目标页签，每一下看反馈再按下一下），手柄态、触屏态都跑。
+// 底屏 Deck 的物品栏 / 角色 / 技能 / 任务键：按 + 开功能页，开出来后直接调功能页自己的切页函数 main+0x405898(面板, 目标页, 方向) 一步切到目标页（同点顶部页签直切那条），
+// 不再一下下按 R 翻（翻页过程玩家看得见，实机反馈「先开上次那页再一页页滚过去」）。页号默认用实机测得的（任务 1、角色 2、物品栏 3、技能树 4），
+// 功能页开着时看到哪个目标面板可见就记下它在第几页（隐藏的佣兵页也占号，没佣兵时页号会变，所以每次都核）；切过去没到位才退回按 R 翻。手柄态、触屏态都跑。
 // 目标页已经开着 = 再点一下关掉（按 B，同手柄的返回）。到位按目标面板控件可见判（控件名同本文件别处）
-// The bottom-screen Deck's Inventory / Character / Skills / Quests buttons: opened the same way as "open the mercenary page" above (press + to open the function page, then press R to flip to the target tab, checking feedback after each press), in both controller and touch mode.
+// The bottom-screen Deck's Inventory / Character / Skills / Quests buttons: press + to open the function page, and once it is open call the function page's own page-switch function main+0x405898(panel, target page, direction) to go straight to the target page (same as the direct switch for tapping a top tab),
+// instead of pressing R page by page (the flipping is visible; feedback on the device: "it opens the last page, then scrolls through to the target"). The page numbers default to the ones measured on the device (quests 1, character 2, inventory 3, skill tree 4),
+// and whenever the function page is open and a target panel is visible, its page number is recorded (the hidden mercenary page also takes a number and numbers can change without a mercenary, so it is checked every time); only if the jump does not land does it fall back to pressing R. Runs in both controller and touch mode.
 // Target page already open = a second tap closes it (press B, the controller's back). Arrival is judged by the target panel widget being visible (widget names as elsewhere in this file)
 static _Atomic int g_opentab;   // 请求：页 + 1；0 = 无 | request: tab + 1; 0 = none
 void dm_ui_open_tab(int tab) { if (tab >= 0 && tab < 4) atomic_store(&g_opentab, tab + 1); }
 static void ui_tab_pump(uint64_t root, uint64_t fr) {
     static const char *const panel[4] = { "PlayerInventoryExpansionLayout", "CharacterStatsPanel", "SkillsTreePanel", "QuestLogPanelExpansion" };
-    static int on, tab, tries, page; static uint64_t pressed;
+    static int pageof[4] = { 3, 2, 4, 1 };   // 各目标在功能页的第几页：Thor 实测的默认值，见到就记 | each target's page number in the function page: defaults measured on the Thor, recorded when seen
+    static int on, tab, tries, page, jumped; static uint64_t pressed;
+    module_t *sm = main_module(); uint64_t us = ui_find(root, "UISwitcher", 0);
+    int dm = us && *(uint8_t *)(us + 0x50), direct = dm && sm && *(uint64_t *)(*(uint64_t *)us + 0x28) == (uint64_t)sm->base + 0x404fd8;
+    if (direct) { int cur = *(int32_t *)(us + 0x1b8);   // 记页号 | record page numbers
+        for (int k = 0; k < 4; k++) if (cur >= 0 && pageof[k] != cur && bd_open(root, panel[k])) { LOG("底屏 Deck：%s 在功能页第 %d 页（原记第 %d 页）", panel[k], cur, pageof[k]); pageof[k] = cur; } }
     int req = atomic_exchange(&g_opentab, 0);
     if (req) { tab = req - 1;
         if (bd_open(root, panel[tab])) { dm_ui_key_pulse(DM_BTN_B, 4); on = 0; LOG("底屏 Deck：%s 已开着 → 按 B 关", panel[tab]); return; }
-        on = 1; tries = 0; page = -1; pressed = 0; }
+        on = 1; tries = 0; page = -1; pressed = 0; jumped = 0; }
     if (!on) return;
-    if (bd_open(root, panel[tab])) { LOG("底屏 Deck：%s 已开（按键 %d 次）", panel[tab], tries); on = 0; return; }
+    if (bd_open(root, panel[tab])) { LOG("底屏 Deck：%s 已开（按键 %d 次%s）", panel[tab], tries, jumped ? "，直接切页" : ""); on = 0; return; }
     if (tries >= 9) { LOG("【红】底屏 Deck：按了 %d 次键 %s 还没开，放弃", tries, panel[tab]); on = 0; return; }
-    int dm = bd_open(root, "UISwitcher"), cur = dm ? bd_top_tab(root) : -1;
+    int cur = dm ? bd_top_tab(root) : -1;
+    if (direct && !jumped) {   // 功能页刚开：直接切到目标页 | function page just opened: switch straight to the target page
+        int at = *(int32_t *)(us + 0x1b8), n = *(int32_t *)(us + 0x188), to = pageof[tab];
+        jumped = 1; pressed = fr; page = cur;
+        if (to >= 0 && (n <= 0 || to < n) && to != at) { ((void (*)(uint64_t, int, int))(sm->base + 0x405898))(us, to, to > at); LOG("底屏 Deck：功能页第 %d → 第 %d 页（直接切，现为 %d）", at, to, *(int32_t *)(us + 0x1b8)); }
+        return; }
     if (tries) { uint64_t dt = fr - pressed; int moved = dm && cur >= 0 && cur != page; if (!((moved && dt >= 7) || dt >= 24)) return; }
+    if (jumped && fr - pressed < 12) return;   // 直接切后给它几帧 | give the direct switch a few frames
     page = cur; pressed = fr; dm_ui_key_pulse(dm ? DM_BTN_R : DM_BTN_PLUS, 4); tries++;
 }
 // 个人仓库页码（个人仓库 2–5 页，dm_pages.c）：写在自己的文字控件 TouchPgPage_Text 里（布局 wide_stash.py），文字照原版共享页页码的写法：
