@@ -55,7 +55,7 @@ final class SecondScreen implements DisplayManager.DisplayListener {
         if (!polling) return;
         if (ThorDeck.nativeHud(hud) == ThorDeck.H_COUNT) {
             gate.enabled(hud[ThorDeck.H_SWITCH] != 0);
-            if (shown != null) shown.deck.update(hud);
+            if (shown != null) { shown.deck.update(hud); shown.deck.poll(); }
         }
         reconcile();
         handler.postDelayed(poll, POLL_MS);

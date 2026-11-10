@@ -606,7 +606,7 @@ _Atomic int g_dm_game_ver = -1;
 // coordinates, unaffected when the game unloads the room. Art numbers: MG_WP = the waypoint nameplate, MG_LVL + level id = the level name nameplate
 // (lvl_wp / lvl_<level id> of tools/gen_map_goal_art.py)
 #define MX_MAX 12
-static struct { uint64_t lv; int n; int32_t x[MX_MAX], y[MX_MAX]; uint16_t art[MX_MAX]; } g_mx;
+static struct { uint64_t lv; int n; int32_t x[MX_MAX], y[MX_MAX]; uint16_t art[MX_MAX]; uint8_t snapped[MX_MAX]; } g_mx;
 static void mx_add(int x, int y, int art) {
     for (int i = 0; i < g_mx.n; i++) if (g_mx.art[i] == art && abs(g_mx.x[i] - x) < 25 && abs(g_mx.y[i] - y) < 25) return;
     if (g_mx.n < MX_MAX) { g_mx.x[g_mx.n] = x; g_mx.y[g_mx.n] = y; g_mx.art[g_mx.n] = (uint16_t)art; g_mx.n++; }
@@ -709,6 +709,29 @@ static void mg_scan_room(uint64_t lv, uint64_t r) {
         else mg_add(rx + *(int *)(r + 0x68) * 5 / 2, ry + *(int *)(r + 0x6c) * 5 / 2, 16);   // 市集 → 毁灭的神庙：入口在房间中部 | Kurast Bazaar -> Ruined Temple: the entrance is in the middle of the room
     }
 }
+// Exits and waypoints are marked at their room's centre (w_map_mark_step), up to about 20 cells from the real entrance or waypoint: near
+// it, a compass pointing at the centre turns the wrong way (standing right above a cave mouth, the arrow went diagonal). The game's client
+// holds the units of the rooms around the player, so once it knows the real one, the mark moves onto it, for good: the waypoint object (a
+// waypoint class in objects.txt) or the exit tile (unit type 5) nearest the room centre, within 40 cells, each unit used once. Every 15
+// frames while a mark is still at its centre
+static const uint16_t k_wp_cls[] = { 119, 145, 156, 157, 237, 238, 288, 323, 324, 398, 402, 429, 494, 496, 511, 539 };
+static void mx_snap(uint8_t *b) {
+    static uint64_t next; uint64_t fr = dm_guest_frame(); if (fr < next) return; next = fr + 15;
+    int used[MX_MAX]; uint64_t taken[MX_MAX]; int nt = 0;
+    for (int i = 0; i < g_mx.n; i++) {
+        if (g_mx.snapped[i]) continue;
+        int wp = g_mx.art[i] == DM_MG_WP; uint32_t type = wp ? 2 : 5; uint64_t best = 0; int bd = 41, bx = 0, by = 0;
+        for (int k = 0; k < 128; k++) for (uint64_t u = *(uint64_t *)(b + 0x2d603a0 + type * 0x400 + k * 8), c = 0; u && c < 1024; u = *(uint64_t *)(u + 0x158), c++) {
+            if (wp) { uint32_t cl = *(uint32_t *)(u + 4); int is = 0; for (unsigned j = 0; j < sizeof k_wp_cls / sizeof *k_wp_cls; j++) is |= cl == k_wp_cls[j]; if (!is) continue; }
+            int x = 0, y = 0, dup = 0; if (!w_unit_xy(u, &x, &y)) continue;
+            for (int j = 0; j < nt; j++) dup |= taken[j] == u;
+            int d = abs(x - g_mx.x[i]) > abs(y - g_mx.y[i]) ? abs(x - g_mx.x[i]) : abs(y - g_mx.y[i]);
+            if (!dup && d < bd) { bd = d; best = u; bx = x; by = y; }
+        }
+        if (best) { LOG("Deck compass: %s mark moved from %d,%d to %d,%d", wp ? "waypoint" : "exit", g_mx.x[i], g_mx.y[i], bx, by); g_mx.x[i] = bx; g_mx.y[i] = by; g_mx.snapped[i] = 1; used[nt] = i; taken[nt++] = best; }
+    }
+    (void)used;
+}
 static void w_map_goal_step(void) {
     static int env = -2; if (env == -2) { const char *e = getenv("DM_MAP_MARK"); env = e ? e[0] != '0' : -1; }
     int dm_custom_get(const char *key); int on = env >= 0 ? env : dm_custom_get("map_mark");
@@ -724,6 +747,7 @@ static void w_map_goal_step(void) {
     // Publish: player world cell, player position on screen (feet, normalized), goals; the front end converts to the screen by the map geometry (dm_ui_map_geom)
     dm_map_goal_view v; memset(&v, 0, sizeof v);
     int nx = lv && g_mx.lv == lv ? g_mx.n : 0, ng = !g_mg.room ? g_mg.n : 0;
+    if (nx) mx_snap(b);
     if (lv && ng + nx) { int px = 0, py = 0; w_unit_xy(pl, &px, &py); v.px = px; v.py = py; int W = 0, H = 0; dm_screen_real(&W, &H); uint64_t scene = *(uint64_t *)(b + 0x2e2a698); float f[2];
         if (W > 0 && H > 0 && scene && w_project(b, scene, pl, f, 0)) { v.sx = f[0] / W; v.sy = f[1] / H; for (int i = 0; i < ng && v.n < DM_MAP_GOAL_MAX; i++, v.n++) { v.x[v.n] = g_mg.x[i]; v.y[v.n] = g_mg.y[i]; v.art[v.n] = g_mg.art[i]; }
             for (int i = 0; i < nx && v.n < DM_MAP_GOAL_MAX; i++, v.n++) { v.x[v.n] = g_mx.x[i]; v.y[v.n] = g_mx.y[i]; v.art[v.n] = g_mx.art[i]; } } }

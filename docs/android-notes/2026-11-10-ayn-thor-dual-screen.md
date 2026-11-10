@@ -118,3 +118,48 @@ Measured on the Thor (QCS8550, Android 13), with the debug app built from this b
 - **Real pack and APK from this branch** (`b1ab75e`): import pack made with `dm/tools/d2rm_android.py` from the Switch 3.3.94012 game files (product `3.3.94012-r45`), APK built with headers generated from the same files. On the Thor the app starts, the Custom page shows **Bottom-screen Deck (dual screen)**, and Apply hides the Deck (80 ms after Apply) and shows it again (85 ms). Earlier device checks ran on a test build that kept main's two fingerprinted files.
 - **Release app and debug app on one device.** Both read the import pack from `Download/S2X/D2R Mobile/android`. A pack from this branch there would make the release app re-import it and then refuse to start. So the fork's pack was copied straight into the debug app's `files/dm/` with `run-as`, and the shared folder was renamed to `android.r45` so neither app re-imports.
 - An import pack made from other source is rejected by this build: the overlay fingerprint covers `dm/i18n/ui_text.tsv` and `dm/ios/tools/touch_layout.py`, and both change here.
+
+## 8. Phase 2 plan (agreed 2026-11-10)
+
+Branch `thor/phase2-panels`, one PR per slice, each stacked on the one before (PR #1 first). Every slice keeps the Phase 1 perf gate: frame-time median within 0.5 ms of Deck off, no new stalls.
+
+1. **Area name** on the status strip. The import pack carries `deck/levels.tsv`: levels.txt Ids with the level names from the player's own `lng/strings/levels.json`, in all 13 game languages (`dm/android/tools/stage_deck_assets.py`). The Deck picks the column by the game's language number (`dm_lang_index`), falling back to English. Nothing of the game's text goes into the repo or the APK.
+2. **Bag tab, read only.** The Deck gets a tab row: Main (today's strip and buttons, plus the goal compass), Bag, later Skills. A new host reader `dm_inv_snapshot` lists the bag, equipped items and belt once per server tick (id, code, container, cell x/y/w/h, quality, unidentified, unique/set index), read by Java only while Bag is open. Item pictures come from the pack (`deck/` icons from the player's own sprites, one cell = 64 px, with a code → file map); coloured cells are the fallback. The Main page's Inventory button keeps opening the game's own inventory. Stash and cube come later.
+3. **Bag actions:** tap an item → a sheet with its icon and name (quality colour) and Use / To belt / Sort bag, through `dm_item_use`, `dm_belt_put`, `dm_inv_sort`. Equip, drop and drag come later, if at all.
+4. **Skills tab:** the class's three trees with icons, skill levels and unspent points; tap + confirm spends a point through the existing allocation calls.
+5. **Goal compass** on Main instead of a real map: up to three goals from `dm_map_goals`, arrow and distance, turned to match the game's view; hidden with no goals. The full map is shelved.
+6. **Screen swap is dropped.**
+
+Tests: plain-Java tests for pure logic (names, bag grid hit-testing, compass maths), Python tests for the pack exporters, and Thor log/screenshot checks for host readers of live game memory.
+
+### Slice 1 status: area name (done)
+
+On the Thor with a rebuilt pack: the strip shows "Blood Moor" in gold on its own line under the life and mana bars (the middle column is about 290 px wide, too narrow for names such as "Fortaleza de la Piedra Ecuménica Nivel 1", so the name sits under the bars rather than after the level). The real pack's table has 137 areas in all 13 languages. The frame-time check was waived for this slice by the user: the name is one `drawText`, redrawn only when the area or language changes.
+
+### Slice 2 status: Bag tab, read only (done)
+
+- Pack: `deck/items/` holds 415 pictures (4 MB) at the game's native 49 px per cell, and `deck/items.tsv` 1255 keys (item codes, `u<row>`, `s<row>`), from `hd/items/items.json`, `uniques.json`, `sets.json` and the `hd/global/ui/items/` sprites. Kept native rather than the 64 px agreed in Q13: the Deck scales them, so upscaling would only grow the pack.
+- Host: `dm_inv.c` reads the server player's item chain on the server tick, only while the Bag tab shows (`dm_inv_want`), and publishes a list with a generation number; the Deck redraws only when it changes.
+- On the Thor, a new character: the log line `Deck bag: 8 items: hp1/L0,0 ... tsc/B9,3 ... ssd/W4,0 1x3 ... buc/W5,0 2x2` matches the game, and the screenshot shows the short sword and buckler in the hand slots, two scrolls at the bag's right edge and four healing potions on the belt's bottom row.
+- Not checked yet (the test character has none): unique and set pictures (row read from item data +0x34, the offset the vault table uses) and the unidentified tint.
+
+### Slice 3 status: item sheet (done)
+
+- Pack: `deck/itemnames.tsv`, 1242 names in all 13 languages from `item-names.json` / `item-runes.json` (base items by namestr, uniques and sets by index; gender markers such as `[fs]` and `[ns]` and colour codes removed). Magic and rare names are built from affixes and are not included: the sheet shows the base name.
+- Host: `dm_inv.c` adds use and belt flags from the game's own item-type tests; the sheet's buttons go to `dm_item_use`, `dm_belt_put`, `dm_inv_sort(0)`, which already queue to the game thread.
+- On the Thor (adb taps on display 4): a belt potion's sheet showed "Minor Healing Potion" with Use and Close; Use logged `使用：物品 id 1（hp1）已调原版使用` and the bag list went from 8 to 7 items. The identify scroll's sheet showed Use, To belt, Sort bag, Close; To belt put it in the empty first belt column. Sort bag logged `整理：页 0 已调原版整理`.
+- Bug found on the device and fixed: touch codes for "outside the sheet" (399) fell inside the item range (300+), so tapping empty space read past the item list and crashed. The ranges are now apart (items 1000+).
+
+## 9. Re-plan: Main, Map, Skills (2026-11-10)
+
+After slice 3 the user found the Bag tab unnecessary: the game's own inventory does the same job better, and a second copy of the belt was confusing. A look at what a second screen is good for (glanceable state the game hides or puts behind a menu, and things the controller makes slow) gave three tabs:
+
+- **Main.** The game's HUD drawn with its own art (globes, gold frame, Exocet and Formal fonts, exported from the player's files into `deck/ui/`), a compact potion row instead of a second belt, the page buttons in the escape-menu style. Where the HUD's belt boxes would be: run stats (`RunStats.java`: time in this game, % of a level per hour, time to the next level). Above the bar, the mercenary's life (host `merc_step`, every 6 frames, the same lookup the mercenary auto-feed uses).
+- **Map.** The goal compass from slice 5, moved to its own tab with a radar and a list of up to six goals (`GoalCompass.java`, names from `deck/goals.tsv`). Towns are skipped by the map marker (`w_map_mark_step`, levels 1, 40, 75, 103, 109), so the tab shows its empty note there.
+- **Skills.** Read-only: the skills bound to A/B/X/Y/R/ZR, plain and with ZL held, for the weapon set in hand. Host `skillbar_step` reads the controller slot table and the binding table every frame; icons are the touch layer's own skill atlases, names from `deck/skills.tsv` plus `ui-controller.json` for controller-only actions (Interact, Automap, Loot to Cube).
+
+The Bag UI, the item sheet and its actions were removed; `BagModel` stays only to decode the item list for the belt pictures. Spending skill points from the Deck was dropped: the game's skill menu is one tap away.
+
+### Status
+
+On the Thor (Rogue Encampment, new character): Main shows the HUD, "Game 0:06", "XP -/h" and the potion row; Skills shows A = Attack and ZL + A = Scroll of Town Portal with icons; Map shows the empty note, as expected in town. No crashes. Not checked yet: the mercenary bar (the test character has none), the XP rate after a minute of play, and the compass outside town. The frame-time check stays waived. Buffs and their time left are not shown: nothing in the host reads state durations yet.
