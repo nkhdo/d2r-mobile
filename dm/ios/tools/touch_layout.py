@@ -1179,7 +1179,7 @@ def _drop_rows(*rows):
 # 视频页的表格整个换成我们的行：分节标题 + 每个开关一行原版勾选框（照「游戏」页「自动拾取金币」那一行的字段）。控件名 TouchCustom_<键>，
 # 宿主 dm_custom.c 读勾没勾、按应用 / 放弃 / 默认处理。勾选框的消息发一条无害的 ClosePanel（同「极乐世界」），游戏不认
 # 「配音」单选（voice：中文配音 / English voice）只在编进过场解码的包里有（MOVIE_FFMPEG=1，与宿主 dm_custom.c 的 DM_MOVIE_FFMPEG 同一个开关）：缺省包的自定义页一行不多
-_CUSTOM_KEYS = (('voice',) if os.environ.get('MOVIE_FFMPEG') == '1' else ()) + ('auto_mana', 'merc_pot', 'drop_light', 'map_mark', 'item_notes', 'icloud', 'pot_pick', 'drop_haptic', 'gem_pick', 'store_btn', 'eco_fps', 'q3d', 'loot_filter', 'auto_buff', 'touch_swap_above', 'cam', 'bright', 'scale3d')
+_CUSTOM_KEYS = (('voice',) if os.environ.get('MOVIE_FFMPEG') == '1' else ()) + ('auto_mana', 'merc_pot', 'drop_light', 'map_mark', 'item_notes', 'icloud', 'pot_pick', 'drop_haptic', 'gem_pick', 'store_btn', 'eco_fps', 'q3d', 'loot_filter', 'auto_buff', 'touch_swap_above', 'cam', 'bright', 'scale3d', 'deck')
 # 字在中英表（dm/i18n/ui_text.tsv 的 dmCustom<键名驼峰>），布局写 @键、跟原版语言走（英文版）；行高按中文行数分，英文必须同样行数（不然换语言排版变）
 # The text lives in the Chinese-English string table (dmCustom<key name in camel case> in dm/i18n/ui_text.tsv); layouts write @key and follow the
 # original game's language (English version); row height is assigned by the number of Chinese lines, and English must have the same number of lines
@@ -1210,7 +1210,9 @@ _CUSTOM_ALL = (('lang', '@dmCustomLang'),) + _CUSTOM_ROWS
 # The row gets height 0 and no widgets, and the rows below move up; _CUSTOM_ALL still contains it (same order as the host's k_keys, the key is still saved), and the host skips rows the page does not have when the controller moves up or down (dm_custom.c)
 # Mac App（DM_OVERLAY_MAC）不出「3D 清晰度」：Mac 宿主的 3D 比例恒为 1.0，不按这个档（hle_oe.c dm_3d_scale_level_set）
 # The Mac App (DM_OVERLAY_MAC) does not show "3D resolution": the Mac host's 3D scale is always 1.0 and does not follow this level (hle_oe.c dm_3d_scale_level_set)
-_CUSTOM_HIDDEN = frozenset((('icloud',) if os.environ.get('DM_OVERLAY_NO_ICLOUD') == '1' else ()) + (('scale3d',) if os.environ.get('DM_OVERLAY_MAC') else ()))
+# 「底屏 Deck」（deck）只有安卓读（双屏掌机的第二块屏，DmActivity / SecondScreen.java）：安卓导入包才出这一行（d2rm_android.py 设 DM_OVERLAY_ANDROID=1）
+# "Bottom-screen Deck" (deck) is read only on Android (the second screen of dual-screen handhelds, DmActivity / SecondScreen.java): the row appears only in the Android import pack (d2rm_android.py sets DM_OVERLAY_ANDROID=1)
+_CUSTOM_HIDDEN = frozenset((('icloud',) if os.environ.get('DM_OVERLAY_NO_ICLOUD') == '1' else ()) + (('scale3d',) if os.environ.get('DM_OVERLAY_MAC') else ()) + (() if os.environ.get('DM_OVERLAY_ANDROID') == '1' else ('deck',)))
 _CUSTOM_TEST_ROWS = int(os.environ.get('DM_CUSTOM_TEST_ROWS', '0'))   # 测试（造现场）：末尾多摆这么多行假行，验更多行时的滚动；产品不设 | test (test setup): append this many dummy rows at the end, to verify scrolling with more rows; not set in the product
 # 「3D 画质」（q3d）是单选的两项、每项下面一行说明小字，占两行高（_CUSTOM_Q3D_H）；其余各行一行高
 # "3D Quality" (q3d) is a radio with two options, each with a line of small description text below, taking two rows of height (_CUSTOM_Q3D_H); every other row is one row high

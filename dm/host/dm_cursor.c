@@ -2294,6 +2294,26 @@ static void ui_mercpg_pump(module_t *m, uint64_t root, uint64_t fr) {
     if (tries) { uint64_t dt = fr - pressed; int moved = dm && cur >= 0 && cur != page; if (!((moved && dt >= 7) || dt >= 24)) return; }
     page = cur; pressed = fr; dm_ui_key_pulse(dm ? DM_BTN_R : DM_BTN_PLUS, 4); tries++;
 }
+// 底屏 Deck 的物品栏 / 角色 / 技能 / 任务键：同上「开佣兵页」的开法（按 + 开功能页，再按 R 翻到目标页签，每一下看反馈再按下一下），手柄态、触屏态都跑。
+// 目标页已经开着 = 再点一下关掉（按 B，同手柄的返回）。到位按目标面板控件可见判（控件名同本文件别处）
+// The bottom-screen Deck's Inventory / Character / Skills / Quests buttons: opened the same way as "open the mercenary page" above (press + to open the function page, then press R to flip to the target tab, checking feedback after each press), in both controller and touch mode.
+// Target page already open = a second tap closes it (press B, the controller's back). Arrival is judged by the target panel widget being visible (widget names as elsewhere in this file)
+static _Atomic int g_opentab;   // 请求：页 + 1；0 = 无 | request: tab + 1; 0 = none
+void dm_ui_open_tab(int tab) { if (tab >= 0 && tab < 4) atomic_store(&g_opentab, tab + 1); }
+static void ui_tab_pump(uint64_t root, uint64_t fr) {
+    static const char *const panel[4] = { "PlayerInventoryExpansionLayout", "CharacterStatsPanel", "SkillsTreePanel", "QuestLogPanelExpansion" };
+    static int on, tab, tries, page; static uint64_t pressed;
+    int req = atomic_exchange(&g_opentab, 0);
+    if (req) { tab = req - 1;
+        if (bd_open(root, panel[tab])) { dm_ui_key_pulse(DM_BTN_B, 4); on = 0; LOG("底屏 Deck：%s 已开着 → 按 B 关", panel[tab]); return; }
+        on = 1; tries = 0; page = -1; pressed = 0; }
+    if (!on) return;
+    if (bd_open(root, panel[tab])) { LOG("底屏 Deck：%s 已开（按键 %d 次）", panel[tab], tries); on = 0; return; }
+    if (tries >= 9) { LOG("【红】底屏 Deck：按了 %d 次键 %s 还没开，放弃", tries, panel[tab]); on = 0; return; }
+    int dm = bd_open(root, "UISwitcher"), cur = dm ? bd_top_tab(root) : -1;
+    if (tries) { uint64_t dt = fr - pressed; int moved = dm && cur >= 0 && cur != page; if (!((moved && dt >= 7) || dt >= 24)) return; }
+    page = cur; pressed = fr; dm_ui_key_pulse(dm ? DM_BTN_R : DM_BTN_PLUS, 4); tries++;
+}
 // 个人仓库页码（个人仓库 2–5 页，dm_pages.c）：写在自己的文字控件 TouchPgPage_Text 里（布局 wide_stash.py），文字照原版共享页页码的写法：
 // 原版写共享页页码（0x3963e4 内 0x397098–0x39714c）= 格式串 0x7f5630({"SharedStashPage", 15}) → 0x399130(缓冲, 格式, 第几页, 共几页) → 0x136e5c(文字控件 +0x88, 缓冲, 长) → 0xadc434(文字控件) 重排；
 // 原先借原版共享页那块（SharedStashTabContainer）并强制它可见、改它的字——违反「我们的功能不改原版控件状态」，已改
@@ -2881,7 +2901,7 @@ void dm_ui_mouse_pump(void) {   // 游戏取手柄处调（hle_hid fill，主线
                 else fix = 0; }
             if (th) { ui_auto_key(th); tnext = fr + 8; } } } }
     { module_t *pm = main_module(); uint64_t proot = 0; if (pm) { memcpy(&proot, pm->base + 0x2f05458, 8); int32_t pw = *(int32_t *)(pm->base + 0x211da38), phh = *(int32_t *)(pm->base + 0x211da3c);
-        static uint64_t pf = UINT64_MAX; if (proot && pw > 0 && phh > 0 && pf != fr) { pf = fr; { static int dd; const char *dn; if (!dd && (dn = getenv("DM_UI_DUMP")) && atomic_load(&g_taps_base) && fr >= atomic_load(&g_taps_base) + (getenv("DM_UI_DUMP_AT") ? atoi(getenv("DM_UI_DUMP_AT")) : 45)) { dd = 1; ui_dump(proot, 0, dn, 0, pm); } } int tm = ui_touch_mode(); if (tm) ui_wtap_pump(pm, proot, pw, phh); if (tm) ui_long_pump(); ui_target_pump(pm, fr); if (tm) ui_use_pump(); if (tm) ui_buy_pump(pw, phh); ui_item_pump(proot, pw, phh); ui_ptr_pump(pm, proot, pw, phh); if (tm) ui_drag_pump(pm, proot, pw, phh); UI_MOUSE_ITEM_PUMPS(pm, proot, pw, phh); { int lu = atomic_load(&g_load_up); dm_uiscreen_set_ingame(ui_panel(proot, "HUDPanel") && !(lu < 0 ? ui_find(proot, "LoadScreenPanel", 0) != 0 : lu)); } ui_safe_pump(pm, proot, fr); ui_lift_pump(proot, fr); ui_note_dock_pump(proot); ui_trove_tabs_pump(pm, proot, fr); ui_minimap_pump(pm, proot, pw, phh, fr); ui_map_pump(pm, proot); ui_map_geom_pump(pm, proot); ui_boss_pct_pump(pm, proot); ui_npcdlg_pump(proot); ui_map_center(pm, proot, *(volatile int32_t *)(pm->base + 0x2d5c748)); if (tm) ui_bind_pump(proot, fr); if (tm) swaptab_pump(proot); if (tm) ui_mercpg_pump(pm, proot, fr); ui_widestash_pump(proot); mv_audit_pump(proot, fr); ui_pages_pump(pm, proot); } } }
+        static uint64_t pf = UINT64_MAX; if (proot && pw > 0 && phh > 0 && pf != fr) { pf = fr; { static int dd; const char *dn; if (!dd && (dn = getenv("DM_UI_DUMP")) && atomic_load(&g_taps_base) && fr >= atomic_load(&g_taps_base) + (getenv("DM_UI_DUMP_AT") ? atoi(getenv("DM_UI_DUMP_AT")) : 45)) { dd = 1; ui_dump(proot, 0, dn, 0, pm); } } int tm = ui_touch_mode(); if (tm) ui_wtap_pump(pm, proot, pw, phh); if (tm) ui_long_pump(); ui_target_pump(pm, fr); if (tm) ui_use_pump(); if (tm) ui_buy_pump(pw, phh); ui_item_pump(proot, pw, phh); ui_ptr_pump(pm, proot, pw, phh); if (tm) ui_drag_pump(pm, proot, pw, phh); UI_MOUSE_ITEM_PUMPS(pm, proot, pw, phh); { int lu = atomic_load(&g_load_up); dm_uiscreen_set_ingame(ui_panel(proot, "HUDPanel") && !(lu < 0 ? ui_find(proot, "LoadScreenPanel", 0) != 0 : lu)); } ui_safe_pump(pm, proot, fr); ui_lift_pump(proot, fr); ui_note_dock_pump(proot); ui_trove_tabs_pump(pm, proot, fr); ui_minimap_pump(pm, proot, pw, phh, fr); ui_map_pump(pm, proot); ui_map_geom_pump(pm, proot); ui_boss_pct_pump(pm, proot); ui_npcdlg_pump(proot); ui_map_center(pm, proot, *(volatile int32_t *)(pm->base + 0x2d5c748)); if (tm) ui_bind_pump(proot, fr); if (tm) swaptab_pump(proot); if (tm) ui_mercpg_pump(pm, proot, fr); ui_tab_pump(proot, fr); ui_widestash_pump(proot); mv_audit_pump(proot, fr); ui_pages_pump(pm, proot); } } }
     if (atomic_load(&g_fe_name_open) && atomic_load(&g_ut_phase) == 2) {   // 起名页：点输入框（底板 / 文本框）= 重新弹系统键盘，不发鼠标点击 | naming page: tapping the input box (backplate / text box) = pop up the system keyboard again, no mouse click is sent
         module_t *nm = main_module(); uint64_t nroot = 0; if (nm) memcpy(&nroot, nm->base + 0x2f05458, 8); uint64_t pn = nroot ? ui_find(nroot, "CharacterCreateNamePanel", 0) : 0;
         if (pn && nm) { int32_t w = *(int32_t *)(nm->base + 0x211da38), h = *(int32_t *)(nm->base + 0x211da3c); uint64_t v = atomic_load(&g_ut_xy);
@@ -3387,6 +3407,6 @@ void dm_ui_cache_mode_leave(void) {
     // 在途的触摸请求（触屏专属的泵切到手柄后不再跑，留着会在切回触屏时突然落地）和保持中的悬停 / 没发完的指针事件
     // In-flight touch requests (the touch-only pumps no longer run after switching to the controller, and leaving them would make them land suddenly on switching back to touch) plus a held hover / pointer events not yet fully sent
     atomic_store(&g_wtap, 0); atomic_store(&g_buy_at, 0); atomic_store(&g_tap_req, 0); atomic_store(&g_use_req, 0); atomic_store(&g_long_req, 0); atomic_store(&g_ident_req, 0);
-    atomic_store(&g_dg_kind, 0); atomic_store(&g_bd_state, 0); atomic_store(&g_swaptab_tap, 0); atomic_store(&g_mercpg, 0);
+    atomic_store(&g_dg_kind, 0); atomic_store(&g_bd_state, 0); atomic_store(&g_swaptab_tap, 0); atomic_store(&g_mercpg, 0); atomic_store(&g_opentab, 0);
     atomic_store(&g_up_hold, 0); atomic_store(&g_up_r, atomic_load(&g_up_w));
 }
