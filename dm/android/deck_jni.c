@@ -14,10 +14,11 @@ void dm_tp_request(void);          // dm_freetp.c
 void dm_ui_map_full(int on);       // dm_cursor.c
 int dm_ui_map_is_full(void);
 void dm_ui_open_tab(int tab);
+uint64_t dm_guest_frame(void);     // hle_os.c: frames the game has presented
 
 // snapshot indices match H_* in ThorDeck.java
 enum { H_VALID, H_LEVEL, H_EXP, H_HP, H_HP_MAX, H_MP, H_MP_MAX, H_BELT, H_KIND = H_BELT + 4, H_PORTAL = H_KIND + 4,
-       H_PLAYERS, H_POINTS, H_QUEST, H_DEAD, H_TOWN, H_SWITCH, H_MAP_FULL, H_AREA, H_LANG, H_WSET, H_MERC_HP, H_MERC_MAX, H_COUNT };
+       H_PLAYERS, H_POINTS, H_QUEST, H_DEAD, H_TOWN, H_SWITCH, H_MAP_FULL, H_AREA, H_LANG, H_WSET, H_MERC_HP, H_MERC_MAX, H_FRAME, H_COUNT };
 
 JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeHud(JNIEnv *env, jclass cls, jintArray out) {
     (void)cls;
@@ -35,6 +36,7 @@ JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeHud(JNIEnv *env, jc
     v[H_AREA] = h.area; v[H_LANG] = dm_lang_index();   // area name looked up in Java from the pack (deck/levels.tsv), in the game's language
     v[H_WSET] = dm_swapskill_wset();
     { int mh = 0, mm = 0; dm_merc_life(&mh, &mm); v[H_MERC_HP] = mh; v[H_MERC_MAX] = mm; }   // 0 / 0 = no mercenary or dead   // weapon set in hand: 0 = I, 1 = II, -1 = not known yet
+    v[H_FRAME] = (jint)(dm_guest_frame() & 0x7fffffff);   // the Deck's FPS: frames presented, counted over a second in Java
     (*env)->SetIntArrayRegion(env, out, 0, H_COUNT, v);
     return H_COUNT;
 }

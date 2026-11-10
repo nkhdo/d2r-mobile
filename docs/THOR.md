@@ -14,8 +14,8 @@ Three tabs on top: **Main**, **Map** and **Skills**.
 
 | Area | Contents |
 |---|---|
-| Info bar | The middle of the game's HUD bar: the name of the area you are in (in the game's language), your level and how far into it, experience filling the bar's own channel along its top edge; where the game's belt boxes would be, time in this game, experience per hour (in percent of a level, level-ups included) and time to the next level at that rate (shown after a minute with progress; a new game, or more than 15 s out of one, starts over); in the small box, your mercenary's life when you have one |
-| Badges | Under the bar: **Town**, **Points to spend** and **New quest** (**Dead** replaces them while your character is dead) |
+| Info bar | The middle of the game's HUD bar: the name of the area you are in (in the game's language), your level and how far into it, experience filling the bar's own channel along its top edge; where the game's belt boxes would be, time in this game, experience per hour (in percent of a level, level-ups included) and time to the next level at that rate (shown after a minute with progress; a new game, or more than 15 s out of one, starts over); in the small box, frames per second |
+| Badges | Under the bar: **Town**, **Points to spend** and **New quest** (**Dead** replaces them while your character is dead), and your mercenary's life on the right when you have one |
 | Buttons | **Inventory**, **Character**, **Skills**, **Quests**: opens that page of the game's menu (tap again to close it). **Portal** (with how many town portals you have left), **Map** (full-screen map on and off; a dot shows when it is on), **Swap weapons**, **Players** (tap to pick 1–8) |
 | Bottom row | The life globe on the left and the mana globe on the right, the HUD's own ends, with your numbers on them. Between them, the four belt columns, each with the picture of the item in its bottom row and how many are left. **Tap** drinks it; **hold** gives it to your mercenary |
 

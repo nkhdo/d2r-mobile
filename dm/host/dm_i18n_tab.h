@@ -509,6 +509,7 @@ static const struct { const char *k, *zh, *en, *es, *mx, *pt, *ru, *ko; } k_dm_i
     { "dmDeckXpRate", "经验 %s/时", "XP %s/h", "EXP %s/h", "EXP %s/h", "EXP %s/h", "Опыт %s/ч", "경험치 %s/시" },
     { "dmDeckNextLv", "升级 %s", "Level up %s", "Subir nivel %s", "Subir nivel %s", "Subir nível %s", "Уровень через %s", "레벨업 %s" },
     { "dmDeckMerc", "佣兵", "Merc", "Mercenario", "Mercenario", "Mercenário", "Наёмник", "용병" },
+    { "dmDeckFps", "%s 帧", "%s FPS", "%s FPS", "%s FPS", "%s FPS", "%s FPS", "%s FPS" },
     { "dmDeckNoGoals", "这里没有标出的目标", "No marked goals here", "No hay objetivos marcados aquí", "No hay objetivos marcados aquí", "Nenhum objetivo marcado aqui", "Здесь нет отмеченных целей", "여기에는 표시된 목표가 없습니다" },
     { "dmDeckGoalAway", "%d 格", "%d away", "a %d", "a %d", "a %d", "в %d", "%d 거리" },
     { "dmDeckSkillsNormal", "按键", "Buttons", "Botones", "Botones", "Botões", "Кнопки", "버튼" },

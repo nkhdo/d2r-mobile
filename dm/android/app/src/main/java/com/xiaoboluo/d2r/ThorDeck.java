@@ -36,7 +36,7 @@ import java.util.Arrays;
 final class ThorDeck extends View {
     // snapshot indices, matching deck_jni.c
     static final int H_VALID = 0, H_LEVEL = 1, H_EXP = 2, H_HP = 3, H_HP_MAX = 4, H_MP = 5, H_MP_MAX = 6, H_BELT = 7, H_KIND = 11, H_PORTAL = 15,
-        H_PLAYERS = 16, H_POINTS = 17, H_QUEST = 18, H_DEAD = 19, H_TOWN = 20, H_SWITCH = 21, H_MAP_FULL = 22, H_AREA = 23, H_LANG = 24, H_WSET = 25, H_MERC_HP = 26, H_MERC_MAX = 27, H_COUNT = 28;
+        H_PLAYERS = 16, H_POINTS = 17, H_QUEST = 18, H_DEAD = 19, H_TOWN = 20, H_SWITCH = 21, H_MAP_FULL = 22, H_AREA = 23, H_LANG = 24, H_WSET = 25, H_MERC_HP = 26, H_MERC_MAX = 27, H_FRAME = 28, H_COUNT = 29;
     // action numbers, matching deck_jni.c
     static final int A_DRINK = 0, A_FEED_MERC = 1, A_PORTAL = 2, A_MAP = 3, A_SWAP = 4, A_TAB = 5, A_PLAYERS = 6;
     static native int nativeHud(int[] out);
@@ -91,7 +91,10 @@ final class ThorDeck extends View {
     private final RectF dst = new RectF();
     private final Paint bitmapPaint = new Paint(Paint.FILTER_BITMAP_FLAG), manaPaint = new Paint(Paint.FILTER_BITMAP_FLAG);
     private static final RunStats run = new RunStats();   // kept across shows of the Deck, like the tab
-    private String runLine = "";   // the run stats as last drawn: the clock ticks every second, the snapshot does not
+    private String runLine = "";
+    // frames per second: the host's presented-frame count (H_FRAME) over at least a second. The count is left out of the snapshot's
+    // change test (it moves every frame): the Deck redraws only when the shown number changes
+    private long fpsAt; private int fpsFrame, fps = -1, fpsShown = -1;   // the run stats as last drawn: the clock ticks every second, the snapshot does not
     // Map tab: the goals as last read (nativeGoals) and their names (deck/goals.tsv)
     private final int[] goalRaw = new int[3 + 3 * 24], goalLast = new int[3 + 3 * 24];
     private GoalCompass.Goal[] goals = new GoalCompass.Goal[0];
@@ -133,9 +136,13 @@ final class ThorDeck extends View {
 
     // new snapshot: redraw only on change. Returns false = same as last time
     boolean update(int[] next) {
-        run.sample(android.os.SystemClock.elapsedRealtime(), next[H_VALID] != 0 && next[H_DEAD] == 0, next[H_LEVEL], next[H_EXP]);
+        long now = android.os.SystemClock.elapsedRealtime();
+        run.sample(now, next[H_VALID] != 0 && next[H_DEAD] == 0, next[H_LEVEL], next[H_EXP]);
+        int fr = next[H_FRAME]; next[H_FRAME] = 0;
+        if (fpsAt == 0 || now - fpsAt > 5000) { fpsAt = now; fpsFrame = fr; }   // first sample, or the Deck was away: start over
+        else if (now - fpsAt >= 1000) { fps = Math.round(((fr - fpsFrame) & 0x7fffffff) * 1000f / (now - fpsAt)); fpsAt = now; fpsFrame = fr; }
         if (Arrays.equals(hud, next)) {
-            if (tab != TAB_MAIN || runText(0).equals(runLine)) return false;
+            if (tab != TAB_MAIN || (runText(0).equals(runLine) && fps == fpsShown)) return false;
             invalidate(); return true;
         }
         System.arraycopy(next, 0, hud, 0, H_COUNT);
@@ -298,17 +305,29 @@ final class ThorDeck extends View {
             tmp.set(a, hy(XP_Y[0]), b, hy(XP_Y[1]));
             fill.setColor(XP); c.drawRect(tmp, fill);
         }
-        // the small right box: the mercenary's life, a red bar with the word on it (empty without a mercenary)
+        // the small right box: frames per second
+        fpsShown = fps;
+        tmp.set(hx(HUD_PORTAL[0]), hy(HUD_PORTAL[1]) - 8 * s, hx(HUD_PORTAL[2]), hy(HUD_PORTAL[3]) + 8 * s);
+        text.setTypeface(art.name(hud[H_LANG]));
+        label(c, String.format(t("dmDeckFps"), fps < 0 ? "-" : String.valueOf(fps)), tmp.centerX(), tmp.centerY(), tmp.height() * 0.55f, tmp.width() * 0.9f, TEXT);
+        text.setTypeface(art.label(hud[H_LANG]));
+        // under the bar: badges (one red word on death), with a mercenary on the left half and its life on the right half
+        float by = hudRect.bottom + BADGE_H * k / 2, bx = getWidth() / 2f;
         if (hud[H_MERC_MAX] > 0) {
-            tmp.set(hx(HUD_PORTAL[0]) + 4 * s, hy(HUD_PORTAL[1]), hx(HUD_PORTAL[2]) - 4 * s, hy(HUD_PORTAL[3]));
-            float mf = Math.min(1f, Math.max(0f, hud[H_MERC_HP] / (float) hud[H_MERC_MAX]));
-            fill.setColor(0xC0000000); c.drawRect(tmp, fill);
-            tmp2.set(tmp); tmp2.right = tmp.left + tmp.width() * mf; fill.setColor(mf < 0.3f ? DEAD : LIFE); c.drawRect(tmp2, fill);
-            label(c, t("dmDeckMerc"), tmp.centerX(), tmp.centerY(), tmp.height() * 0.62f, tmp.width() * 0.9f, TEXT);
+            bx = getWidth() * 0.3f;
+            float ml = getWidth() * 0.6f, mr = getWidth() - 24 * k, mh = 22 * k, mf = Math.min(1f, Math.max(0f, hud[H_MERC_HP] / (float) hud[H_MERC_MAX]));
+            String m = t("dmDeckMerc");
+            text.setTextAlign(Paint.Align.LEFT); text.setTextSize(30 * k); text.setColor(TEXT);
+            c.drawText(m, ml, by - (text.descent() + text.ascent()) / 2, text);
+            float bl = ml + text.measureText(m) + 14 * k;
+            if (bl < mr) {
+                tmp.set(bl, by - mh / 2, mr, by + mh / 2); fill.setColor(0xC0000000); c.drawRect(tmp, fill);
+                tmp2.set(tmp); tmp2.right = bl + (mr - bl) * mf; fill.setColor(mf < 0.3f ? DEAD : LIFE); c.drawRect(tmp2, fill);
+                line.setColor(0xA08C7340); c.drawRect(tmp, line);
+            }
+            text.setTextAlign(Paint.Align.CENTER);
         }
-        // under the bar: badges (one red word on death)
-        float by = hudRect.bottom + BADGE_H * k / 2;
-        if (hud[H_DEAD] != 0) label(c, t("dmDeckDead"), getWidth() / 2f, by, 38 * k, getWidth() * 0.8f, DEAD);
+        if (hud[H_DEAD] != 0) label(c, t("dmDeckDead"), bx, by, 38 * k, getWidth() * 0.55f, DEAD);
         else {
             String[] word = new String[3]; int[] col = new int[3]; int n = 0;
             if (hud[H_TOWN] != 0) { word[n] = t("dmDeckTown"); col[n++] = XP; }
@@ -317,7 +336,7 @@ final class ThorDeck extends View {
             text.setTextAlign(Paint.Align.LEFT); text.setTextSize(30 * k);
             float sp = 48 * k, total = sp * Math.max(0, n - 1);
             for (int i = 0; i < n; i++) total += text.measureText(word[i]);
-            float x = getWidth() / 2f - total / 2;
+            float x = bx - total / 2;
             for (int i = 0; i < n; i++) { text.setColor(col[i]); c.drawText(word[i], x, by - (text.descent() + text.ascent()) / 2, text); x += text.measureText(word[i]) + sp; }
         }
         text.setTextAlign(Paint.Align.CENTER);
