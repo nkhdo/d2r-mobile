@@ -19,8 +19,8 @@ import java.util.Arrays;
 // Bottom-screen Deck: status and large buttons on the second screen of dual-screen handhelds (for controller play; SecondScreen.java
 // handles showing and hiding), drawn with the game's own panel art and fonts from the import pack (DeckArt.java; flat panels without it).
 // A tab row on top switches between:
-//   Main: the game's HUD bar (life and mana globes, area name, level and experience, portal count, badges above it; its belt boxes stay
-//     empty, the belt is the row at the bottom), 8 large buttons (Inventory, Character, Skills, Quests / Portal, Map, Swap weapons,
+//   Main: the game's HUD bar (life and mana globes, area name, level and experience, portal count, badges above it; where its belt
+//     boxes were, run stats: time in this game, experience per hour and time to the next level, RunStats.java), 8 large buttons (Inventory, Character, Skills, Quests / Portal, Map, Swap weapons,
 //     Players) and a row of the four belt columns as potion buttons (tap = drink the bottom-row bottle, long press = feed the mercenary).
 // The host's item list (BagModel.java) is read while the Deck shows, for the belt's own pictures. Item management stays in the
 // game's own inventory (the Inventory button): the bottom screen is for glancing and one-tap actions.
@@ -77,6 +77,8 @@ final class ThorDeck extends View {
     private final Rect src = new Rect();
     private final RectF dst = new RectF();
     private final Paint bitmapPaint = new Paint(Paint.FILTER_BITMAP_FLAG), manaPaint = new Paint(Paint.FILTER_BITMAP_FLAG);
+    private static final RunStats run = new RunStats();   // kept across shows of the Deck, like the tab
+    private String runLine = "";   // the run stats as last drawn: the clock ticks every second, the snapshot does not
     private DeckNames names;   // area names from the import pack (deck/levels.tsv); loaded once, null until then
 
     // An import pack made before the Deck had area names has no deck/levels.tsv: the name line then stays empty
@@ -106,7 +108,11 @@ final class ThorDeck extends View {
 
     // new snapshot: redraw only on change. Returns false = same as last time
     boolean update(int[] next) {
-        if (Arrays.equals(hud, next)) return false;
+        run.sample(android.os.SystemClock.elapsedRealtime(), next[H_VALID] != 0 && next[H_DEAD] == 0, next[H_LEVEL], next[H_EXP]);
+        if (Arrays.equals(hud, next)) {
+            if (tab != TAB_MAIN || runText(0).equals(runLine)) return false;
+            invalidate(); return true;
+        }
         System.arraycopy(next, 0, hud, 0, H_COUNT);
         if (!actionsEnabled()) { picking = false; cancelAll(); }
         invalidate();
@@ -212,6 +218,14 @@ final class ThorDeck extends View {
             tmp.set(hx(HUD_GOLD[0]), hy(HUD_GOLD[1]), hx(HUD_GOLD[2]), hy(HUD_GOLD[3]));
             art.frame(c, "hud", src, tmp, 10, s, PANEL);
         }
+        // in that box: time in this game, then experience per hour and time to the next level
+        tmp.set(hx(HUD_GOLD[0]), hy(HUD_GOLD[1]), hx(HUD_GOLD[2]), hy(HUD_GOLD[3]));
+        runLine = runText(0);
+        float rh = tmp.height(), fit = tmp.width() * 0.88f;
+        text.setTypeface(art.name(hud[H_LANG]));   // numbers again: Formal
+        label(c, runLine, tmp.centerX(), tmp.top + rh * 0.36f, rh * 0.3f, fit, TEXT);
+        label(c, runText(1), tmp.centerX(), tmp.top + rh * 0.7f, rh * 0.26f, fit, XP);
+        text.setTypeface(art.label(hud[H_LANG]));
         text.setTypeface(art.name(hud[H_LANG]));   // numbers in the game's Formal font: Exocet's 1 reads as I
         label(c, hud[H_HP] + "/" + hud[H_HP_MAX], hx(GLOBE_L), hy(GLOBE_Y), 34 * s, GLOBE_RAD * 1.8f * s, TEXT);
         label(c, hud[H_MP] + "/" + hud[H_MP_MAX], hx(GLOBE_R), hy(GLOBE_Y), 34 * s, GLOBE_RAD * 1.8f * s, TEXT);
@@ -257,6 +271,17 @@ final class ThorDeck extends View {
             for (int i = 0; i < n; i++) { text.setColor(col[i]); c.drawText(word[i], x, by - (text.descent() + text.ascent()) / 2, text); x += text.measureText(word[i]) + sp; }
         }
         text.setTextAlign(Paint.Align.CENTER);
+    }
+
+    // run stats line 0: time in this game; line 1: experience per hour and time to the next level ("XP -" until known)
+    private String runText(int line) {
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (line == 0) return String.format(t("dmDeckRun"), RunStats.clock(Math.max(0, run.elapsed(now))));
+        double p = run.percentPerHour(now);
+        if (p < 0) return String.format(t("dmDeckXpRate"), "-");
+        String rate = String.format(t("dmDeckXpRate"), "+" + (p >= 10 ? Math.round(p) : Math.round(p * 10) / 10.0) + "%");
+        long eta = run.etaMs(now);
+        return eta < 0 ? rate : rate + "  " + String.format(t("dmDeckNextLv"), RunStats.span(eta));
     }
 
     // a belt column's bottom-row item: its own picture from the item list (scrolls and other potions too), else the picture for its

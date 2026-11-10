@@ -505,4 +505,7 @@ static const struct { const char *k, *zh, *en, *es, *mx, *pt, *ru, *ko; } k_dm_i
     { "dmDeckDead", "已死亡", "Dead", "Muerto", "Muerto", "Morto", "Погиб", "사망" },
     { "dmDeckTabMain", "主页", "Main", "Principal", "Principal", "Principal", "Главная", "메인" },
     { "dmDeckIdle", "进入游戏后，这里显示角色状态和快捷按钮", "Character status and shortcuts appear here in game", "Aquí verás el estado y los atajos al jugar", "Aquí verás el estado y los atajos al jugar", "Status e atalhos aparecem aqui durante o jogo", "Здесь появятся состояние и быстрые кнопки", "게임 중 여기에 캐릭터 상태와 단축 버튼이 표시됩니다" },
+    { "dmDeckRun", "本局 %s", "Game %s", "Partida %s", "Partida %s", "Partida %s", "Игра %s", "게임 %s" },
+    { "dmDeckXpRate", "经验 %s/时", "XP %s/h", "EXP %s/h", "EXP %s/h", "EXP %s/h", "Опыт %s/ч", "경험치 %s/시" },
+    { "dmDeckNextLv", "升级 %s", "Level up %s", "Subir nivel %s", "Subir nivel %s", "Subir nível %s", "Уровень через %s", "레벨업 %s" },
 };
