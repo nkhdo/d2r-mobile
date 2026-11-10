@@ -86,36 +86,54 @@ class ItemIcons(unittest.TestCase):
         self.assertEqual(deck.icon_file('weapon/axe/hand_axe'), 'weapon_axe_hand_axe.png')
 
 
-class ItemNames(unittest.TestCase):
-    BASE = {'weapon': [{'code': 'hax', 'namestr': 'hax'}], 'misc': [{'code': 'r01', 'namestr': 'r01'}, {'code': 'zzz', 'namestr': 'nokey'}]}
-    UROWS = [{'index': 'The Gnasher', 'code': 'hax', '*ID': '0'}]
-    SROWS = [{'index': "Civerb's Icon", 'item': 'amu', '*ID': '7'}]
-    STRINGS = [
-        {'Key': 'hax', 'enUS': 'Hand Axe', 'esES': '[fs]Hacha de mano', 'deDE': '[ns]Handaxt'},
-        {'Key': 'r01', 'enUS': 'El Rune', 'deDE': 'ÿc4El-Rune'},
-        {'Key': 'The Gnasher', 'enUS': 'The Gnasher', 'zhCN': '啸哮'},
-        {'Key': "Civerb's Icon", 'enUS': "Civerb's Icon"},
-    ]
+class SkillNames(unittest.TestCase):
+    SKILLS = [{'*Id': '0', 'skilldesc': 'attack'}, {'*Id': '54', 'skilldesc': 'teleport'}, {'*Id': '99', 'skilldesc': ''},
+              {'*Id': '', 'skilldesc': 'x'}]
+    DESC = [{'skilldesc': 'attack', 'str name': 'StrSkill0'}, {'skilldesc': 'teleport', 'str name': 'skillname54'}]
+    STRINGS = [{'Key': 'StrSkill0', 'enUS': 'Attack', 'zhCN': '攻击'}, {'Key': 'skillname54', 'enUS': 'Teleport', 'deDE': '[ms]Teleportieren'}]
+
+    def test_skill_names_by_id(self):
+        t = {r[0]: r[1:] for r in rows(deck.skill_table(self.SKILLS, self.DESC, self.STRINGS))[1:]}
+        self.assertEqual(t['0'][deck.LANGS.index('zhCN')], '攻击')
+        self.assertEqual(t['54'][1], 'Teleportieren')
+        self.assertNotIn('99', t)
+        self.assertEqual(rows(deck.skill_table(self.SKILLS, self.DESC, self.STRINGS))[0], ['id'] + list(deck.LANGS))
+
+
+class GoalNames(unittest.TestCase):
+    # label number -> (strings file, key), as gen_map_goal_art.py LABELS
+    LABELS = [('levels', "Tal Rasha's Tomb"), ('monsters', 'Bloodraven'), ('objects', 'NoSuchKey')]
+    STRINGS = {
+        'levels': [{'Key': "Tal Rasha's Tomb", 'enUS': "Tal Rasha's Tomb", 'deDE': '[ms]Tal Rashas Grab'}],
+        'monsters': [{'Key': 'Bloodraven', 'enUS': 'Blood Raven', 'zhCN': '血鸦'}],
+        'objects': [{'Key': 'Waypoint', 'enUS': 'Waypoint', 'frFR': 'Point de passage'}, {'Key': 'portal', 'enUS': 'Portal'}],
+        'skills': [{'Key': 'skillan219', 'enUS': 'Town Portal', 'ruRU': 'Портал в город'}],
+    }
 
     def table(self):
-        return {r[0]: r[1:] for r in rows(deck.item_name_table(self.BASE, self.UROWS, self.SROWS, self.STRINGS))[1:]}
+        return {r[0]: r[1:] for r in rows(deck.goal_table(self.LABELS, self.STRINGS))[1:]}
 
-    def test_header_is_key_then_the_game_languages(self):
-        self.assertEqual(rows(deck.item_name_table(self.BASE, self.UROWS, self.SROWS, self.STRINGS))[0], ['key'] + list(deck.LANGS))
-
-    def test_base_unique_and_set_names(self):
+    def test_labels_by_number_in_every_language(self):
         t = self.table()
-        self.assertEqual(t['hax'][0], 'Hand Axe')
-        self.assertEqual(t['hax'][2], 'Hacha de mano')
-        self.assertEqual(t['hax'][1], 'Handaxt')   # German gender marker dropped too
-        self.assertEqual(t['u0'][8], '啸哮')
-        self.assertEqual(t['s7'][0], "Civerb's Icon")
+        self.assertEqual(t['0'][0], "Tal Rasha's Tomb")
+        self.assertEqual(t['0'][1], 'Tal Rashas Grab')   # gender marker removed
+        self.assertEqual(t['1'][deck.LANGS.index('zhCN')], '血鸦')
 
-    def test_colour_codes_are_removed(self):
-        self.assertEqual(self.table()['r01'][1], 'El-Rune')
+    def test_waypoint_is_goal_255(self):
+        self.assertEqual(self.table()['255'][deck.LANGS.index('frFR')], 'Point de passage')
 
-    def test_keys_without_a_string_are_left_out(self):
-        self.assertNotIn('zzz', self.table())
+    def test_portals_are_goals_254_and_253(self):
+        t = self.table()
+        self.assertEqual(t['254'][deck.LANGS.index('ruRU')], 'Портал в город')
+        self.assertEqual(t['253'][0], 'Portal')
+
+    def test_labels_without_a_string_are_left_out(self):
+        self.assertNotIn('2', self.table())
+
+    def test_labels_are_read_from_the_map_goal_tool(self):
+        labels = deck.goal_labels()
+        self.assertEqual(labels[0], ('levels', "Tal Rasha's Tomb"))
+        self.assertEqual(labels[2], ('objects', 'StoneAlpha'))
 
 
 if __name__ == '__main__':
