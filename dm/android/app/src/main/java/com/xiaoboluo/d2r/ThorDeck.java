@@ -390,15 +390,16 @@ final class ThorDeck extends View {
             fill.setColor(goalColour(g.art)); c.drawCircle(x0, mid, tmp.height() * 0.2f, fill);
             label(c, String.valueOf(i + 1), x0, mid, tmp.height() * 0.24f, tmp.height() * 0.3f, 0xFF000000);
             drawArrow(c, x0 + tmp.height() * 0.55f, mid, g.sx, g.sy, tmp.height() * 0.22f, TEXT);
-            float nameX = x0 + tmp.height() * 0.95f, distW = tmp.width() * 0.2f;
-            String d = String.format(t("dmDeckGoalAway"), Math.round(g.dist));
-            text.setTextAlign(Paint.Align.RIGHT); text.setColor(DIM); text.setTextSize(tmp.height() * 0.26f);
-            c.drawText(d, tmp.right - tmp.height() * 0.4f, mid - (text.descent() + text.ascent()) / 2, text);
-            String name = goalName(g.art);
-            text.setTextAlign(Paint.Align.LEFT); text.setColor(goalColour(g.art)); text.setTextSize(tmp.height() * 0.32f);
-            float room = tmp.right - tmp.height() * 0.4f - distW - nameX;
+            // name on top, distance on its own line under it, both shrunk to the room left of the frame's right edge
+            float nameX = x0 + tmp.height() * 0.95f, room = tmp.right - tmp.height() * 0.4f - nameX;
+            String name = goalName(g.art), d = String.format(t("dmDeckGoalAway"), Math.round(g.dist));
+            text.setTextAlign(Paint.Align.LEFT);
+            text.setColor(goalColour(g.art)); text.setTextSize(tmp.height() * 0.28f);
             if (text.measureText(name) > room) text.setTextSize(text.getTextSize() * room / text.measureText(name));
-            c.drawText(name, nameX, mid - (text.descent() + text.ascent()) / 2, text);
+            c.drawText(name, nameX, mid - tmp.height() * 0.06f, text);
+            text.setColor(DIM); text.setTextSize(tmp.height() * 0.21f);
+            if (text.measureText(d) > room) text.setTextSize(text.getTextSize() * room / text.measureText(d));
+            c.drawText(d, nameX, mid + tmp.height() * 0.06f - text.ascent(), text);
         }
         text.setTextAlign(Paint.Align.CENTER); text.setTypeface(art.label(hud[H_LANG]));
     }
