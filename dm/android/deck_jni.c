@@ -32,7 +32,7 @@ JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeHud(JNIEnv *env, jc
     return H_COUNT;
 }
 
-// Bag tab (BagModel.java): the host reads the player's items on the server tick only while the tab asks for them
+// Item list (BagModel.java, for the belt's pictures): the host reads the player's items on the server tick only while the Deck asks for them
 JNIEXPORT void JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeBagWant(JNIEnv *env, jclass cls, jboolean on) { (void)env; (void)cls; dm_inv_want(on); }
 
 // out[0] = list generation (changes whenever the list changes), then 5 ints per item (BagModel.decode). Returns the item count, -1 if out is too short
@@ -56,7 +56,7 @@ JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeBag(JNIEnv *env, jc
 }
 
 // action numbers match A_* in ThorDeck.java
-enum { A_DRINK, A_FEED_MERC, A_PORTAL, A_MAP, A_SWAP, A_TAB, A_PLAYERS, A_USE, A_TO_BELT, A_SORT };
+enum { A_DRINK, A_FEED_MERC, A_PORTAL, A_MAP, A_SWAP, A_TAB, A_PLAYERS };
 
 JNIEXPORT void JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeAction(JNIEnv *env, jclass cls, jint action, jint arg) {
     (void)env; (void)cls;
@@ -68,9 +68,6 @@ JNIEXPORT void JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeAction(JNIEnv *env,
     case A_SWAP: dm_swap_request(); break;
     case A_TAB: dm_ui_open_tab(arg); break;
     case A_PLAYERS: dm_hud_request_players(arg); break;
-    case A_USE: dm_item_use((uint32_t)arg); break;          // Bag tab item sheet: arg = item id
-    case A_TO_BELT: dm_belt_put((uint32_t)arg); break;
-    case A_SORT: dm_inv_sort(0); break;                      // page 0 = the bag
     }
 }
 

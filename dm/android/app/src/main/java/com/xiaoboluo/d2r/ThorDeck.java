@@ -22,11 +22,8 @@ import java.util.Arrays;
 //   Main: the game's HUD bar (life and mana globes, area name, level and experience, portal count, badges above it; its belt boxes stay
 //     empty, the belt is the row at the bottom), 8 large buttons (Inventory, Character, Skills, Quests / Portal, Map, Swap weapons,
 //     Players) and a row of the four belt columns as potion buttons (tap = drink the bottom-row bottle, long press = feed the mercenary).
-//   Bag: the game's inventory panel with worn items, the bag and the belt's bottom row in its own boxes, the weapon set tabs I / II
-//     (tap the other one = swap weapons), the belt's upper rows beside it,
-//     and under those an item panel: tap an item for its picture, its name (base, unique or set name in the game's language) and the
-//     actions that apply (Use, To belt, Sort bag); tap it again or on nothing to let go (BagModel.java). The host reads items while
-//     the Deck shows (Main draws the belt with them too).
+// The host's item list (BagModel.java) is read while the Deck shows, for the belt's own pictures. Item management stays in the
+// game's own inventory (the Inventory button): the bottom screen is for glancing and one-tap actions.
 // All text goes through the string table (nativeText). SecondScreen reads a snapshot every 100 ms and passes it to update, which redraws
 // only on change; press feedback is drawn at once. A touch takes effect on release, and CANCEL means undo: right after the bottom screen
 // appears, the first touch arrives as DOWN then CANCEL.
@@ -35,7 +32,7 @@ final class ThorDeck extends View {
     static final int H_VALID = 0, H_LEVEL = 1, H_EXP = 2, H_HP = 3, H_HP_MAX = 4, H_MP = 5, H_MP_MAX = 6, H_BELT = 7, H_KIND = 11, H_PORTAL = 15,
         H_PLAYERS = 16, H_POINTS = 17, H_QUEST = 18, H_DEAD = 19, H_TOWN = 20, H_SWITCH = 21, H_MAP_FULL = 22, H_AREA = 23, H_LANG = 24, H_WSET = 25, H_COUNT = 26;
     // action numbers, matching deck_jni.c
-    static final int A_DRINK = 0, A_FEED_MERC = 1, A_PORTAL = 2, A_MAP = 3, A_SWAP = 4, A_TAB = 5, A_PLAYERS = 6, A_USE = 7, A_TO_BELT = 8, A_SORT = 9;
+    static final int A_DRINK = 0, A_FEED_MERC = 1, A_PORTAL = 2, A_MAP = 3, A_SWAP = 4, A_TAB = 5, A_PLAYERS = 6;
     static native int nativeHud(int[] out);
     static native void nativeAction(int action, int arg);
     static native String nativeText(String key);
@@ -48,16 +45,11 @@ final class ThorDeck extends View {
     private static final String[] TAB_KEY = { "dmDeckInventory", "dmDeckCharacter", "dmDeckSkills", "dmDeckQuests" };
     private static final int BG = 0xFF0E0B08, PANEL = DeckArt.PANEL, PRESSED = DeckArt.PRESSED, GOLD = DeckArt.GOLD, TEXT = 0xFFE8D9B0, DIM = 0xFF8A7F68,
         LIFE = 0xFFB0202A, MANA = 0xFF2A4FC0, XP = 0xFFC7A04A, DEAD = 0xFFE04030;
-    // item quality colours (1 low ... 8 crafted), as the game colours item names
-    private static final int[] QUALITY_COLOUR = { 0xFF8A7F68, 0xFF8A8A8A, 0xFFE0E0E0, 0xFFE0E0E0, 0xFF6F6FFF, 0xFF1EC81E, 0xFFE8E85A, 0xFFC7A04A, 0xFFE89A2A };
     private static final int[] KIND_COLOUR = { 0xFF2A2520, LIFE, MANA, 0xFF8A3AB0, 0xFF6B6B6B };   // empty / red / blue / purple / other
     private static final String[] KIND_PICTURE = { null, "hp4", "mp4", "rvl", null };   // the picture a belt column's kind is drawn with
     // where things sit on the game's HUD bar art (deck/ui/hud.png, 1582 x 206 pixels)
     private static final float HUD_W = 1582, HUD_H = 206, GLOBE_L = 222, GLOBE_R = 1376, GLOBE_Y = 117, GLOBE_RAD = 83, GLOBE_ART = 87;
     private static final float[] HUD_INFO = { 330, 118, 745, 196 }, HUD_GOLD = { 849, 116, 1119, 197 }, HUD_PORTAL = { 1128, 140, 1245, 170 };
-    // the game's outline for an empty paper-doll box, by body location
-    private static final String[] DOLL_ART = { null, "doll_head", "doll_neck", "doll_torso", "doll_weapon", "doll_shield", "doll_ring", "doll_ring",
-        "doll_belt", "doll_boots", "doll_glove" };
 
     private final int[] hud = new int[H_COUNT];
     private final RectF[] cell = new RectF[B_COUNT];
@@ -71,27 +63,17 @@ final class ThorDeck extends View {
     private final boolean[] longFired = new boolean[MAX_POINTERS];
     private final Runnable[] longPress = new Runnable[MAX_POINTERS];
     private boolean picking;   // the players 1–8 picker is open
-    // tabs: 0 Main, 1 Bag. Kept across shows of the Deck (a new view is made each time the bottom screen comes back)
-    private static final int TAB_MAIN = 0, TAB_BAG = 1, TAB_COUNT = 2, TAB_BASE = 200;
-    private static final String[] TAB_LABEL = { "dmDeckTabMain", "dmDeckTabBag" };
+    // tabs. Kept across shows of the Deck (a new view is made each time the bottom screen comes back)
+    private static final int TAB_MAIN = 0, TAB_COUNT = 1, TAB_BASE = 200;
+    private static final String[] TAB_LABEL = { "dmDeckTabMain" };
     private static int tab = TAB_MAIN;
     private final RectF[] tabRect = new RectF[TAB_COUNT];
-    private BagModel.Layout bagLayout;
     private BagModel.Item[] bag = new BagModel.Item[0];
     private final int[] bagRaw = new int[1 + 128 * BagModel.INTS];
     private int bagGen = -1;
     private DeckIcons icons;
     private DeckArt art;
-    // the item panel: which item is picked (item id; 0 = none), its picture box, name line and buttons (BagModel.ACT_*)
-    // touch target codes, in ranges that cannot overlap: picker 99–107, tabs 200+, weapon set tabs 300–301, outside the panel 499,
-    // panel buttons 500–502, items 1000 + index (up to 128)
-    private static final int WSET_BASE = 300, SHEET_OUT = 499, SHEET_BASE = 500, ITEM_BASE = 1000;
-    private int sheetId;
-    private int[] sheetActs = new int[0];
-    private final RectF sheet = new RectF(), sheetPic = new RectF();
-    private float sheetNameY;
-    private final RectF[] sheetBtn = { new RectF(), new RectF(), new RectF() };
-    private DeckNames itemNames;
+    // touch target codes, in ranges that cannot overlap: Main cells 0–11, picker 99–107, tabs 200+
     private final Rect src = new Rect();
     private final RectF dst = new RectF();
     private final Paint bitmapPaint = new Paint(Paint.FILTER_BITMAP_FLAG), manaPaint = new Paint(Paint.FILTER_BITMAP_FLAG);
@@ -153,19 +135,6 @@ final class ThorDeck extends View {
         // the players picker covers the middle two button rows: 4 x 2
         float pt = cell[2].top, ph = (cell[5].bottom - pt - gap) / 2, pw = (w - 2 * pad - 3 * gap) / 4;
         for (int i = 0; i < 8; i++) { float x = pad + (i % 4) * (pw + gap), y = pt + (i / 4) * (ph + gap); pick[i].set(x, y, x + pw, y + ph); }
-        // Bag: the inventory panel as tall as the room under the tabs, on the left; the belt's upper rows and the item panel on the right
-        float pk = (h - top - pad) / BagModel.PANEL_H, beltX = pad + BagModel.PANEL_W * pk + gap;
-        bagLayout = new BagModel.Layout(pad, top, pk, beltX, top, w - pad - beltX);
-        sheet.set(beltX, bagLayout.beltRow(1)[3] + gap, w - pad, h - pad);
-        float ms = sheet.width() / 491, sh = sheet.height(), picH = sh * 0.28f;
-        sheetPic.set(sheet.centerX() - picH, sheet.top + 52 * ms, sheet.centerX() + picH, sheet.top + 52 * ms + picH);
-        sheetNameY = sheetPic.bottom + sh * 0.08f;
-        float sbw = sheet.width() * 0.8f, btop = sheetNameY + sh * 0.07f;
-        float sbh = Math.min(sbw * 60 / 330, (sheet.bottom - 30 * ms - btop) / 3 - gap * 0.6f);
-        for (int i = 0; i < 3; i++) {
-            float y = btop + i * (sbh + gap * 0.6f);
-            sheetBtn[i].set(sheet.centerX() - sbw / 2, y, sheet.centerX() + sbw / 2, y + sbh);
-        }
         line.setStrokeWidth(Math.max(2, 3 * k));
         text.setShadowLayer(3 * k, 0, 2 * k, 0xE0000000);
     }
@@ -178,7 +147,6 @@ final class ThorDeck extends View {
             return;
         }
         drawTabs(c);
-        if (tab == TAB_BAG) { drawBag(c); return; }
         drawHud(c);
         boolean on = actionsEnabled();
         for (int i = 0; i < B_COUNT; i++) drawCell(c, i, on);
@@ -342,10 +310,9 @@ final class ThorDeck extends View {
         }
     }
 
-    // ---- Bag tab ----
     private void setTab(int t) {
         if (t == tab) return;
-        tab = t; picking = false; sheetId = 0; cancelAll();
+        tab = t; picking = false; cancelAll();
         invalidate();
     }
 
@@ -358,101 +325,12 @@ final class ThorDeck extends View {
         if (n < 0 || bagRaw[0] == bagGen) return;
         bagGen = bagRaw[0];
         bag = BagModel.decode(Arrays.copyOfRange(bagRaw, 1, bagRaw.length), n);
-        BagModel.Item open = sheetItem();
-        if (open == null) sheetId = 0; else sheetActs = BagModel.actions(open);   // used up or moved away: let go of it
-        invalidate();
-    }
-
-    private void drawBag(Canvas c) {
-        BagModel.Layout l = bagLayout; if (l == null) return;
-        tmp.set(l.px, l.py, l.px + l.panelW, l.py + l.panelH);
-        if (!art.draw(c, "inventory", null, tmp)) art.frame(c, "", null, tmp, 0, 1, PANEL);
-        boolean[] worn = new boolean[DOLL_ART.length];
-        for (BagModel.Item it : bag) if (it.where == BagModel.WORN && it.loc < worn.length) worn[it.loc] = true;
-        for (int loc : BagModel.dollLocs()) {   // empty paper-doll boxes show the game's outline of what goes there
-            Bitmap d = worn[loc] ? null : art.get(DOLL_ART[loc]);
-            if (d == null) continue;
-            float[] r = l.box(BagModel.dollBox(loc));
-            tmp.set(r[0], r[1], r[2], r[3]); picture(c, d, tmp, l.k);
-        }
-        // weapon set tabs on the strips above the hand columns: the set in hand lit, as in the game
-        int ws = hud[H_WSET];
-        for (int side = 0; side < 2; side++)
-            for (int set = 0; set < 2; set++) {
-                float[] r = l.box(BagModel.weaponTab(side, set)); tmp.set(r[0], r[1], r[2], r[3]);
-                boolean lit = set == ws, down = pressed(WSET_BASE + set);
-                if (lit || down) { fill.setColor(down ? 0x60000000 : 0x708C7340); c.drawRect(tmp, fill); }
-                label(c, set == 0 ? "I" : "II", tmp.centerX(), tmp.centerY(), tmp.height() * 0.75f, tmp.width(), lit ? TEXT : DIM);
-            }
-        for (int row = 1; row < BagModel.BELT_ROWS; row++) {
-            float[] r = l.beltRow(row); tmp.set(r[0], r[1], r[2], r[3]);
-            if (!art.draw(c, "beltrow", null, tmp)) art.frame(c, "", null, tmp, 0, 1, PANEL);
-        }
-        for (BagModel.Item it : bag) {
-            float[] r = l.rect(it); if (r == null) continue;
-            tmp.set(r[0], r[1], r[2], r[3]); tmp.inset(2, 2);
-            if (it.unid) { fill.setColor(0x60B0202A); c.drawRect(tmp, fill); }   // the game's red for unidentified items
-            if (it.id == sheetId) { fill.setColor(0x40E8D9B0); c.drawRect(tmp, fill); }
-            Bitmap b = icons().get(it);
-            if (b != null) picture(c, b, tmp, l.k);
-            else label(c, it.code, tmp.centerX(), tmp.centerY(), Math.min(tmp.width(), tmp.height()) * 0.3f, tmp.width(), QUALITY_COLOUR[Math.max(0, Math.min(8, it.quality))]);
-            if (it.id == sheetId) { line.setColor(XP); c.drawRect(tmp, line); }
-        }
-        drawSheet(c);
-    }
-
-    private BagModel.Item sheetItem() {
-        if (sheetId == 0) return null;
-        for (BagModel.Item it : bag) if (it.id == sheetId) return it;
-        return null;
-    }
-
-    // name in the game's language: unique / set name once identified, else the base item's; the item code if the pack has no names
-    private String itemName(BagModel.Item it) {
-        if (itemNames == null) {
-            String tsv = "";
-            File f = new File(getContext().getFilesDir(), "dm/overlay/deck/itemnames.tsv");
-            try {
-                if (f.isFile() && f.length() <= 4 * 1024 * 1024) tsv = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
-            } catch (java.io.IOException | SecurityException e) { tsv = ""; }
-            itemNames = DeckNames.parse(tsv);
-        }
-        String n = it.unid ? "" : itemNames.name(it.pictureKey(), hud[H_LANG]);
-        if (n.isEmpty()) n = itemNames.name(it.code, hud[H_LANG]);
-        return n.isEmpty() ? it.code : n;
-    }
-
-    // the item panel under the belt: the picked item's picture, name and buttons, or a hint while nothing is picked
-    private void drawSheet(Canvas c) {
-        art.frame(c, "modal", null, sheet, 60, sheet.width() / 491, 0xF0151109);
-        BagModel.Item it = sheetItem();
-        if (it == null) { label(c, t("dmDeckBagHint"), sheet.centerX(), sheet.centerY(), sheet.width() * 0.07f, sheet.width() * 0.8f, DIM); return; }
-        Bitmap b = icons().get(it);
-        if (b != null) picture(c, b, sheetPic, bagLayout.k * 2);
-        int q = QUALITY_COLOUR[Math.max(0, Math.min(8, it.quality))];
-        text.setTypeface(art.name(hud[H_LANG]));
-        label(c, itemName(it), sheet.centerX(), sheetNameY, sheet.width() * 0.08f, sheet.width() * 0.88f, it.unid ? DEAD : q);
-        text.setTypeface(art.label(hud[H_LANG]));
-        for (int i = 0; i < sheetActs.length && i < sheetBtn.length; i++) {
-            RectF r = sheetBtn[i]; int act = sheetActs[i]; boolean down = pressed(SHEET_BASE + i);
-            art.frame(c, down ? "button_down" : "button", null, r, 20, r.height() / 60, down ? PRESSED : PANEL);
-            String s = t(act == BagModel.ACT_USE ? "dmDeckUse" : act == BagModel.ACT_BELT ? "dmDeckToBelt" : "dmDeckSort");
-            label(c, s, r.centerX(), r.centerY(), r.height() * 0.36f, r.width() * 0.75f, TEXT);
-        }
+        if (tab == TAB_MAIN) invalidate();
     }
 
     // ---- touch ----
     private int hit(float x, float y) {
         for (int i = 0; i < TAB_COUNT; i++) if (tabRect[i].contains(x, y)) return TAB_BASE + i;
-        if (tab == TAB_BAG) {
-            if (sheetItem() != null)
-                for (int i = 0; i < sheetBtn.length && i < sheetActs.length; i++) if (sheetBtn[i].contains(x, y)) return SHEET_BASE + i;
-            if (sheet.contains(x, y)) return -1;
-            int ws = bagLayout == null ? -1 : bagLayout.weaponTabAt(x, y);
-            if (ws >= 0) return WSET_BASE + ws;
-            int i = bagLayout == null ? -1 : bagLayout.itemAt(bag, x, y);
-            return i >= 0 ? ITEM_BASE + i : sheetItem() != null ? SHEET_OUT : -1;   // a tap on nothing lets go of the item
-        }
         if (picking) { for (int i = 0; i < 8; i++) if (pick[i].contains(x, y)) return PICK_BASE + i; return PICK_BASE - 1; }   // outside the picker = close it
         for (int i = 0; i < B_COUNT; i++) if (cell[i].contains(x, y)) return i;
         return -1;
@@ -494,22 +372,7 @@ final class ThorDeck extends View {
     }
 
     private void commit(int d) {
-        // highest range first: items (ITEM_BASE + index), panel buttons, outside the panel, tabs, then the players picker below
-        if (d >= ITEM_BASE) {
-            int i = d - ITEM_BASE;   // the list can change between finger down and up (10 Hz poll): check the index again
-            if (i < bag.length) { BagModel.Item it = bag[i]; sheetId = it.id == sheetId ? 0 : it.id; sheetActs = BagModel.actions(it); }
-            return;
-        }
-        if (d >= SHEET_BASE) {
-            int i = d - SHEET_BASE; BagModel.Item it = sheetItem();
-            if (it != null && i < sheetActs.length) {
-                int act = sheetActs[i];
-                nativeAction(act == BagModel.ACT_USE ? A_USE : act == BagModel.ACT_BELT ? A_TO_BELT : A_SORT, it.id);
-            }
-            sheetId = 0; return;
-        }
-        if (d == SHEET_OUT) { sheetId = 0; return; }
-        if (d >= WSET_BASE) { if (d - WSET_BASE != hud[H_WSET]) nativeAction(A_SWAP, 0); return; }   // the other set's tab = swap
+        // highest range first: tabs, then the players picker, then Main's cells
         if (d >= TAB_BASE) { setTab(d - TAB_BASE); return; }
         if (d >= PICK_BASE) { nativeAction(A_PLAYERS, d - PICK_BASE + 1); picking = false; return; }
         if (d < 4) nativeAction(A_TAB, d);

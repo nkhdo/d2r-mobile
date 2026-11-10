@@ -4,8 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 // Names for the bottom-screen Deck, from the import pack (stage_deck_assets.py), made from the player's own game files:
-// deck/levels.tsv (area names by levels.txt Id) and deck/itemnames.tsv (item names by item code, "u<row>", "s<row>").
-// Both: a header line, then key + 13 columns in the game's language-number order (0 enUS ... 12 ptBR).
+// deck/levels.tsv (area names by levels.txt Id): a header line, then key + 13 columns in the game's language-number order (0 enUS ... 12 ptBR).
 // A missing or empty name in the game's language falls back to English; an unknown key has no name.
 final class DeckNames {
     private static final int LANGS = 13;
