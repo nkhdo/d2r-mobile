@@ -19,9 +19,11 @@ import java.util.Arrays;
 // Bottom-screen Deck: status and large buttons on the second screen of dual-screen handhelds (for controller play; SecondScreen.java
 // handles showing and hiding), drawn with the game's own panel art and fonts from the import pack (DeckArt.java; flat panels without it).
 // A tab row on top switches between:
-//   Main: the game's HUD bar (life and mana globes, area name, level and experience, portal count, badges and the mercenary's life above it; where its belt
-//     boxes were, run stats: time in this game, experience per hour and time to the next level, RunStats.java), 8 large buttons (Inventory, Character, Skills, Quests / Portal, Map, Swap weapons,
-//     Players) and a row of the four belt columns as potion buttons (tap = drink the bottom-row bottle, long press = feed the mercenary).
+//   Main: on top, the middle of the game's HUD bar as an info bar (area name, level and experience; where its belt boxes were, run
+//     stats: time in this game, experience per hour and time to the next level, RunStats.java; in its small box, the mercenary's life),
+//     badges under it, 8 large buttons (Inventory, Character, Skills, Quests / Portal with the portal count, Map, Swap weapons, Players),
+//     and at the bottom the HUD's two ends, the life and mana globes, with the four belt columns between them as potion buttons
+//     (tap = drink the bottom-row bottle, long press = feed the mercenary).
 //   Map: a goal compass for the current area (GoalCompass.java): the host's map goals (quest goals, the true tomb, waypoints, real
 //     exits) on a radar turned like the game's view, and a list nearest first with an arrow, the game's name and the distance.
 //   Skills: the skills bound to the controller buttons, as the game's own icons and names (SkillBar.java): the four face buttons as a
@@ -53,14 +55,18 @@ final class ThorDeck extends View {
         LIFE = 0xFFB0202A, MANA = 0xFF2A4FC0, XP = 0xFFC7A04A, DEAD = 0xFFE04030;
     private static final int[] KIND_COLOUR = { 0xFF2A2520, LIFE, MANA, 0xFF8A3AB0, 0xFF6B6B6B };   // empty / red / blue / purple / other
     private static final String[] KIND_PICTURE = { null, "hp4", "mp4", "rvl", null };   // the picture a belt column's kind is drawn with
-    // where things sit on the game's HUD bar art (deck/ui/hud.png, 1582 x 206 pixels)
-    private static final float HUD_W = 1582, HUD_H = 206, GLOBE_L = 222, GLOBE_R = 1376, GLOBE_Y = 117, GLOBE_RAD = 83, GLOBE_ART = 87;
+    // where things sit on the game's HUD bar art (deck/ui/hud.png, 1582 x 206 pixels): the middle of the bar (BAR) is the info bar on top,
+    // its two ends (SIDE_L / SIDE_R: statue and globe) sit at the ends of the potion row
+    private static final float HUD_H = 206, GLOBE_L = 222, GLOBE_R = 1376, GLOBE_Y = 117, GLOBE_RAD = 83, GLOBE_ART = 87;
+    // the bar's experience channel along its top edge: ten segments (start, end) between the tick marks, and its top and bottom
+    private static final int[] XP_SEG = { 329, 411, 417, 506, 513, 602, 609, 698, 704, 794, 800, 890, 897, 986, 993, 1082, 1088, 1178, 1184, 1264 }, XP_Y = { 101, 109 };
+    private static final int[] BAR = { 300, 84, 1285, 206 }, SIDE_L = { 0, 0, 312, 206 }, SIDE_R = { 1270, 0, 1582, 206 };
     private static final float[] HUD_INFO = { 330, 118, 745, 196 }, HUD_GOLD = { 849, 116, 1119, 197 }, HUD_PORTAL = { 1128, 140, 1245, 170 };
 
     private final int[] hud = new int[H_COUNT];
     private final RectF[] cell = new RectF[B_COUNT];
     private final RectF[] pick = new RectF[8];
-    private final RectF hudRect = new RectF(), full = new RectF(), tmp = new RectF(), tmp2 = new RectF();
+    private final RectF hudRect = new RectF(), sideL = new RectF(), sideR = new RectF(), full = new RectF(), tmp = new RectF(), tmp2 = new RectF();
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG), line = new Paint(Paint.ANTI_ALIAS_FLAG), text = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Handler handler = new Handler(Looper.getMainLooper());
     // which cell each finger is on (-1 none; PICK_BASE + n = cell n of the players picker), and whether its long press already fired
@@ -147,15 +153,21 @@ final class ThorDeck extends View {
         full.set(0, 0, w, h);
         for (int i = 0; i < TAB_COUNT; i++) tabRect[i].set(pad + i * (tw + gap), pad, pad + i * (tw + gap) + tw, pad + tabH);
         float top = pad + tabH + gap;
-        // Main: the HUD bar across the whole width, 8 buttons in 2 columns, then one low row of the four potion buttons
-        hudRect.set(0, top, w, top + w * HUD_H / HUD_W);
-        float potH = 140 * k, by = hudRect.bottom + gap, bw = (w - 2 * pad - gap) / 2, bh = (h - pad - by - potH - 4 * gap) / 4;
+        // Main: the info bar across the whole width, a row of badges, 8 buttons in 2 columns, then the bottom row: life globe, the four
+        // potion buttons, mana globe
+        hudRect.set(0, top, w, top + w * (BAR[3] - BAR[1]) / (BAR[2] - BAR[0]));
+        float sideH = 190 * k, sideW = sideH * (SIDE_L[2] - SIDE_L[0]) / HUD_H, stripTop = h - sideH;
+        sideL.set(0, stripTop, sideW, h);
+        sideR.set(w - sideW, stripTop, w, h);
+        float by = hudRect.bottom + BADGE_H * k + gap, bw = (w - 2 * pad - gap) / 2, bh = (stripTop - gap - by - 3 * gap) / 4;
         for (int i = 0; i < B_BELT; i++) {
             float x = pad + (i % 2) * (bw + gap), y = by + (i / 2) * (bh + gap);
             cell[i].set(x, y, x + bw, y + bh);
         }
-        float py = h - pad - potH, pw4 = (w - 2 * pad - 3 * gap) / 4;
-        for (int i = 0; i < 4; i++) cell[B_BELT + i].set(pad + i * (pw4 + gap), py, pad + i * (pw4 + gap) + pw4, py + potH);
+        // the potions centred on the globes' height, between them
+        float potH = 140 * k, gy = stripTop + GLOBE_Y * sideH / HUD_H, py = Math.min(gy - potH / 2, h - pad - potH);
+        float pl = sideW + gap, pw4 = (w - 2 * sideW - 2 * gap - 3 * gap) / 4;
+        for (int i = 0; i < 4; i++) cell[B_BELT + i].set(pl + i * (pw4 + gap), py, pl + i * (pw4 + gap) + pw4, py + potH);
         // the players picker covers the middle two button rows: 4 x 2
         float pt = cell[2].top, ph = (cell[5].bottom - pt - gap) / 2, pw = (w - 2 * pad - 3 * gap) / 4;
         for (int i = 0; i < 8; i++) { float x = pad + (i % 4) * (pw + gap), y = pt + (i / 4) * (ph + gap); pick[i].set(x, y, x + pw, y + ph); }
@@ -211,12 +223,14 @@ final class ThorDeck extends View {
     }
 
     // ---- Main tab ----
-    private float hx(float x) { return hudRect.left + x * hudRect.width() / HUD_W; }
-    private float hy(float y) { return hudRect.top + y * hudRect.height() / HUD_H; }
+    // a point on the HUD art's middle (BAR) to the info bar on screen
+    private float hx(float x) { return hudRect.left + (x - BAR[0]) * hudRect.width() / (BAR[2] - BAR[0]); }
+    private float hy(float y) { return hudRect.top + (y - BAR[1]) * hudRect.height() / (BAR[3] - BAR[1]); }
 
-    // a globe filled from the bottom up to v / max: the game's globe picture (blue-shifted for mana) cut at the level
-    private void drawGlobe(Canvas c, float cx, int v, int max, boolean mana) {
-        float s = hudRect.width() / HUD_W, x = hx(cx), y = hy(GLOBE_Y), r = GLOBE_RAD * s, a = GLOBE_ART * s;
+    // one end of the bottom row: the globe filled from the bottom up to v / max (the game's globe picture, blue-shifted for mana, cut at
+    // the level), the HUD's end over it (statue and glass), and the numbers
+    private void drawSide(Canvas c, RectF side, int[] crop, float globeX, int v, int max, boolean mana) {
+        float sc = side.height() / HUD_H, x = side.left + (globeX - crop[0]) * sc, y = side.top + GLOBE_Y * sc, r = GLOBE_RAD * sc, a = GLOBE_ART * sc;
         float frac = max > 0 ? Math.min(1f, Math.max(0f, v / (float) max)) : 0;
         c.save();
         c.clipRect(x - a, y + r - 2 * r * frac, x + a, y + a);
@@ -224,20 +238,24 @@ final class ThorDeck extends View {
         if (g != null) { tmp.set(x - a, y - a, x + a, y + a); c.drawBitmap(g, null, tmp, mana ? manaPaint : bitmapPaint); }
         else { fill.setColor(mana ? MANA : LIFE); c.drawCircle(x, y, r, fill); }
         c.restore();
+        src.set(crop[0], crop[1], crop[2], crop[3]);
+        if (!art.draw(c, "hud", src, side)) { line.setColor(GOLD); c.drawCircle(x, y, r, line); }
+        text.setTypeface(art.name(hud[H_LANG]));   // numbers in the game's Formal font: Exocet's 1 reads as I
+        label(c, v + "/" + max, x, y, 40 * sc, r * 1.8f, TEXT);
+        text.setTypeface(art.label(hud[H_LANG]));
     }
 
     private void drawHud(Canvas c) {
-        float s = hudRect.width() / HUD_W;
-        drawGlobe(c, GLOBE_L, hud[H_HP], hud[H_HP_MAX], false);
-        drawGlobe(c, GLOBE_R, hud[H_MP], hud[H_MP_MAX], true);
-        if (!art.draw(c, "hud", null, hudRect)) {
-            tmp.set(hx(HUD_INFO[0] - 20), hy(HUD_INFO[1] - 20), hx(HUD_PORTAL[2] + 20), hy(HUD_INFO[3] + 6));
-            art.frame(c, "", null, tmp, 0, 1, PANEL);
-            line.setColor(GOLD);
-            c.drawCircle(hx(GLOBE_L), hy(GLOBE_Y), GLOBE_RAD * s, line); c.drawCircle(hx(GLOBE_R), hy(GLOBE_Y), GLOBE_RAD * s, line);
-        } else {
-            // the belt lives in the potion row below: cover the HUD's four gold belt boxes (they would read as an empty belt) with a
-            // copy of the HUD's own plain box, the long one the area name sits in
+        float s = hudRect.width() / (BAR[2] - BAR[0]), k = getWidth() / 1240f;
+        // the bottom row's ends
+        drawSide(c, sideL, SIDE_L, GLOBE_L, hud[H_HP], hud[H_HP_MAX], false);
+        drawSide(c, sideR, SIDE_R, GLOBE_R, hud[H_MP], hud[H_MP_MAX], true);
+        // the info bar
+        src.set(BAR[0], BAR[1], BAR[2], BAR[3]);
+        if (!art.draw(c, "hud", src, hudRect)) art.frame(c, "", null, hudRect, 0, 1, PANEL);
+        else {
+            // cover the HUD's four gold belt boxes (they would read as an empty belt) with a copy of the HUD's own plain box, the long
+            // one the area name sits in
             src.set((int) HUD_INFO[0], (int) HUD_INFO[1], (int) HUD_INFO[2], (int) HUD_INFO[3]);
             tmp.set(hx(HUD_GOLD[0]), hy(HUD_GOLD[1]), hx(HUD_GOLD[2]), hy(HUD_GOLD[3]));
             art.frame(c, "hud", src, tmp, 10, s, PANEL);
@@ -250,10 +268,6 @@ final class ThorDeck extends View {
         label(c, runLine, tmp.centerX(), tmp.top + rh * 0.36f, rh * 0.3f, fit, TEXT);
         label(c, runText(1), tmp.centerX(), tmp.top + rh * 0.7f, rh * 0.26f, fit, XP);
         text.setTypeface(art.label(hud[H_LANG]));
-        text.setTypeface(art.name(hud[H_LANG]));   // numbers in the game's Formal font: Exocet's 1 reads as I
-        label(c, hud[H_HP] + "/" + hud[H_HP_MAX], hx(GLOBE_L), hy(GLOBE_Y), 34 * s, GLOBE_RAD * 1.8f * s, TEXT);
-        label(c, hud[H_MP] + "/" + hud[H_MP_MAX], hx(GLOBE_R), hy(GLOBE_Y), 34 * s, GLOBE_RAD * 1.8f * s, TEXT);
-        text.setTypeface(art.label(hud[H_LANG]));
         // the long box: area name on top, level and the experience bar under it
         float l = hx(HUD_INFO[0]) + 14 * s, rr = hx(HUD_INFO[2]) - 14 * s, t0 = hy(HUD_INFO[1]), bh = hy(HUD_INFO[3]) - t0;
         text.setTextAlign(Paint.Align.LEFT); text.setTextSize(bh * 0.32f);
@@ -264,48 +278,45 @@ final class ThorDeck extends View {
             text.setColor(XP); c.drawText(area, l, t0 + bh * 0.42f, text);
         }
         String lv = String.format(t("dmDeckLevel"), hud[H_LEVEL]);
+        int exp = Math.min(1000, Math.max(0, hud[H_EXP]));
         text.setColor(TEXT); c.drawText(lv, l, t0 + bh * 0.84f, text);
-        float xl = l + text.measureText(lv) + 14 * s, xy = t0 + bh * 0.72f, xh = 11 * s * 1.3f;
-        if (xl < rr) {
-            tmp.set(xl, xy - xh / 2, rr, xy + xh / 2); fill.setColor(0xC0000000); c.drawRect(tmp, fill);
-            float frac = Math.min(1000, Math.max(0, hud[H_EXP])) / 1000f;
-            c.save(); c.clipRect(xl, tmp.top, xl + (rr - xl) * frac, tmp.bottom);
-            if (!art.draw(c, "expbar", null, tmp)) { fill.setColor(XP); c.drawRect(tmp, fill); }
-            c.restore();
-        }
-        // the small right box: portal count, with the town portal book's picture
-        tmp.set(hx(HUD_PORTAL[0]), hy(HUD_PORTAL[1]) - 10 * s, hx(HUD_PORTAL[2]), hy(HUD_PORTAL[3]) + 10 * s);
-        Bitmap tbk = icons().load("tbk");
-        if (tbk != null) { tmp2.set(tmp.left + 6 * s, tmp.top, tmp.left + 6 * s + tmp.height(), tmp.bottom); picture(c, tbk, tmp2, 10); }
-        text.setTypeface(art.name(hud[H_LANG]));
-        label(c, "×" + hud[H_PORTAL], tmp.centerX() + tmp.height() * 0.35f, tmp.centerY(), tmp.height() * 0.7f, tmp.width() * 0.55f, TEXT);
+        float pl = l + text.measureText(lv) + 18 * s;
+        text.setTypeface(art.name(hud[H_LANG])); text.setColor(DIM);
+        c.drawText(exp / 10 + "%", pl, t0 + bh * 0.84f, text);
         text.setTypeface(art.label(hud[H_LANG]));
-        // above the bar, between the globes: badges on the left half (one red word on death), the mercenary's life on the right half
-        float by = hy(55);
-        if (hud[H_MERC_MAX] > 0) {
-            float ml = hx(860), mr = hx(1250), mh = 22 * s, frac = Math.min(1f, Math.max(0f, hud[H_MERC_HP] / (float) hud[H_MERC_MAX]));
-            String m = t("dmDeckMerc");
-            text.setTextAlign(Paint.Align.LEFT); text.setTextSize(30 * s); text.setColor(TEXT);
-            c.drawText(m, ml, by - (text.descent() + text.ascent()) / 2, text);
-            float bl = ml + text.measureText(m) + 14 * s;
-            if (bl < mr) {
-                tmp.set(bl, by - mh / 2, mr, by + mh / 2); fill.setColor(0xC0000000); c.drawRect(tmp, fill);
-                tmp.right = bl + (mr - bl) * frac; fill.setColor(frac < 0.3f ? DEAD : LIFE); c.drawRect(tmp, fill);
-                tmp.right = mr; line.setColor(0xA08C7340); c.drawRect(tmp, line);
-            }
-            text.setTextAlign(Paint.Align.CENTER);
+        // experience: in the bar's own channel along its top edge, the ten segments between its tick marks, as in the game
+        float frac = exp / 1000f, xEnd = hx(XP_SEG[0] + (XP_SEG[XP_SEG.length - 1] - XP_SEG[0]) * frac);
+        // the game's own fill (deck/ui/expbar.png, 938 x 11: the channel's size), cut at the level; flat segments without it
+        tmp.set(hx(XP_SEG[0]), hy(XP_Y[0] - 1), hx(XP_SEG[0] + 938), hy(XP_Y[0] + 10));
+        c.save(); c.clipRect(tmp.left, tmp.top, xEnd, tmp.bottom);
+        boolean drawn = art.draw(c, "expbar", null, tmp);
+        c.restore();
+        if (!drawn) for (int i = 0; i + 1 < XP_SEG.length; i += 2) {
+            float a = hx(XP_SEG[i]), b = Math.min(hx(XP_SEG[i + 1]), xEnd);
+            if (b <= a) break;
+            tmp.set(a, hy(XP_Y[0]), b, hy(XP_Y[1]));
+            fill.setColor(XP); c.drawRect(tmp, fill);
         }
-        float bx = hud[H_MERC_MAX] > 0 ? hx(590) : getWidth() / 2f;
-        if (hud[H_DEAD] != 0) label(c, t("dmDeckDead"), bx, by, 48 * s, hx(1150) - hx(430), DEAD);
+        // the small right box: the mercenary's life, a red bar with the word on it (empty without a mercenary)
+        if (hud[H_MERC_MAX] > 0) {
+            tmp.set(hx(HUD_PORTAL[0]) + 4 * s, hy(HUD_PORTAL[1]), hx(HUD_PORTAL[2]) - 4 * s, hy(HUD_PORTAL[3]));
+            float mf = Math.min(1f, Math.max(0f, hud[H_MERC_HP] / (float) hud[H_MERC_MAX]));
+            fill.setColor(0xC0000000); c.drawRect(tmp, fill);
+            tmp2.set(tmp); tmp2.right = tmp.left + tmp.width() * mf; fill.setColor(mf < 0.3f ? DEAD : LIFE); c.drawRect(tmp2, fill);
+            label(c, t("dmDeckMerc"), tmp.centerX(), tmp.centerY(), tmp.height() * 0.62f, tmp.width() * 0.9f, TEXT);
+        }
+        // under the bar: badges (one red word on death)
+        float by = hudRect.bottom + BADGE_H * k / 2;
+        if (hud[H_DEAD] != 0) label(c, t("dmDeckDead"), getWidth() / 2f, by, 38 * k, getWidth() * 0.8f, DEAD);
         else {
             String[] word = new String[3]; int[] col = new int[3]; int n = 0;
             if (hud[H_TOWN] != 0) { word[n] = t("dmDeckTown"); col[n++] = XP; }
             if (hud[H_POINTS] != 0) { word[n] = t("dmDeckPoints"); col[n++] = DEAD; }
             if (hud[H_QUEST] != 0) { word[n] = t("dmDeckQuest"); col[n++] = DEAD; }
-            text.setTextAlign(Paint.Align.LEFT); text.setTextSize(34 * s);
-            float sp = 40 * s, total = sp * Math.max(0, n - 1);
+            text.setTextAlign(Paint.Align.LEFT); text.setTextSize(30 * k);
+            float sp = 48 * k, total = sp * Math.max(0, n - 1);
             for (int i = 0; i < n; i++) total += text.measureText(word[i]);
-            float x = bx - total / 2;
+            float x = getWidth() / 2f - total / 2;
             for (int i = 0; i < n; i++) { text.setColor(col[i]); c.drawText(word[i], x, by - (text.descent() + text.ascent()) / 2, text); x += text.measureText(word[i]) + sp; }
         }
         text.setTextAlign(Paint.Align.CENTER);
@@ -325,6 +336,7 @@ final class ThorDeck extends View {
     // ---- Map tab ----
     private static final int GOAL_QUEST = 0xFFC7A04A, GOAL_TOMB = 0xFFE04030, GOAL_WAYPOINT = 0xFF7FA8FF, GOAL_EXIT = 0xFFE8D9B0;
     private static final int GOALS_SHOWN = 6;
+    private static final float BADGE_H = 46;   // the badge row under the info bar, in 1240-wide pixels
 
     private int goalColour(int art) {
         return art >= GoalCompass.LEVEL ? GOAL_EXIT : art == GoalCompass.WAYPOINT ? GOAL_WAYPOINT : art >= GoalCompass.SYMBOL ? GOAL_TOMB : GOAL_QUEST;
@@ -505,7 +517,18 @@ final class ThorDeck extends View {
         else if (i == B_MAP) s = t("dmDeckMap");
         else if (i == B_SWAP) s = t("dmDeckSwap");
         else s = String.format(t("dmDeckPlayers"), hud[H_PLAYERS]);
-        label(c, s, r.centerX(), r.centerY(), Math.min(r.height() * 0.3f, 40 * getWidth() / 1240f), r.width() * 0.72f, on ? TEXT : DIM);
+        float lx = r.centerX(), fitW = r.width() * 0.72f;
+        if (i == B_PORTAL) {   // the town portal book's picture and how many portals are left, right of the word
+            lx = r.left + r.width() * 0.4f; fitW = r.width() * 0.4f;
+            float ih = r.height() * 0.5f, ix = r.left + r.width() * 0.64f;
+            Bitmap tbk = icons().load("tbk");
+            if (tbk != null) { tmp2.set(ix, r.centerY() - ih / 2, ix + ih, r.centerY() + ih / 2); picture(c, tbk, tmp2, 10); }
+            text.setTypeface(art.name(hud[H_LANG]));
+            text.setTextAlign(Paint.Align.LEFT); text.setTextSize(r.height() * 0.3f); text.setColor(!on ? DIM : hud[H_PORTAL] > 0 ? TEXT : DEAD);
+            c.drawText("×" + hud[H_PORTAL], ix + ih + r.width() * 0.02f, r.centerY() - (text.descent() + text.ascent()) / 2, text);
+            text.setTextAlign(Paint.Align.CENTER); text.setTypeface(art.label(hud[H_LANG]));
+        }
+        label(c, s, lx, r.centerY(), Math.min(r.height() * 0.3f, 40 * getWidth() / 1240f), fitW, on ? TEXT : DIM);
         if (i == B_MAP && hud[H_MAP_FULL] != 0) {   // full map is on
             fill.setColor(XP); c.drawCircle(r.right - r.height() * 0.6f, r.centerY(), r.height() * 0.08f, fill);
         }
