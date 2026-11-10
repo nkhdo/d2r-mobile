@@ -1210,7 +1210,6 @@ _CUSTOM_ALL = (('lang', '@dmCustomLang'),) + _CUSTOM_ROWS
 # The row gets height 0 and no widgets, and the rows below move up; _CUSTOM_ALL still contains it (same order as the host's k_keys, the key is still saved), and the host skips rows the page does not have when the controller moves up or down (dm_custom.c)
 # Mac App（DM_OVERLAY_MAC）不出「3D 清晰度」：Mac 宿主的 3D 比例恒为 1.0，不按这个档（hle_oe.c dm_3d_scale_level_set）
 # The Mac App (DM_OVERLAY_MAC) does not show "3D resolution": the Mac host's 3D scale is always 1.0 and does not follow this level (hle_oe.c dm_3d_scale_level_set)
-# 「底屏 Deck」（deck）只有安卓读（双屏掌机的第二块屏，DmActivity / SecondScreen.java）：安卓导入包才出这一行（d2rm_android.py 设 DM_OVERLAY_ANDROID=1）
 # "Bottom-screen Deck" (deck) is read only on Android (the second screen of dual-screen handhelds, DmActivity / SecondScreen.java): the row appears only in the Android import pack (d2rm_android.py sets DM_OVERLAY_ANDROID=1)
 _CUSTOM_HIDDEN = frozenset((('icloud',) if os.environ.get('DM_OVERLAY_NO_ICLOUD') == '1' else ()) + (('scale3d',) if os.environ.get('DM_OVERLAY_MAC') else ()) + (() if os.environ.get('DM_OVERLAY_ANDROID') == '1' else ('deck',)))
 _CUSTOM_TEST_ROWS = int(os.environ.get('DM_CUSTOM_TEST_ROWS', '0'))   # 测试（造现场）：末尾多摆这么多行假行，验更多行时的滚动；产品不设 | test (test setup): append this many dummy rows at the end, to verify scrolling with more rows; not set in the product

@@ -1,6 +1,5 @@
 package com.xiaoboluo.d2r;
 
-// 底屏 Deck 显隐规则（DeckGate）：前台且有焦点才显示、失焦延迟收起、文字输入时让开、开关与底屏在不在。
 // Bottom-screen Deck visibility rules (DeckGate): shown only while resumed and focused, delayed hide on focus loss, out of the way during text entry, the switch and whether a bottom screen exists.
 public class DeckGateTest {
     private static int cases;
@@ -19,7 +18,7 @@ public class DeckGateTest {
         g.display(true); g.enabled(true); g.resumed(true, 0);
         check("resumed but not yet focused", false, g.shown(0));
 
-        // 旋转、系统对话框会短暂拿走焦点：400 ms 内回来就不闪 | rotation and system dialogs take focus briefly: back within 400 ms means no flicker
+        // rotation and system dialogs take focus briefly: back within 400 ms means no flicker
         g = ready(0);
         g.focused(false, 1000);
         check("just lost focus", true, g.shown(1000));
@@ -36,7 +35,7 @@ public class DeckGateTest {
         g.display(true); g.enabled(true); g.resumed(true, 0); g.focused(false, 0);
         check("never shown, focus loss does not show it", false, g.shown(10));
 
-        // Home：onPause 先于失焦，当场收起，不等延迟 | Home: onPause comes before the focus loss; hide at once, no delay
+        // Home: onPause comes before the focus loss; hide at once, no delay
         g = ready(0);
         g.resumed(false, 1000); g.focused(false, 1000);
         check("paused hides at once", false, g.shown(1000));
@@ -44,9 +43,9 @@ public class DeckGateTest {
         g.focused(false, 1000); g.resumed(false, 1100); g.resumed(true, 1200);
         check("a pending hide does not survive a pause: resumed again, still waiting for focus", false, g.shown(1250));
 
-        // 起名框：AYN 的 ime_show_on_second 会把键盘开在底屏、压在 Deck 下面 | name dialog: AYN's ime_show_on_second opens the keyboard on the bottom screen, under the Deck
+        // name dialog: AYN's ime_show_on_second opens the keyboard on the bottom screen, under the Deck
         g = ready(0);
-        g.textEntry(true); g.focused(false, 1000);   // 对话框拿走活动窗口的焦点 | the dialog takes the activity window's focus
+        g.textEntry(true); g.focused(false, 1000);   // the dialog takes the activity window's focus
         check("text entry hides at once", false, g.shown(1000));
         g.textEntry(false); g.focused(true, 5000);
         check("back after the dialog closes", true, g.shown(5000));

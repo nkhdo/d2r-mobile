@@ -97,7 +97,7 @@ public class DmActivity extends Activity implements SurfaceHolder.Callback, Disp
     private CamSensor camSensor;
     private CamButtons camButtons;
     private CamThreats camThreats;
-    // 底屏 Deck（双屏掌机的第二块屏；没有演示屏的机器上什么都不做）：游戏起来后建 | bottom-screen Deck (second screen of dual-screen handhelds; does nothing on devices without a presentation display): created once the game is up
+    // bottom-screen Deck (second screen of dual-screen handhelds; does nothing on devices without a presentation display): created once the game is up
     private SecondScreen secondScreen;
 
     @Override protected void onCreate(Bundle b) {
@@ -456,7 +456,7 @@ public class DmActivity extends Activity implements SurfaceHolder.Callback, Disp
             .setPositiveButton(R.string.dmConfirm, null).setNegativeButton(R.string.dmCancel, (d, which) -> {})
             .create();
         inputDialog = dialog;
-        if (secondScreen != null) secondScreen.textEntry(true);   // AYN 的 ime_show_on_second 会把键盘开在底屏：Deck 先让开 | AYN's ime_show_on_second opens the keyboard on the bottom screen: the Deck steps aside
+        if (secondScreen != null) secondScreen.textEntry(true);   // AYN's ime_show_on_second opens the keyboard on the bottom screen: the Deck steps aside
         dialog.setOnDismissListener(d -> {
             if (inputDialog == dialog) inputDialog = null;
             if (secondScreen != null) secondScreen.textEntry(false);

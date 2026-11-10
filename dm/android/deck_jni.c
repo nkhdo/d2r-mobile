@@ -1,5 +1,3 @@
-// 底屏 Deck（双屏掌机的第二块屏，ThorDeck.java / SecondScreen.java）的原生接口：一次读全 HUD 快照、一个动作入口、我们自己的界面文字。
-// 动作全走宿主已有的「任意线程调」入口（存原子请求，游戏线程的泵取走），这里不碰游戏内存。
 // Native interface of the bottom-screen Deck (the second screen of dual-screen handhelds, ThorDeck.java / SecondScreen.java): one call reads the whole HUD snapshot, one action entry point, and our own UI text.
 // Every action goes through the host's existing "callable from any thread" entry points (they store an atomic request that a game-thread pump takes), so nothing here touches game memory.
 #include <jni.h>
@@ -13,7 +11,7 @@ void dm_ui_map_full(int on);       // dm_cursor.c
 int dm_ui_map_is_full(void);
 void dm_ui_open_tab(int tab);
 
-// 快照下标与 ThorDeck.java 的 H_* 一致 | snapshot indices match H_* in ThorDeck.java
+// snapshot indices match H_* in ThorDeck.java
 enum { H_VALID, H_LEVEL, H_EXP, H_HP, H_HP_MAX, H_MP, H_MP_MAX, H_BELT, H_KIND = H_BELT + 4, H_PORTAL = H_KIND + 4,
        H_PLAYERS, H_POINTS, H_QUEST, H_DEAD, H_TOWN, H_SWITCH, H_MAP_FULL, H_COUNT };
 
@@ -31,7 +29,7 @@ JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeHud(JNIEnv *env, jc
     return H_COUNT;
 }
 
-// 动作号与 ThorDeck.java 的 A_* 一致 | action numbers match A_* in ThorDeck.java
+// action numbers match A_* in ThorDeck.java
 enum { A_DRINK, A_FEED_MERC, A_PORTAL, A_MAP, A_SWAP, A_TAB, A_PLAYERS };
 
 JNIEXPORT void JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeAction(JNIEnv *env, jclass cls, jint action, jint arg) {

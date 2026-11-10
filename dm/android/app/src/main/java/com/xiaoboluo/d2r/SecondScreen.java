@@ -17,11 +17,6 @@ import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
 
-// 底屏（双屏掌机的第二块屏，首个目标 AYN Thor）上的 Deck：用系统的 Presentation 挂在演示屏上；没有演示屏的机器上什么都不做。
-// 什么时候显示由 DeckGate 定（纯规则，有单测），这里只把 Presentation 摆成它说的样子，并做各家 Thor 移植踩过的坑（docs/android-notes/2026-11-10-ayn-thor-dual-screen.md 第 3 节）：
-//   不可获得焦点（否则第一下点底屏手柄就跟着焦点走了）、不可取消且不吃按键（手柄 B 在系统层会变成返回键）、自己的窗口里藏系统栏（沉浸是按窗口的）、
-//   锁横屏（不随活动、底屏原生是竖的）、系统自己 dismiss 时重新挂上、show() 被 AYN 启动器占着屏时抛 InvalidDisplayException 就先不挂、按类别找屏不写死 id 4。
-// 每 100 ms 读一次宿主快照（ThorDeck.nativeHud）：自定义页的 deck 开关点「应用」当场生效，Deck 的数字也按这个频率刷新
 // The Deck on the bottom screen (the second screen of dual-screen handhelds; first target the AYN Thor): a system Presentation on the presentation display; nothing happens on devices without one.
 // When it shows is decided by DeckGate (pure rules, unit-tested); this class only keeps the Presentation the way it says, and applies the workarounds other Thor ports needed (section 3 of docs/android-notes/2026-11-10-ayn-thor-dual-screen.md):
 //   not focusable (otherwise the gamepad follows focus on the first tap on the bottom screen), not cancelable and not consuming keys (gamepad B becomes BACK at system level), system bars hidden on its own window (immersive mode is per window),
@@ -36,8 +31,8 @@ final class SecondScreen implements DisplayManager.DisplayListener {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final int[] hud = new int[ThorDeck.H_COUNT];
     private final Runnable poll = this::poll, reconcile = this::reconcile;
-    private DeckPresentation shown;   // 我们自己挂上的那个；系统 dismiss 时它还指着那个 = 不是我们要收的 | the one we showed; if it still points at it when the system dismisses = not a dismissal we asked for
-    private long blockedUntil;        // show() 失败后到这个时刻之前不再试 | after a failed show(), do not try again before this time
+    private DeckPresentation shown;   // the one we showed; if it still points at it when the system dismisses = not a dismissal we asked for
+    private long blockedUntil;        // after a failed show(), do not try again before this time
     private boolean polling;
 
     SecondScreen(Activity activity, boolean resumed, boolean focused) {
@@ -78,7 +73,7 @@ final class SecondScreen implements DisplayManager.DisplayListener {
         if (next >= 0) handler.postDelayed(reconcile, next + 1);
     }
 
-    // 演示类别里、不是活动自己那块的第一块屏 | the first presentation-category display that is not the activity's own
+    // the first presentation-category display that is not the activity's own
     private Display findDisplay() {
         if (displays == null) return null;
         Display own = activity.getDisplay();
@@ -98,10 +93,9 @@ final class SecondScreen implements DisplayManager.DisplayListener {
             WindowManager.LayoutParams lp = w.getAttributes();
             lp.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
             lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
-            w.setAttributes(lp);   // 目标 SDK 36 起窗口一律铺满（edge-to-edge），不用再 setDecorFitsSystemWindows | from target SDK 36 windows are always edge-to-edge, so setDecorFitsSystemWindows is no longer needed
+            w.setAttributes(lp);   // from target SDK 36 windows are always edge-to-edge, so setDecorFitsSystemWindows is no longer needed
         }
         p.setOnDismissListener(x -> {
-            // 我们收的时候先清了引用；这里还指着它 = 系统自己收的（显示屏闪断、配置变动）：清掉，下一拍按 DeckGate 重新挂
             // When we hide it we clear the reference first; if it still points at it here = the system dismissed it (display flicker, configuration churn): clear it and re-show on the next pass as DeckGate says
             if (shown == p) { shown = null; Log.i(TAG, "dismissed by the system; showing again"); handler.post(reconcile); }
         });
@@ -124,7 +118,7 @@ final class SecondScreen implements DisplayManager.DisplayListener {
     private void hide() {
         DeckPresentation p = shown;
         if (p == null) return;
-        shown = null;   // 先清引用再收：dismiss 回调据此知道是我们要收的 | clear the reference before dismissing: the dismiss callback uses it to know we asked for it
+        shown = null;   // clear the reference before dismissing: the dismiss callback uses it to know we asked for it
         p.dismiss();
         Log.i(TAG, "Deck hidden");
     }
@@ -137,7 +131,7 @@ final class SecondScreen implements DisplayManager.DisplayListener {
         final ThorDeck deck;
         DeckPresentation(Context outer, Display display) { super(outer, display); deck = new ThorDeck(getContext()); }
         @Override protected void onCreate(Bundle state) { super.onCreate(state); setContentView(deck); }
-        // 不吃任何按键：手柄 B 在系统层变成的返回键不会关掉它 | consume no keys: the BACK that gamepad B turns into at system level does not close it
+        // consume no keys: the BACK that gamepad B turns into at system level does not close it
         @Override public boolean dispatchKeyEvent(KeyEvent e) { return false; }
     }
 }
