@@ -6,16 +6,22 @@ The Deck is made for controller play with the Thor's built-in gamepad. Touching 
 
 ## What the Deck shows
 
+The Deck is drawn with the game's own panel art and fonts (HUD bar, globes, menu buttons, stone), taken from your own game files when the import pack is made. A pack made before this shows the same layout as plain panels.
+
+Three tabs on top: **Main**, **Map** and **Skills**.
+
+**Main**
+
 | Area | Contents |
 |---|---|
-| Tabs (top) | **Main** (everything below) and **Bag** |
-| Status strip | Life and mana bars with numbers, level and experience bar, and the name of the area you are in (in the game's language; taken from your own game files when the import pack is made, so a pack made before this feature shows no name). Badges for **Town**, **Points to spend** and **New quest**. **Dead** replaces the badges while your character is dead |
-| Row 1 | **Inventory**, **Character**, **Skills**, **Quests**: opens that page of the game's menu. Tap again to close it |
-| Row 2 | **Portal** (with your town portal count), **Map** (full-screen map on and off), **Swap weapons**, **Players** (tap to pick 1–8) |
-| Row 3 | The four belt columns, coloured by the potion in the bottom row (red, blue, purple for rejuvenation), with how many are left. **Tap** drinks it; **hold** gives it to your mercenary |
+| HUD bar | The game's HUD: life and mana globes that fill to your current values (with numbers), the name of the area you are in (in the game's language), level and experience bar, and your town portal count. Where the game's belt boxes would be: time in this game, experience per hour (in percent of a level, level-ups included) and time to the next level at that rate (shown after a minute with progress; a new game, or more than 15 s out of one, starts over) |
+| Above the bar | Badges for **Town**, **Points to spend** and **New quest** (**Dead** replaces them while your character is dead), and your mercenary's life when you have one |
+| Buttons | **Inventory**, **Character**, **Skills**, **Quests**: opens that page of the game's menu (tap again to close it). **Portal**, **Map** (full-screen map on and off; a dot shows when it is on), **Swap weapons**, **Players** (tap to pick 1–8) |
+| Potion row | The four belt columns, each with the picture of the item in its bottom row and how many are left. **Tap** drinks it; **hold** gives it to your mercenary |
 
+**Map**: a compass for the area you are in. The game's own map marks (quest goals such as Blood Raven or the Horadric Cube chest, the true Tal Rasha's tomb, waypoints and real exits) appear on a radar turned like the game's view, and in a list, nearest first, with an arrow, the game's name for it and the distance in map cells. It uses the same marks as the minimap, so it needs the Custom page's map marking on (the default). Towns have no marks (the game marks nothing there), and areas without marks say so.
 
-The **Bag** tab shows what you carry without opening the game's menu: your worn items in one row (helm, amulet, armour, both hands, both rings, belt, gloves, boots), the 10 × 4 bag, and the belt. Pictures come from your own game files when the import pack is made; a pack made before this feature shows item codes instead. Magic, set, rare, unique and crafted items get a border in their colour; unidentified items are tinted red. Tap an item to open a sheet with its picture and name (base, unique or set name in the game's language; magic and rare items show their base name) and the actions that apply: **Use** (potions, scrolls, tomes, the cube), **To belt**, **Sort bag**. Tap anywhere else to close it.
+**Skills**: the skills bound to your controller buttons, with the game's own icons and names: the four face buttons as a diamond plus R and ZR, and the same again with ZL held, for the weapon set in your hands. To change a binding, use the game's skill menu (the **Skills** button on Main).
 
 A button takes effect when you lift your finger, so sliding off a button cancels it. While you are not in a game (main menu, character select, loading), the Deck shows a short note instead. While your character is dead, the buttons are greyed out.
 
@@ -43,7 +49,8 @@ Any Android device with a second display that Android treats as a presentation d
 ## Known limits
 
 - Opening a page presses the controller's menu button for you and then jumps to the page, so the menu's last page can flash for a moment. It can fail while another window of the game is open, such as a vendor or the stash.
-- The Bag tab cannot move, equip or drop items, and has no stash or cube yet. No map yet.
+- Items are managed in the game's own inventory (the **Inventory** button); the Deck only shows the belt.
+- The Map tab is a compass, not a drawn map. The Skills tab shows bindings but cannot change them. Buffs and their time left are not shown.
 - Tested on the Thor with the Snapdragon 8 Gen 2. The Thor Lite (Snapdragon 865) has not been tested.
 
 Background, workarounds and test notes: [android-notes/2026-11-10-ayn-thor-dual-screen.md](android-notes/2026-11-10-ayn-thor-dual-screen.md).
