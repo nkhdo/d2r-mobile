@@ -7,6 +7,7 @@
 #include "../host/dm_i18n.h"
 #include "../host/dm_inv.h"
 #include "../host/dm_world.h"
+#include "../host/dm_uiscreen.h"
 #include "dm_touch_native_art.h"
 
 void dm_tp_request(void);          // dm_freetp.c
@@ -23,7 +24,10 @@ JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeHud(JNIEnv *env, jc
     if ((*env)->GetArrayLength(env, out) < H_COUNT) return -1;
     dm_hud_info h; dm_hud_get(&h); int kind[4]; dm_belt_kinds(kind);
     jint v[H_COUNT] = {0};
-    v[H_VALID] = h.valid; v[H_LEVEL] = h.level; v[H_EXP] = h.exp_permille;
+    // in a run: the player was read on the last game tick AND the game's HUD is up with no load screen. The tick snapshot alone is not
+    // enough: ticks stop when the game ends, so after "Save and exit" the last in-run snapshot stayed published and the Deck kept its tabs
+    // over empty data at the main menu. The UI flag is updated every frame, menus included
+    v[H_VALID] = h.valid && dm_uiscreen_ingame(); v[H_LEVEL] = h.level; v[H_EXP] = h.exp_permille;
     v[H_HP] = h.hp; v[H_HP_MAX] = h.hp_max; v[H_MP] = h.mp; v[H_MP_MAX] = h.mp_max;
     for (int i = 0; i < 4; i++) { v[H_BELT + i] = h.belt[i]; v[H_KIND + i] = kind[i]; }
     v[H_PORTAL] = h.portal; v[H_PLAYERS] = h.players; v[H_POINTS] = h.points; v[H_QUEST] = h.quest_unread; v[H_DEAD] = h.dead;
