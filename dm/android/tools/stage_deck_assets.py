@@ -214,8 +214,11 @@ def _stage_icons(romfs, target):
         if path:
             strings[name] = json.loads(read(path[0]).decode('utf-8-sig'))
     (target / 'goals.tsv').write_text(goal_table(labels, strings), encoding='utf-8', newline='\n')
-    path = [p for p in index if p.endswith('/lng/strings/skills.json')]
-    skill_strings = json.loads(read(path[0]).decode('utf-8-sig')) if path else []
+    skill_strings = []   # class skills in skills.json; the controller-only actions (Interact, Loot, Automap ...) in ui-controller.json
+    for name in ('skills.json', 'ui-controller.json'):
+        path = [p for p in index if p.endswith('/lng/strings/' + name)]
+        if path:
+            skill_strings += json.loads(read(path[0]).decode('utf-8-sig'))
     (target / 'skills.tsv').write_text(skill_table(annot_strings.excel(romfs, 'skills.txt'), annot_strings.excel(romfs, 'skilldesc.txt'),
                                                    skill_strings), encoding='utf-8', newline='\n')
     _stage_ui(read, target)
