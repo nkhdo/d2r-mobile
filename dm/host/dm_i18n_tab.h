@@ -508,4 +508,6 @@ static const struct { const char *k, *zh, *en, *es, *mx, *pt, *ru, *ko; } k_dm_i
     { "dmDeckRun", "本局 %s", "Game %s", "Partida %s", "Partida %s", "Partida %s", "Игра %s", "게임 %s" },
     { "dmDeckXpRate", "经验 %s/时", "XP %s/h", "EXP %s/h", "EXP %s/h", "EXP %s/h", "Опыт %s/ч", "경험치 %s/시" },
     { "dmDeckNextLv", "升级 %s", "Level up %s", "Subir nivel %s", "Subir nivel %s", "Subir nível %s", "Уровень через %s", "레벨업 %s" },
+    { "dmDeckNoGoals", "这里没有标出的目标", "No marked goals here", "No hay objetivos marcados aquí", "No hay objetivos marcados aquí", "Nenhum objetivo marcado aqui", "Здесь нет отмеченных целей", "여기에는 표시된 목표가 없습니다" },
+    { "dmDeckGoalAway", "%d 格", "%d away", "a %d", "a %d", "a %d", "в %d", "%d 거리" },
 };

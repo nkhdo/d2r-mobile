@@ -7,6 +7,8 @@ Writes into the import pack's overlay folder, before its manifest is written:
   deck/items/*.png  inventory pictures from the player's own item sprites, at the game's native 49 px per cell
   deck/items.tsv    key -> picture file: key = item code ("hax"), "u<UniqueItems *ID>" or "s<SetItems *ID>"
                     (the row number the host reads at item data +0x34)
+  deck/goals.tsv    map goal names per game language (the goal compass): key = the host's goal label number (dm_world.c, labels from
+                    gen_map_goal_art.py), 255 = waypoint
   deck/ui/*.png     the game's own panel art the Deck is drawn with (UI_ART below), and deck/ui/exocet.otf / formal.ttf, the game's fonts
 These files hold game text, so they only ever live in the player's own import pack.
 """
@@ -40,6 +42,37 @@ def level_table(levels, strings):
         entry = by_key.get(key)
         names = [_clean(entry.get(lang)) for lang in LANGS] if entry else [_clean(key)] + [''] * (len(LANGS) - 1)
         out.append('\t'.join([ident] + names))
+    return '\n'.join(out) + '\n'
+
+
+WAYPOINT_GOAL = 255   # dm_world.h DM_MG_WP
+
+
+def goal_labels():
+    """The map goal label table (number -> (strings file, key)) from dm/ios/tools/gen_map_goal_art.py LABELS, read without importing it
+    (it renders pictures on import paths); the host's goal numbers index it (dm_world.c)."""
+    import ast
+    src = (Path(__file__).resolve().parents[2] / 'ios' / 'tools' / 'gen_map_goal_art.py').read_text(encoding='utf-8')
+    for node in ast.parse(src).body:
+        if isinstance(node, ast.Assign) and any(getattr(t, 'id', '') == 'LABELS' for t in node.targets):
+            return [(e.elts[0].value, e.elts[1].value) for e in node.value.elts]
+    raise SystemExit('stage_deck_assets: no LABELS in gen_map_goal_art.py')
+
+
+def goal_table(labels, strings):
+    """Names of the map goals (dm_map_goals) per game language: key = goal label number, plus 255 = waypoint.
+    labels: [(strings file, key)]; strings: {file name: entries of lng/strings/<file>.json}."""
+    by_file = {}
+    for name, entries in strings.items():
+        m = by_file.setdefault(name, {})
+        for e in entries:
+            m.setdefault(e.get('Key'), e)
+    want = list(enumerate(labels)) + [(WAYPOINT_GOAL, ('objects', 'Waypoint'))]
+    out = ['\t'.join(('key',) + LANGS)]
+    for n, (name, key) in want:
+        e = by_file.get(name, {}).get(key)
+        if e:
+            out.append('\t'.join([str(n)] + [_clean(e.get(lang)) for lang in LANGS]))
     return '\n'.join(out) + '\n'
 
 
@@ -159,6 +192,12 @@ def _stage_icons(romfs, target):
         im.save(out / icon_file(path), optimize=True)
     lines = ['%s\t%s' % (k, icon_file(v)) for k, v in sorted(icons.items())]
     (target / 'items.tsv').write_text('\n'.join(lines) + '\n', encoding='utf-8', newline='\n')
+    labels, strings = goal_labels(), {}
+    for name in sorted({f for f, _ in labels} | {'objects'}):
+        path = [p for p in index if p.endswith('/lng/strings/%s.json' % name)]
+        if path:
+            strings[name] = json.loads(read(path[0]).decode('utf-8-sig'))
+    (target / 'goals.tsv').write_text(goal_table(labels, strings), encoding='utf-8', newline='\n')
     _stage_ui(read, target)
     return len(icons), len(set(icons.values()))
 

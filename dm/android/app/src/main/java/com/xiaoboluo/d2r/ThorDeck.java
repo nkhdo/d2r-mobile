@@ -22,6 +22,8 @@ import java.util.Arrays;
 //   Main: the game's HUD bar (life and mana globes, area name, level and experience, portal count, badges above it; where its belt
 //     boxes were, run stats: time in this game, experience per hour and time to the next level, RunStats.java), 8 large buttons (Inventory, Character, Skills, Quests / Portal, Map, Swap weapons,
 //     Players) and a row of the four belt columns as potion buttons (tap = drink the bottom-row bottle, long press = feed the mercenary).
+//   Map: a goal compass for the current area (GoalCompass.java): the host's map goals (quest goals, the true tomb, waypoints, real
+//     exits) on a radar turned like the game's view, and a list nearest first with an arrow, the game's name and the distance.
 // The host's item list (BagModel.java) is read while the Deck shows, for the belt's own pictures. Item management stays in the
 // game's own inventory (the Inventory button): the bottom screen is for glancing and one-tap actions.
 // All text goes through the string table (nativeText). SecondScreen reads a snapshot every 100 ms and passes it to update, which redraws
@@ -38,6 +40,7 @@ final class ThorDeck extends View {
     static native String nativeText(String key);
     static native void nativeBagWant(boolean on);
     static native int nativeBag(int[] out);
+    static native int nativeGoals(int[] out);
 
     private static final long LONG_PRESS_MS = 500;
     // twelve cells: 0–3 the four function pages, 4 portal, 5 map, 6 swap, 7 players, 8–11 the four belt columns
@@ -64,8 +67,8 @@ final class ThorDeck extends View {
     private final Runnable[] longPress = new Runnable[MAX_POINTERS];
     private boolean picking;   // the players 1–8 picker is open
     // tabs. Kept across shows of the Deck (a new view is made each time the bottom screen comes back)
-    private static final int TAB_MAIN = 0, TAB_COUNT = 1, TAB_BASE = 200;
-    private static final String[] TAB_LABEL = { "dmDeckTabMain" };
+    private static final int TAB_MAIN = 0, TAB_MAP = 1, TAB_COUNT = 2, TAB_BASE = 200;
+    private static final String[] TAB_LABEL = { "dmDeckTabMain", "dmDeckMap" };
     private static int tab = TAB_MAIN;
     private final RectF[] tabRect = new RectF[TAB_COUNT];
     private BagModel.Item[] bag = new BagModel.Item[0];
@@ -79,6 +82,12 @@ final class ThorDeck extends View {
     private final Paint bitmapPaint = new Paint(Paint.FILTER_BITMAP_FLAG), manaPaint = new Paint(Paint.FILTER_BITMAP_FLAG);
     private static final RunStats run = new RunStats();   // kept across shows of the Deck, like the tab
     private String runLine = "";   // the run stats as last drawn: the clock ticks every second, the snapshot does not
+    // Map tab: the goals as last read (nativeGoals) and their names (deck/goals.tsv)
+    private final int[] goalRaw = new int[3 + 3 * 24], goalLast = new int[3 + 3 * 24];
+    private GoalCompass.Goal[] goals = new GoalCompass.Goal[0];
+    private DeckNames goalNames;
+    private final RectF radar = new RectF(), list = new RectF();
+    private final android.graphics.Path arrow = new android.graphics.Path();
     private DeckNames names;   // area names from the import pack (deck/levels.tsv); loaded once, null until then
 
     // An import pack made before the Deck had area names has no deck/levels.tsv: the name line then stays empty
@@ -125,7 +134,7 @@ final class ThorDeck extends View {
     private DeckIcons icons() { if (icons == null) icons = new DeckIcons(getContext()); return icons; }
 
     @Override protected void onSizeChanged(int w, int h, int ow, int oh) {
-        float k = w / 1240f, gap = 14 * k, pad = 18 * k, tw = (w - 2 * pad - gap) / 2, tabH = tw * 45 / 459;
+        float k = w / 1240f, gap = 14 * k, pad = 18 * k, tw = (w - 2 * pad - (TAB_COUNT - 1) * gap) / TAB_COUNT, tabH = 58 * k;
         full.set(0, 0, w, h);
         for (int i = 0; i < TAB_COUNT; i++) tabRect[i].set(pad + i * (tw + gap), pad, pad + i * (tw + gap) + tw, pad + tabH);
         float top = pad + tabH + gap;
@@ -141,6 +150,10 @@ final class ThorDeck extends View {
         // the players picker covers the middle two button rows: 4 x 2
         float pt = cell[2].top, ph = (cell[5].bottom - pt - gap) / 2, pw = (w - 2 * pad - 3 * gap) / 4;
         for (int i = 0; i < 8; i++) { float x = pad + (i % 4) * (pw + gap), y = pt + (i / 4) * (ph + gap); pick[i].set(x, y, x + pw, y + ph); }
+        // Map: the radar as a square on the left, the goal list beside it
+        float bodyH = h - pad - top, rs = Math.min(bodyH, w * 0.5f);
+        radar.set(pad, top + (bodyH - rs) / 2, pad + rs, top + (bodyH + rs) / 2);
+        list.set(radar.right + 2 * gap, top, w - pad, h - pad);
         line.setStrokeWidth(Math.max(2, 3 * k));
         text.setShadowLayer(3 * k, 0, 2 * k, 0xE0000000);
     }
@@ -153,6 +166,7 @@ final class ThorDeck extends View {
             return;
         }
         drawTabs(c);
+        if (tab == TAB_MAP) { drawMap(c); return; }
         drawHud(c);
         boolean on = actionsEnabled();
         for (int i = 0; i < B_COUNT; i++) drawCell(c, i, on);
@@ -284,6 +298,87 @@ final class ThorDeck extends View {
         return eta < 0 ? rate : rate + "  " + String.format(t("dmDeckNextLv"), RunStats.span(eta));
     }
 
+    // ---- Map tab ----
+    private static final int GOAL_QUEST = 0xFFC7A04A, GOAL_TOMB = 0xFFE04030, GOAL_WAYPOINT = 0xFF7FA8FF, GOAL_EXIT = 0xFFE8D9B0;
+    private static final int GOALS_SHOWN = 6;
+
+    private int goalColour(int art) {
+        return art >= GoalCompass.LEVEL ? GOAL_EXIT : art == GoalCompass.WAYPOINT ? GOAL_WAYPOINT : art >= GoalCompass.SYMBOL ? GOAL_TOMB : GOAL_QUEST;
+    }
+
+    // the game's name for a goal in its language: exits by the area they lead to, the rest from deck/goals.tsv
+    private String goalName(int art) {
+        int lv = GoalCompass.exitLevel(art);
+        if (lv >= 0) return names().area(lv, hud[H_LANG]);
+        if (goalNames == null) {
+            String tsv = "";
+            File f = new File(getContext().getFilesDir(), "dm/overlay/deck/goals.tsv");
+            try {
+                if (f.isFile() && f.length() <= 1024 * 1024) tsv = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+            } catch (java.io.IOException | SecurityException e) { tsv = ""; }
+            goalNames = DeckNames.parse(tsv);
+        }
+        String n = goalNames.name(GoalCompass.nameKey(art), hud[H_LANG]);
+        return n.isEmpty() ? "?" : n;
+    }
+
+    // a small arrow at (x, y) pointing along the unit direction (dx, dy)
+    private void drawArrow(Canvas c, float x, float y, double dx, double dy, float size, int colour) {
+        float a = (float) Math.atan2(dy, dx);
+        arrow.reset();
+        arrow.moveTo(size, 0); arrow.lineTo(-size * 0.6f, size * 0.6f); arrow.lineTo(-size * 0.25f, 0); arrow.lineTo(-size * 0.6f, -size * 0.6f); arrow.close();
+        c.save(); c.translate(x, y); c.rotate((float) Math.toDegrees(a));
+        fill.setColor(colour); c.drawPath(arrow, fill);
+        c.restore();
+    }
+
+    private void drawMap(Canvas c) {
+        float k = getWidth() / 1240f;
+        int n = Math.min(GOALS_SHOWN, goals.length);
+        float cx = radar.centerX(), cy = radar.centerY(), R = radar.width() / 2 - 12 * k;
+        // radar: dark disc, three rings, the player in the middle; goals at their screen direction, distance scaled to the farthest shown
+        fill.setColor(0xB0000000); c.drawCircle(cx, cy, R, fill);
+        line.setColor(0x808C7340);
+        for (int i = 1; i <= 3; i++) c.drawCircle(cx, cy, R * i / 3, line);
+        line.setColor(GOLD); c.drawCircle(cx, cy, R, line);
+        fill.setColor(TEXT); c.drawCircle(cx, cy, 8 * k, fill);
+        double far = 60;
+        for (int i = 0; i < n; i++) far = Math.max(far, goals[i].dist);
+        text.setTypeface(art.name(hud[H_LANG]));
+        for (int i = n - 1; i >= 0; i--) {
+            GoalCompass.Goal g = goals[i];
+            float r = (float) (R * 0.92 * Math.min(1, g.dist / far)), x = cx + (float) g.sx * r, y = cy + (float) g.sy * r;
+            fill.setColor(goalColour(g.art)); c.drawCircle(x, y, 16 * k, fill);
+            label(c, String.valueOf(i + 1), x, y, 22 * k, 30 * k, 0xFF000000);
+        }
+        // list: number, arrow, name, distance
+        if (n == 0) {
+            text.setTypeface(art.label(hud[H_LANG]));
+            label(c, t("dmDeckNoGoals"), list.centerX(), list.centerY(), 36 * k, list.width() * 0.95f, DIM);
+            return;
+        }
+        float rowH = Math.min(list.height() / GOALS_SHOWN, 150 * k), gap = 10 * k;
+        for (int i = 0; i < n; i++) {
+            GoalCompass.Goal g = goals[i];
+            tmp.set(list.left, list.top + i * rowH, list.right, list.top + (i + 1) * rowH - gap);
+            art.frame(c, "button_off", null, tmp, 20, Math.min(tmp.width() / 330, tmp.height() / 60), PANEL);
+            float mid = tmp.centerY(), x0 = tmp.left + tmp.height() * 0.55f;
+            fill.setColor(goalColour(g.art)); c.drawCircle(x0, mid, tmp.height() * 0.2f, fill);
+            label(c, String.valueOf(i + 1), x0, mid, tmp.height() * 0.24f, tmp.height() * 0.3f, 0xFF000000);
+            drawArrow(c, x0 + tmp.height() * 0.55f, mid, g.sx, g.sy, tmp.height() * 0.22f, TEXT);
+            float nameX = x0 + tmp.height() * 0.95f, distW = tmp.width() * 0.2f;
+            String d = String.format(t("dmDeckGoalAway"), Math.round(g.dist));
+            text.setTextAlign(Paint.Align.RIGHT); text.setColor(DIM); text.setTextSize(tmp.height() * 0.26f);
+            c.drawText(d, tmp.right - tmp.height() * 0.4f, mid - (text.descent() + text.ascent()) / 2, text);
+            String name = goalName(g.art);
+            text.setTextAlign(Paint.Align.LEFT); text.setColor(goalColour(g.art)); text.setTextSize(tmp.height() * 0.32f);
+            float room = tmp.right - tmp.height() * 0.4f - distW - nameX;
+            if (text.measureText(name) > room) text.setTextSize(text.getTextSize() * room / text.measureText(name));
+            c.drawText(name, nameX, mid - (text.descent() + text.ascent()) / 2, text);
+        }
+        text.setTextAlign(Paint.Align.CENTER); text.setTypeface(art.label(hud[H_LANG]));
+    }
+
     // a belt column's bottom-row item: its own picture from the item list (scrolls and other potions too), else the picture for its
     // kind, and how many the column holds
     private void beltBottle(Canvas c, int col, RectF r, float countSize) {
@@ -344,8 +439,11 @@ final class ThorDeck extends View {
     @Override protected void onAttachedToWindow() { super.onAttachedToWindow(); nativeBagWant(true); bagGen = -1; }
     @Override protected void onDetachedFromWindow() { nativeBagWant(false); super.onDetachedFromWindow(); }
 
-    // called with every snapshot (SecondScreen, 10 Hz): take the host's item list and redraw if it changed
-    void pollBag() {
+    // called with every snapshot (SecondScreen, 10 Hz)
+    void poll() { pollBag(); pollGoals(); }
+
+    // the host's item list (for the belt's pictures): redraw if it changed
+    private void pollBag() {
         int n = nativeBag(bagRaw);
         if (n < 0 || bagRaw[0] == bagGen) return;
         bagGen = bagRaw[0];
@@ -353,9 +451,20 @@ final class ThorDeck extends View {
         if (tab == TAB_MAIN) invalidate();
     }
 
+    // Map tab: the goals for the current area, redrawn when they or the player's cell change
+    private void pollGoals() {
+        if (tab != TAB_MAP) return;
+        int n = nativeGoals(goalRaw);
+        if (n < 0 || Arrays.equals(goalRaw, goalLast)) return;
+        System.arraycopy(goalRaw, 0, goalLast, 0, goalRaw.length);
+        goals = GoalCompass.read(Arrays.copyOf(goalRaw, 3 + 3 * n));
+        invalidate();
+    }
+
     // ---- touch ----
     private int hit(float x, float y) {
         for (int i = 0; i < TAB_COUNT; i++) if (tabRect[i].contains(x, y)) return TAB_BASE + i;
+        if (tab != TAB_MAIN) return -1;   // the Map tab is to look at
         if (picking) { for (int i = 0; i < 8; i++) if (pick[i].contains(x, y)) return PICK_BASE + i; return PICK_BASE - 1; }   // outside the picker = close it
         for (int i = 0; i < B_COUNT; i++) if (cell[i].contains(x, y)) return i;
         return -1;

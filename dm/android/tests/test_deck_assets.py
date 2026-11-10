@@ -86,5 +86,35 @@ class ItemIcons(unittest.TestCase):
         self.assertEqual(deck.icon_file('weapon/axe/hand_axe'), 'weapon_axe_hand_axe.png')
 
 
+class GoalNames(unittest.TestCase):
+    # label number -> (strings file, key), as gen_map_goal_art.py LABELS
+    LABELS = [('levels', "Tal Rasha's Tomb"), ('monsters', 'Bloodraven'), ('objects', 'NoSuchKey')]
+    STRINGS = {
+        'levels': [{'Key': "Tal Rasha's Tomb", 'enUS': "Tal Rasha's Tomb", 'deDE': '[ms]Tal Rashas Grab'}],
+        'monsters': [{'Key': 'Bloodraven', 'enUS': 'Blood Raven', 'zhCN': '血鸦'}],
+        'objects': [{'Key': 'Waypoint', 'enUS': 'Waypoint', 'frFR': 'Point de passage'}],
+    }
+
+    def table(self):
+        return {r[0]: r[1:] for r in rows(deck.goal_table(self.LABELS, self.STRINGS))[1:]}
+
+    def test_labels_by_number_in_every_language(self):
+        t = self.table()
+        self.assertEqual(t['0'][0], "Tal Rasha's Tomb")
+        self.assertEqual(t['0'][1], 'Tal Rashas Grab')   # gender marker removed
+        self.assertEqual(t['1'][deck.LANGS.index('zhCN')], '血鸦')
+
+    def test_waypoint_is_goal_255(self):
+        self.assertEqual(self.table()['255'][deck.LANGS.index('frFR')], 'Point de passage')
+
+    def test_labels_without_a_string_are_left_out(self):
+        self.assertNotIn('2', self.table())
+
+    def test_labels_are_read_from_the_map_goal_tool(self):
+        labels = deck.goal_labels()
+        self.assertEqual(labels[0], ('levels', "Tal Rasha's Tomb"))
+        self.assertEqual(labels[2], ('objects', 'StoneAlpha'))
+
+
 if __name__ == '__main__':
     unittest.main()

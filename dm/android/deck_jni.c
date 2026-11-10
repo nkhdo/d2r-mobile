@@ -6,6 +6,7 @@
 #include "../host/dm_custom.h"
 #include "../host/dm_i18n.h"
 #include "../host/dm_inv.h"
+#include "../host/dm_world.h"
 
 void dm_tp_request(void);          // dm_freetp.c
 void dm_ui_map_full(int on);       // dm_cursor.c
@@ -52,6 +53,21 @@ JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeBag(JNIEnv *env, jc
         o[4] = (jint)((uint16_t)it->row | (uint32_t)it->flags << 16);
     }
     (*env)->SetIntArrayRegion(env, out, 0, 1 + n * INTS, v);
+    return n;
+}
+
+// Map tab (GoalCompass.java): out = n, player x, player y, then x, y, art per goal (dm_map_goals: quest goals, waypoints and real exits of
+// the current area, in world cells). Returns n, -1 if out is too short
+JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeGoals(JNIEnv *env, jclass cls, jintArray out) {
+    (void)cls;
+    if ((*env)->GetArrayLength(env, out) < 3 + 3 * DM_MAP_GOAL_MAX) return -1;
+    dm_map_goal_view g; int n = dm_map_goals(&g);
+    if (n < 0) n = 0;
+    if (n > DM_MAP_GOAL_MAX) n = DM_MAP_GOAL_MAX;
+    jint v[3 + 3 * DM_MAP_GOAL_MAX];
+    v[0] = n; v[1] = g.px; v[2] = g.py;
+    for (int i = 0; i < n; i++) { v[3 + 3 * i] = g.x[i]; v[4 + 3 * i] = g.y[i]; v[5 + 3 * i] = g.art[i]; }
+    (*env)->SetIntArrayRegion(env, out, 0, 3 + 3 * n, v);
     return n;
 }
 
