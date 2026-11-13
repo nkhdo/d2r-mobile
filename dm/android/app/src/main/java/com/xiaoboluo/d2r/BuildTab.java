@@ -409,15 +409,24 @@ final class BuildTab {
         return out;
     }
 
-    private Row skillRow(final int id, final int to) {
+    // One step of the plan: "n  Skill  → target", then ✓ once reached or the current base level in brackets while open. A stage is an
+    // ordered list, so a skill can come back in a later step (Holy Fire → 7, Resist Fire → 4, Holy Fire → 11); the number shows that.
+    // n <= 0 draws no number (the "after 20" list).
+    private Row skillRow(final int n, final int id, final int to) {
         return new Row(64 * k) {
             void draw(Canvas c, float x, float y, float w) {
                 int have = live.skill(id);
                 boolean met = have >= to;
-                skillIcon(c, id, x, y + 4 * k, 52 * k);
-                left(c, skill(id), x + 68 * k, y + 40 * k, 26 * k, w * 0.6f, met ? DIM : TEXT);
-                text.setTextAlign(Paint.Align.RIGHT); text.setTextSize(26 * k); text.setColor(met ? GREEN : GOLD);
-                c.drawText((met ? "✓ " : "") + have + " / " + to, x + w, y + 40 * k, text);
+                float ix = x;
+                if (n > 0) { centred(c, String.valueOf(n), x + 16 * k, y + 31 * k, 22 * k, 32 * k, DIM); ix += 40 * k; }
+                skillIcon(c, id, ix, y + 4 * k, 52 * k);
+                left(c, skill(id), ix + 68 * k, y + 40 * k, 26 * k, w * 0.55f, met ? DIM : TEXT);
+                text.setTextAlign(Paint.Align.RIGHT); text.setTextSize(26 * k);
+                text.setColor(met ? GREEN : TEXT);
+                c.drawText(met ? "✓" : "(" + have + ")", x + w, y + 40 * k, text);
+                float stateW = text.measureText(met ? "✓" : "(" + have + ")");
+                text.setColor(met ? DIM : GOLD);
+                c.drawText("→ " + to, x + w - stateW - 24 * k, y + 40 * k, text);
             }
         };
     }
@@ -473,10 +482,10 @@ final class BuildTab {
         case 0:   // skills
             out.add(heading(st.name + "  ·  " + String.format(host.text("dmBuildLevels"), band), TEXT));
             if (st.respec) out.addAll(paragraph(host.text("dmBuildRespecStage"), 23 * k, RED, 0));
-            for (BuildGuide.Step s : st.skills) out.add(skillRow(s.skill, s.to));
+            for (int i = 0; i < st.skills.size(); i++) out.add(skillRow(i + 1, st.skills.get(i).skill, st.skills.get(i).to));
             if (si == guide.stages.size() - 1 && guide.after20.length > 0 && live.cap > 20) {
                 out.add(heading(host.text("dmBuildPast20"), BLUE));
-                for (int id : guide.after20) out.add(skillRow(id, live.cap));
+                for (int id : guide.after20) out.add(skillRow(0, id, live.cap));
             }
             for (String tip : st.tips) out.addAll(paragraph("• " + tip, 23 * k, DIM, 0));
             break;

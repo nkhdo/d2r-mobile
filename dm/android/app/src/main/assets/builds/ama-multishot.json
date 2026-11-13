@@ -1,0 +1,656 @@
+{
+ "id": "ama-multishot",
+ "class": "ama",
+ "name": "Multiple Shot Amazon",
+ "summary": "Levels as the Lightning Fury Amazon, then a bow build at 75: Multiple Shot with Pierce, Guided Arrow and Strafe.",
+ "links": [
+  {
+   "title": "Leveling guide",
+   "url": "https://maxroll.gg/d2/guides/amazon-leveling-guide"
+  },
+  {
+   "title": "Multiple Shot guide",
+   "url": "https://maxroll.gg/d2/guides/multiple-shot-amazon"
+  }
+ ],
+ "breakpoints": {
+  "fhr": [
+   0,
+   6,
+   13,
+   20,
+   32,
+   52,
+   86,
+   174,
+   600
+  ],
+  "fhrTarget": 32
+ },
+ "after20": [
+  12,
+  33,
+  9
+ ],
+ "merc": {
+  "type": "Act 2 Might (Greiz, Offensive)",
+  "note": "Pride's aura raises your attack rating and damage.",
+  "gear": [
+   {
+    "slot": "Weapon",
+    "items": [
+     "Insight|Giant Thresher",
+     "Pride|Giant Thresher"
+    ]
+   },
+   {
+    "slot": "Body",
+    "items": [
+     "Treachery",
+     "Shaftstop"
+    ]
+   },
+   {
+    "slot": "Helmet",
+    "items": [
+     "Bulwark",
+     "Andariel's Visage"
+    ]
+   }
+  ]
+ },
+ "stages": [
+  {
+   "name": "Act 1 Normal",
+   "to": 13,
+   "skills": [
+    {
+     "skill": 7,
+     "to": 4
+    },
+    {
+     "skill": 6,
+     "to": 1
+    },
+    {
+     "skill": 15,
+     "to": 5
+    },
+    {
+     "skill": 12,
+     "to": 1
+    },
+    {
+     "skill": 16,
+     "to": 2
+    }
+   ],
+   "stats": [
+    {
+     "stat": "vit",
+     "to": 70
+    },
+    {
+     "stat": "dex",
+     "to": 28
+    },
+    {
+     "stat": "str",
+     "to": 27
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Hunter's Bow"
+     ],
+     "note": "Put a Chipped Ruby in it for Exploding Arrow."
+    },
+    {
+     "slot": "Helmets",
+     "items": [
+      "Cap"
+     ],
+     "note": "Two 2-socket helmets from Charsi or drops: one for Ral runes (fire resistance), one kept for Lore. At least one must not be magic."
+    },
+    {
+     "slot": "Body",
+     "items": [
+      "Studded Leather"
+     ],
+     "note": "2 sockets, not magic: kept for Stealth."
+    }
+   ],
+   "tips": [
+    "Den of Evil point: Magic Arrow.",
+    "Farm the Countess (Act 1, Forgotten Tower) for Tal + Eth (Stealth) and Ral runes."
+   ]
+  },
+  {
+   "name": "Act 2–5 Normal",
+   "to": 26,
+   "skills": [
+    {
+     "skill": 16,
+     "to": 3
+    },
+    {
+     "skill": 7,
+     "to": 5
+    },
+    {
+     "skill": 16,
+     "to": 9
+    },
+    {
+     "skill": 7,
+     "to": 6
+    },
+    {
+     "skill": 16,
+     "to": 15
+    }
+   ],
+   "stats": [
+    {
+     "stat": "ene",
+     "to": 30
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Body",
+     "items": [
+      "Stealth|Studded Leather"
+     ],
+     "note": "Any 2-socket armor that is not magic; Tal + Eth. Wear it from level 17."
+    },
+    {
+     "slot": "Shield",
+     "items": [
+      "Rhyme|Bone Shield"
+     ],
+     "note": "Bone Shield from Drognan; Shael Eth in Nightmare."
+    },
+    {
+     "slot": "Belt",
+     "items": [
+      "Belt"
+     ],
+     "note": "Farah."
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Battle Staff"
+     ],
+     "note": "Battle Staff of Teleportation from Ormus, levels 20-23."
+    }
+   ],
+   "tips": [
+    "Radament and Izual points: Fire Arrow."
+   ]
+  },
+  {
+   "name": "Act 1–3 Nightmare",
+   "to": 38,
+   "skills": [
+    {
+     "skill": 16,
+     "to": 16
+    },
+    {
+     "skill": 7,
+     "to": 7
+    },
+    {
+     "skill": 16,
+     "to": 20
+    },
+    {
+     "skill": 7,
+     "to": 15
+    }
+   ],
+   "stats": [
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Helmet",
+     "items": [
+      "Lore|Cap"
+     ],
+     "note": "Ort Sol into the second 2-socket helmet."
+    },
+    {
+     "slot": "Shield",
+     "items": [
+      "Rhyme|Bone Shield"
+     ]
+    },
+    {
+     "slot": "Shop (Nightmare)",
+     "items": [
+      "Coral Belt of the Mammoth",
+      "Russet Heavy Boots of Haste",
+      "Coral Heavy Gloves"
+     ],
+     "note": "Charsi or Gheed at the start of Nightmare: resistances first, lightning and fire."
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Wand of Lower Resistance"
+     ],
+     "note": "Akara or Drognan in Nightmare, levels 30-35. Cast it on act bosses."
+    },
+    {
+     "slot": "Javelins",
+     "items": [
+      "Javelin"
+     ],
+     "note": "At 29, back in Act 5 Normal: buy 2-3 stacks of Javelins of Swiftness (Malah/Larzuk) for the respec."
+    }
+   ],
+   "tips": [
+    "Respec when you enter Act 4 Nightmare, at 38 or later."
+   ]
+  },
+  {
+   "name": "Respec · Nightmare – Hell",
+   "respec": true,
+   "skills": [
+    {
+     "skill": 10,
+     "to": 1
+    },
+    {
+     "skill": 14,
+     "to": 1
+    },
+    {
+     "skill": 15,
+     "to": 1
+    },
+    {
+     "skill": 20,
+     "to": 1
+    },
+    {
+     "skill": 24,
+     "to": 1
+    },
+    {
+     "skill": 25,
+     "to": 1
+    },
+    {
+     "skill": 35,
+     "to": 9
+    },
+    {
+     "skill": 24,
+     "to": 19
+    },
+    {
+     "skill": 9,
+     "to": 1
+    },
+    {
+     "skill": 23,
+     "to": 1
+    },
+    {
+     "skill": 33,
+     "to": 5
+    },
+    {
+     "skill": 13,
+     "to": 1
+    },
+    {
+     "skill": 18,
+     "to": 1
+    },
+    {
+     "skill": 29,
+     "to": 1
+    },
+    {
+     "skill": 35,
+     "to": 20
+    },
+    {
+     "skill": 24,
+     "to": 20
+    },
+    {
+     "skill": 34,
+     "to": 20
+    },
+    {
+     "skill": 14,
+     "to": 20
+    },
+    {
+     "skill": 20,
+     "to": 20
+    },
+    {
+     "skill": 8,
+     "to": 1
+    },
+    {
+     "skill": 17,
+     "to": 1
+    },
+    {
+     "skill": 28,
+     "to": 1
+    },
+    {
+     "skill": 32,
+     "to": 1
+    }
+   ],
+   "stats": [
+    {
+     "stat": "str",
+     "gear": true
+    },
+    {
+     "stat": "dex",
+     "gear": true,
+     "note": "Enough for 50% chance to block (75% with Rhyme or Spirit later)."
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Titan's Revenge",
+      "Thunderstroke"
+     ],
+     "note": "Ethereal Titan's Revenge repairs itself."
+    },
+    {
+     "slot": "Shield",
+     "items": [
+      "Spirit|Monarch",
+      "Stormshield",
+      "Rhyme|Bone Shield"
+     ]
+    },
+    {
+     "slot": "Helmet",
+     "items": [
+      "Griffon's Eye",
+      "Lore|Cap"
+     ]
+    },
+    {
+     "slot": "Body",
+     "items": [
+      "Enigma|Mage Plate",
+      "Chains of Honor",
+      "Treachery",
+      "Smoke"
+     ]
+    },
+    {
+     "slot": "Gloves",
+     "items": [
+      "Laying of Hands"
+     ],
+     "note": "Or rare gloves with attack speed and javelin skills."
+    },
+    {
+     "slot": "Belt",
+     "items": [
+      "Razortail",
+      "Arachnid Mesh",
+      "Thundergod's Vigor"
+     ]
+    },
+    {
+     "slot": "Boots",
+     "items": [
+      "War Traveler",
+      "Aldur's Advance"
+     ]
+    },
+    {
+     "slot": "Amulet",
+     "items": [
+      "Highlord's Wrath",
+      "Mara's Kaleidoscope"
+     ]
+    },
+    {
+     "slot": "Rings",
+     "items": [
+      "Raven Frost",
+      "The Stone of Jordan",
+      "Bul-Kathos' Wedding Band"
+     ]
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Call to Arms|Crystal Sword"
+     ]
+    },
+    {
+     "slot": "Charms",
+     "items": [
+      "Annihilus",
+      "Hellfire Torch",
+      "Gheed's Fortune"
+     ]
+    }
+   ],
+   "tips": [
+    "52% attack speed is the Lightning Fury breakpoint to aim for.",
+    "Pierce makes every bolt count; Razortail gives 100%.",
+    "At 75, respec into Multiple Shot Amazon (next stage)."
+   ],
+   "to": 75
+  },
+  {
+   "name": "Respec · Multiple Shot",
+   "respec": true,
+   "skills": [
+    {
+     "skill": 6,
+     "to": 1
+    },
+    {
+     "skill": 12,
+     "to": 1
+    },
+    {
+     "skill": 9,
+     "to": 1
+    },
+    {
+     "skill": 23,
+     "to": 1
+    },
+    {
+     "skill": 33,
+     "to": 1
+    },
+    {
+     "skill": 13,
+     "to": 1
+    },
+    {
+     "skill": 18,
+     "to": 1
+    },
+    {
+     "skill": 29,
+     "to": 1
+    },
+    {
+     "skill": 8,
+     "to": 1
+    },
+    {
+     "skill": 17,
+     "to": 1
+    },
+    {
+     "skill": 28,
+     "to": 1
+    },
+    {
+     "skill": 32,
+     "to": 1
+    },
+    {
+     "skill": 11,
+     "to": 1
+    },
+    {
+     "skill": 22,
+     "to": 1
+    },
+    {
+     "skill": 26,
+     "to": 1
+    },
+    {
+     "skill": 33,
+     "to": 12
+    },
+    {
+     "skill": 12,
+     "to": 20
+    },
+    {
+     "skill": 9,
+     "to": 20
+    },
+    {
+     "skill": 23,
+     "to": 20
+    },
+    {
+     "skill": 22,
+     "to": 20
+    },
+    {
+     "skill": 6,
+     "to": 20
+    },
+    {
+     "skill": 26,
+     "to": 20
+    }
+   ],
+   "stats": [
+    {
+     "stat": "str",
+     "gear": true,
+     "note": "As little as the gear allows."
+    },
+    {
+     "stat": "dex",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Eternity|Grand Matron Bow",
+      "Windforce",
+      "Buriza-Do Kyanon"
+     ],
+     "note": "Windforce or Buriza first; arrows or bolts in the other hand."
+    },
+    {
+     "slot": "Helmet",
+     "items": [
+      "Andariel's Visage",
+      "Crown of Ages",
+      "Guillaume's Face"
+     ]
+    },
+    {
+     "slot": "Body",
+     "items": [
+      "Treachery",
+      "Fortitude",
+      "Enigma"
+     ]
+    },
+    {
+     "slot": "Gloves",
+     "items": [
+      "Death's Hand"
+     ]
+    },
+    {
+     "slot": "Belt",
+     "items": [
+      "Death's Guard",
+      "Razortail"
+     ]
+    },
+    {
+     "slot": "Boots",
+     "items": [
+      "War Traveler",
+      "Sandstorm Trek",
+      "Aldur's Advance"
+     ]
+    },
+    {
+     "slot": "Amulet",
+     "items": [
+      "Angelic Wings"
+     ]
+    },
+    {
+     "slot": "Rings",
+     "items": [
+      "Angelic Halo",
+      "Raven Frost"
+     ]
+    },
+    {
+     "slot": "Charms",
+     "items": [
+      "Annihilus",
+      "Hellfire Torch",
+      "Bone Break"
+     ],
+     "note": "Bone Break lowers physical immunity."
+    }
+   ],
+   "tips": [
+    "Stop Pierce at 69% counting +skills; Multiple Shot stops gaining arrows at 24.",
+    "Guided Arrow for bosses; Valkyrie and Decoy draw the hits."
+   ]
+  }
+ ]
+}

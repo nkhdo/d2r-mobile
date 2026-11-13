@@ -58,10 +58,18 @@ BP = {
     "war": ([0, 9, 18, 30, 48, 75, 125], [0, 5, 10, 16, 26, 39, 56, 86, 152, 377]),
 }
 
-def bp(cls, fcr_target, fhr_target):
-    f, h = BP[cls]
-    assert fcr_target in f and fhr_target in h, (cls, fcr_target, fhr_target)
-    return {"fcr": f, "fcrTarget": fcr_target, "fhr": h, "fhrTarget": fhr_target}
+def bp(cls, fcr_target, fhr_target, fcr_table=None):
+    """A target of None leaves that table out (the build does not need it); fcr_table overrides the class's own (skills with their
+    own cast animation, such as Lightning and Chain Lightning)."""
+    f, h = fcr_table or BP[cls][0], BP[cls][1]
+    out = {}
+    if fcr_target is not None:
+        assert fcr_target in f, (cls, fcr_target)
+        out.update({"fcr": f, "fcrTarget": fcr_target})
+    if fhr_target is not None:
+        assert fhr_target in h, (cls, fhr_target)
+        out.update({"fhr": h, "fhrTarget": fhr_target})
+    return out
 
 # common leveling gear lines
 RUNES_A1 = "Farm the Countess (Act 1, Forgotten Tower) for Tal + Eth (Stealth) and Ral runes."
@@ -98,11 +106,12 @@ def write(b):
     with open(os.path.join(OUT, b["id"] + ".json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump(b, f, ensure_ascii=False, indent=1)
         f.write("\n")
+    return b
 
 # ---------------------------------------------------------------- Sorceress
 # 38 Charged Bolt, 42 Static Field, 43 Telekinesis, 44 Frost Nova, 40 Frozen Armor, 48 Nova, 54 Teleport,
 # 39 Ice Bolt, 45 Ice Blast, 55 Glacial Spike, 59 Blizzard, 65 Cold Mastery
-write({
+SOR = write({
     "id": "sor-blizzard", "class": "sor", "name": "Blizzard Sorceress",
     "summary": "Nova to 26, respec into Blizzard; Glacial Spike, Ice Blast and Ice Bolt as synergies.",
     "links": [{"title": "Leveling guide", "url": "https://maxroll.gg/d2/guides/sorceress-leveling"},
@@ -138,7 +147,7 @@ write({
 # 6 Magic Arrow, 7 Fire Arrow, 12 Multiple Shot, 15 Poison Javelin, 16 Exploding Arrow, 10 Jab, 14 Power Strike, 20 Lightning Bolt,
 # 24 Charged Strike, 25 Plague Javelin, 35 Lightning Fury, 34 Lightning Strike, 9 Critical Strike, 23 Penetrate, 33 Pierce,
 # 13 Dodge, 18 Avoid, 29 Evade, 8 Inner Sight, 17 Slow Missiles, 28 Decoy, 32 Valkyrie
-write({
+AMA = write({
     "id": "ama-lightning-fury", "class": "ama", "name": "Lightning Fury Amazon",
     "summary": "Exploding Arrow bow to 38, respec into javelins: Lightning Fury and Charged Strike.",
     "links": [{"title": "Leveling guide", "url": "https://maxroll.gg/d2/guides/amazon-leveling-guide"},
@@ -185,7 +194,7 @@ write({
 # 96 Sacrifice, 97 Smite, 98 Might, 99 Prayer, 100 Resist Fire, 101 Holy Bolt, 102 Holy Fire, 104 Defiance, 106 Zeal, 107 Charge,
 # 108 Blessed Aim, 109 Cleansing, 110 Resist Lightning, 112 Blessed Hammer, 113 Concentration, 115 Vigor, 117 Holy Shield,
 # 122 Fanaticism, 124 Redemption
-write({
+PAL = write({
     "id": "pal-blessed-hammer", "class": "pal", "name": "Blessed Hammer Paladin",
     "summary": "Holy Fire Zeal to 19, respec into Hammers with Concentration, Vigor and Blessed Aim.",
     "links": [{"title": "Leveling guide", "url": "https://maxroll.gg/d2/guides/paladin-leveling"},
@@ -221,7 +230,7 @@ write({
 # ---------------------------------------------------------------- Assassin
 # 251 Fire Blast, 252 Claw Mastery, 253 Psychic Hammer, 256 Shock Web, 258 Burst of Speed, 261 Charged Bolt Sentry, 262 Wake of Fire,
 # 263 Weapon Block, 264 Cloak of Shadows, 267 Fade, 271 Lightning Sentry, 273 Mind Blast, 276 Death Sentry
-write({
+ASS = write({
     "id": "ass-lightning-sentry", "class": "ass", "name": "Lightning Sentry Assassin",
     "summary": "Fire traps to 38, respec into Lightning Sentry with Death Sentry and Charged Bolt Sentry.",
     "links": [{"title": "Leveling guide", "url": "https://maxroll.gg/d2/guides/assassin-leveling"},
@@ -267,7 +276,7 @@ write({
 # ---------------------------------------------------------------- Druid
 # 225 Firestorm, 229 Molten Boulder, 234 Fissure, 244 Volcano, 230 Arctic Blast, 235 Cyclone Armor, 240 Twister, 245 Tornado,
 # 250 Hurricane, 221 Raven, 227 Summon Spirit Wolf, 226 Oak Sage, 237 Summon Dire Wolf, 247 Summon Grizzly
-write({
+DRU = write({
     "id": "dru-wind", "class": "dru", "name": "Wind Druid",
     "summary": "Fire (Firestorm and Fissure) to 38, respec into Tornado and Hurricane.",
     "links": [{"title": "Leveling guide", "url": "https://maxroll.gg/d2/guides/druid-leveling"},
@@ -312,7 +321,7 @@ write({
 # ---------------------------------------------------------------- Necromancer (our own: the guide pages could not be read)
 # 70 Raise Skeleton, 69 Skeleton Mastery, 80 Raise Skeletal Mage, 66 Amplify Damage, 67 Teeth, 74 Corpse Explosion, 75 Clay Golem,
 # 79 Golem Mastery, 72 Weaken, 77 Terror, 87 Decrepify, 89 Summon Resist, 85 Blood Golem, 90 Iron Golem, 95 Revive
-write({
+NEC = write({
     "id": "nec-summoner", "class": "nec", "name": "Summoner Necromancer",
     "summary": "An army of skeletons from level 1 to the end; no respec needed.",
     "notes": "Written from the game's own skill data and the long-standing summoner plan; the maxroll pages could not be read while it was made.",
@@ -343,7 +352,7 @@ write({
 # 138 Shout, 140 Double Throw, 147 Frenzy, 149 Battle Orders, 148 Increased Speed, 154 War Cry, 155 Battle Command, 139 Stun,
 # 144 Concentrate, 151 Whirlwind, 145 Iron Skin, 153 Natural Resistance, 127 Blade Mastery, 131 Find Potion, 142 Find Item,
 # 150 Grim Ward, 152 Berserk
-write({
+BAR = write({
     "id": "bar-whirlwind", "class": "bar", "name": "Whirlwind Barbarian",
     "summary": "Bash and Double Swing, War Cry from 31, then a second respec into Whirlwind at 75.",
     "links": [{"title": "Leveling guide", "url": "https://maxroll.gg/d2/guides/barbarian-leveling"},
@@ -406,7 +415,7 @@ write({
 # 397 Enhanced Entropy, 402 Abyss, 373 Summon Goatman, 376 Summon Tainted, 377 Summon Defiler, 374 Demonic Mastery, 378 Blood Oath,
 # 381 Consume, 396 Sigil: Rancor, 400 Sigil: Death, 391 Cleave, 387 Psychic Ward, 384 Eldritch Blast, 385 Hex Bane, 389 Hex Purge,
 # 392 Mirrored Blades
-write({
+WAR = write({
     "id": "war-echoing-strike", "class": "war", "name": "Echoing Strike Warlock",
     "summary": "Miasma and Abyss to 75, then a respec into Echoing Strike with Hex Purge and Mirrored Blades.",
     "notes": "Warlock breakpoint tables are not published with the guides; the guide's targets (75 / 125 FCR, 26 FHR) match the Necromancer's tables, used here.",
@@ -445,4 +454,235 @@ write({
               ["Keep 125% cast rate once you can.", "Starter: Demonic Mastery only to 5 and Consume after the main skills."],
               respec=True),
     ]})
-print('wrote 8 build guides to ' + OUT)
+
+
+# ================================================================ second builds
+# The endgame guides all start from a level 75 character made with the class's leveling guide, so a second build shares the first
+# build's stages up to 75 (its open last stage now ends there) and adds one respec stage of its own.
+import copy
+
+def then(base, id_, name, summary, title, url, final, breakpoints, after20, merc, cut=None):
+    stages = copy.deepcopy(base["stages"][:cut])
+    last = stages[-1]
+    if "to" not in last:
+        last["to"] = 75
+    last["tips"] = [t for t in last["tips"] if "next stage" not in t] + ["At 75, respec into %s (next stage)." % name]
+    return write({"id": id_, "class": base["class"], "name": name, "summary": summary,
+                  "links": [base["links"][0], {"title": title, "url": url}],
+                  "breakpoints": breakpoints, "after20": after20, "merc": merc, "stages": stages + [final]})
+
+def merc_a2(type_, note, weapons, body, helmet):
+    return {"type": type_, "note": note, "gear": [g("Weapon", weapons), g("Body", body), g("Helmet", helmet)]}
+
+MIGHT = "Act 2 Might (Greiz, Offensive)"
+HOLY_FREEZE = "Act 2 Holy Freeze (Greiz, Defensive)"
+CHARMS_PHYS = g("Charms", ["Annihilus", "Hellfire Torch", "Bone Break"], "Bone Break lowers physical immunity.")
+
+# ---------------------------------------------------------------- Sorceress: Lightning
+# 37 Warmth, 49 Lightning, 53 Chain Lightning, 57 Thunder Storm, 63 Lightning Mastery (others above)
+then(SOR, "sor-lightning", "Lightning Sorceress",
+     "Levels as the Blizzard Sorceress, then Lightning and Chain Lightning with Lightning Mastery at 75.",
+     "Lightning guide", "https://maxroll.gg/d2/guides/lightning-sorceress",
+     stage("Respec · Lightning", None,
+           s((43, 1), (54, 1), (42, 1), (40, 1), (37, 1), (38, 1), (49, 1), (53, 1), (48, 1), (57, 1), (63, 1),
+             (49, 20), (63, 20), (53, 20), (38, 20), (48, 20), (37, 20)),
+           [gear("str"), gear("dex"), rest("vit")],
+           [g("Weapon", ["Heart of the Oak|Flail", "Eschuta's Temper", "The Oculus", "Spirit|Crystal Sword"]),
+            g("Shield", ["Spirit|Monarch", "Stormshield", "Ancients' Pledge|Kite Shield"]),
+            g("Helmet", ["Griffon's Eye", "Harlequin Crest", "Lore|Cap"]),
+            g("Body", ["Enigma|Mage Plate", "Skin of the Vipermagi", "Smoke"]),
+            g("Gloves", ["Chance Guards", "Magefist", "Frostburn"]),
+            g("Belt", ["Arachnid Mesh", "Verdungo's Hearty Cord", "Goldwrap"]),
+            g("Boots", ["War Traveler", "Sandstorm Trek", "Silkweave"]),
+            g("Amulet", ["Mara's Kaleidoscope"]),
+            g("Rings", ["The Stone of Jordan", "Bul-Kathos' Wedding Band", "Nagelring"]),
+            g("Swap", ["Call to Arms|Crystal Sword", "Wand of Lower Resistance"], "Lower Resist charges help against lightning immunes."),
+            g("Charms", ["Crack of the Heavens", "Annihilus", "Hellfire Torch", "Gheed's Fortune"], "Crack of the Heavens lowers lightning immunity.")],
+           ["Lightning and Chain Lightning have their own cast speed table: 117% is the target.",
+            "Warmth takes the points left over at the very end."],
+           respec=True),
+     bp("sor", 117, 60, [0, 7, 15, 23, 35, 52, 78, 117, 194]), [49, 53, 63],
+     merc_a2(MIGHT, "Infinity's Conviction lowers lightning resistance.", ["Insight|Giant Thresher", "Infinity|Giant Thresher"],
+             ["Smoke", "Fortitude"], ["Bulwark", "Andariel's Visage"]))
+
+# ---------------------------------------------------------------- Amazon: Multiple Shot bow
+# 11 Cold Arrow, 22 Guided Arrow, 26 Strafe (others above)
+then(AMA, "ama-multishot", "Multiple Shot Amazon",
+     "Levels as the Lightning Fury Amazon, then a bow build at 75: Multiple Shot with Pierce, Guided Arrow and Strafe.",
+     "Multiple Shot guide", "https://maxroll.gg/d2/guides/multiple-shot-amazon",
+     stage("Respec · Multiple Shot", None,
+           s((6, 1), (12, 1), (9, 1), (23, 1), (33, 1), (13, 1), (18, 1), (29, 1), (8, 1), (17, 1), (28, 1), (32, 1), (11, 1), (22, 1),
+             (26, 1), (33, 12), (12, 20), (9, 20), (23, 20), (22, 20), (6, 20), (26, 20)),
+           [gear("str", "As little as the gear allows."), rest("dex")],
+           [g("Weapon", ["Eternity|Grand Matron Bow", "Windforce", "Buriza-Do Kyanon"], "Windforce or Buriza first; arrows or bolts in the other hand."),
+            g("Helmet", ["Andariel's Visage", "Crown of Ages", "Guillaume's Face"]),
+            g("Body", ["Treachery", "Fortitude", "Enigma"]),
+            g("Gloves", ["Death's Hand"]),
+            g("Belt", ["Death's Guard", "Razortail"]),
+            g("Boots", ["War Traveler", "Sandstorm Trek", "Aldur's Advance"]),
+            g("Amulet", ["Angelic Wings"]),
+            g("Rings", ["Angelic Halo", "Raven Frost"]),
+            CHARMS_PHYS],
+           ["Stop Pierce at 69% counting +skills; Multiple Shot stops gaining arrows at 24.",
+            "Guided Arrow for bosses; Valkyrie and Decoy draw the hits."],
+           respec=True),
+     bp("ama", None, 32), [12, 33, 9],
+     merc_a2(MIGHT, "Pride's aura raises your attack rating and damage.", ["Insight|Giant Thresher", "Pride|Giant Thresher"],
+             ["Treachery", "Shaftstop"], ["Bulwark", "Andariel's Visage"]))
+
+# ---------------------------------------------------------------- Necromancer: Bone Spear
+# 68 Bone Armor, 76 Iron Maiden, 78 Bone Wall, 82 Life Tap, 84 Bone Spear, 88 Bone Prison, 93 Bone Spirit (others above)
+then(NEC, "nec-bone-spear", "Bone Spear Necromancer",
+     "Levels as the Summoner, then Bone Spear and Bone Spirit at 75; Bone Wall and Bone Prison as synergies.",
+     "Bone Spear guide", "https://maxroll.gg/d2/guides/bone-spear-necromancer",
+     stage("Respec · Bone Spear", None,
+           s((66, 1), (72, 1), (77, 1), (87, 1), (76, 1), (82, 1), (75, 1), (67, 1), (74, 1), (84, 1), (68, 1), (78, 1), (88, 1), (93, 1),
+             (84, 20), (88, 20), (78, 20), (93, 20), (67, 20)),
+           [gear("str"), rest("vit")],
+           [g("Weapon", ["Heart of the Oak|Flail", "Spirit|Crystal Sword", "Wizardspike"]),
+            g("Shield", ["Homunculus", "Spirit|Monarch", "Trang-Oul's Wing"]),
+            g("Helmet", ["Harlequin Crest", "Trang-Oul's Guise", "Lore|Cap"]),
+            g("Body", ["Enigma|Mage Plate", "Skin of the Vipermagi", "Bone|Mage Plate"]),
+            g("Gloves", ["Trang-Oul's Claws", "Magefist"]),
+            g("Belt", ["Arachnid Mesh", "Goldwrap"]),
+            g("Boots", ["Marrowwalk", "Sandstorm Trek", "Silkweave"]),
+            g("Amulet", ["Mara's Kaleidoscope"]),
+            g("Rings", ["The Stone of Jordan", "Bul-Kathos' Wedding Band", "Nagelring"]),
+            g("Swap", ["Call to Arms|Crystal Sword", "Staff of Teleportation"]),
+            g("Charms", ["Annihilus", "Hellfire Torch", "Gheed's Fortune"])],
+           ["Bone damage is magic: hardly anything resists it.", "Clay Golem slows; Decrepify on bosses; Bone Prison walls them in."],
+           respec=True),
+     bp("nec", 125, 56), [84, 93, 88],
+     merc_a2(HOLY_FREEZE, "Holy Freeze slows everything that comes close.", ["Insight|Giant Thresher"],
+             ["Smoke", "Treachery", "Fortitude"], ["Bulwark", "Tal Rasha's Horadric Crest", "Andariel's Visage"]))
+
+# ---------------------------------------------------------------- Paladin: Smiter
+# 125 Salvation (others above)
+then(PAL, "pal-smiter", "Smite Paladin",
+     "Levels as the Blessed Hammer Paladin, then Smite with Fanaticism and Holy Shield at 75: the boss killer.",
+     "Smite guide", "https://maxroll.gg/d2/guides/smite-paladin",
+     stage("Respec · Smite", None,
+           s((99, 1), (109, 1), (104, 1), (115, 1), (125, 1), (97, 1), (107, 1), (101, 1), (112, 1), (117, 1), (98, 1), (108, 1), (113, 1),
+             (122, 1), (96, 1), (106, 1), (110, 1), (117, 20), (122, 20), (97, 20), (110, 20), (106, 20)),
+           [gear("str"), gear("dex", "Enough for 75% chance to block with Holy Shield."), rest("vit")],
+           [g("Weapon", ["Grief|Phase Blade", "Black|Flail"]),
+            g("Shield", ["Exile|Vortex Shield", "Herald of Zakarum", "Rhyme|Targe"]),
+            g("Helmet", ["Guillaume's Face", "Crown of Ages", "Vampire Gaze"]),
+            g("Body", ["Chains of Honor", "Enigma", "Treachery", "Duress"]),
+            g("Gloves", ["Dracul's Grasp", "Laying of Hands", "Bloodfist"]),
+            g("Belt", ["Thundergod's Vigor", "String of Ears", "Verdungo's Hearty Cord"]),
+            g("Boots", ["Goblin Toe", "Gore Rider", "Sandstorm Trek"]),
+            g("Amulet", ["Mara's Kaleidoscope", "Metalgrid"]),
+            g("Rings", ["Raven Frost", "Bul-Kathos' Wedding Band", "Wisp Projector"]),
+            g("Charms", ["Annihilus", "Hellfire Torch"])],
+           ["Smite always hits and stuns.", "Crushing blow and life tap (Dracul's Grasp) melt bosses."],
+           respec=True),
+     bp("pal", None, 48), [117, 122, 97],
+     merc_a2(MIGHT, "The Reaper's Toll casts Decrepify on hit.", ["Insight|Giant Thresher", "The Reaper's Toll"],
+             ["Smoke", "Treachery"], ["Bulwark", "Vampire Gaze"]))
+
+# ---------------------------------------------------------------- Barbarian: Frenzy (from the War Cry stage at 75, like Whirlwind)
+then(BAR, "bar-frenzy", "Frenzy Barbarian",
+     "Levels as the Whirlwind Barbarian with War Cry, then Frenzy with two weapons at 75.",
+     "Frenzy guide", "https://maxroll.gg/d2/guides/frenzy-barbarian",
+     stage("Respec · Frenzy", None,
+           s((130, 1), (137, 1), (146, 1), (138, 1), (149, 1), (155, 1), (131, 1), (142, 1), (150, 1), (141, 1), (148, 1), (145, 1),
+             (153, 1), (132, 1), (143, 1), (126, 1), (133, 1), (140, 1), (147, 1), (127, 1), (139, 1), (144, 1), (152, 1),
+             (147, 20), (133, 20), (127, 20), (149, 20), (152, 20)),
+           [gear("str"), gear("dex"), rest("vit")],
+           [g("Weapons", ["Grief|Phase Blade", "Oath|Balrog Blade", "Beast|Berserker Axe"], "Two Grief Phase Blades in the end; the mastery follows the weapon."),
+            g("Helmet", ["Arreat's Face", "Immortal King's Will", "Crown of Ages"]),
+            g("Body", ["Fortitude", "Enigma", "Treachery"]),
+            g("Gloves", ["Dracul's Grasp", "Laying of Hands"]),
+            g("Belt", ["Thundergod's Vigor", "String of Ears"]),
+            g("Boots", ["Gore Rider", "War Traveler", "Goblin Toe"]),
+            g("Amulet", ["Highlord's Wrath"]),
+            g("Rings", ["Raven Frost", "Bul-Kathos' Wedding Band"]),
+            g("Swap", ["Call to Arms|Crystal Sword"], "Battle Orders before a fight."),
+            CHARMS_PHYS],
+           ["Frenzy gets faster with every hit: keep swinging.", "Berserk for physical-immune monsters."],
+           respec=True),
+     bp("bar", 63, 27), [147, 133, 149],
+     merc_a2(MIGHT, "The Reaper's Toll casts Decrepify on hit.", ["Insight|Giant Thresher", "The Reaper's Toll"],
+             ["Treachery", "Fortitude"], ["Tal Rasha's Horadric Crest", "Andariel's Visage"]),
+     cut=5)
+
+# ---------------------------------------------------------------- Druid: Fury Werewolf
+# 223 Werewolf, 224 Lycanthropy, 228 Werebear, 232 Feral Rage, 233 Maul, 236 Heart of Wolverine, 238 Rabies, 248 Fury (others above)
+then(DRU, "dru-fury", "Fury Druid",
+     "Levels as the Wind Druid, then a Werewolf with Fury and Feral Rage at 75.",
+     "Fury guide", "https://maxroll.gg/d2/guides/werewolf-fury-druid",
+     stage("Respec · Fury", None,
+           s((221, 1), (227, 1), (226, 1), (237, 1), (247, 1), (236, 1), (228, 1), (233, 1), (223, 1), (224, 1), (232, 1), (238, 1), (248, 1),
+             (223, 20), (224, 20), (248, 20), (232, 20), (236, 20)),
+           [to("str", 200, "Fury hits harder with Strength; up to 300."), gear("dex"), rest("vit")],
+           [g("Weapon", ["Eternity|Archon Staff", "Breath of the Dying|Archon Staff", "Tomb Reaver", "Oath|Feral Axe"]),
+            g("Helmet", ["Metamorphosis", "Jalal's Mane", "Harlequin Crest"]),
+            g("Body", ["Fortitude", "Treachery", "Shaftstop"]),
+            g("Gloves", ["Dracul's Grasp", "Laying of Hands"]),
+            g("Belt", ["Thundergod's Vigor", "String of Ears", "Verdungo's Hearty Cord"]),
+            g("Boots", ["Gore Rider", "War Traveler", "Goblin Toe"]),
+            g("Rings", ["Raven Frost", "Bul-Kathos' Wedding Band"]),
+            g("Swap", ["Call to Arms|Crystal Sword"]),
+            CHARMS_PHYS],
+           ["With Metamorphosis: Werebear and one Maul for its mark, then back to Werewolf (about every 3 minutes).",
+            "Points past 97 go to Summon Dire Wolf."],
+           respec=True),
+     bp("dru", None, 42), [248, 223, 224],
+     merc_a2(MIGHT, "Pride's aura raises your attack rating and damage.", ["Insight|Giant Thresher", "Pride|Giant Thresher"],
+             ["Smoke", "Shaftstop"], ["Bulwark", "Vampire Gaze"]))
+
+# ---------------------------------------------------------------- Assassin: Phoenix Strike (Mosaic)
+# 254 Tiger Strike, 255 Dragon Talon, 259 Fists of Fire, 265 Cobra Strike, 268 Shadow Warrior, 269 Claws of Thunder, 274 Blades of Ice,
+# 280 Phoenix Strike (others above)
+then(ASS, "ass-phoenix-strike", "Phoenix Strike Assassin",
+     "Levels as the Lightning Sentry Assassin, then martial arts at 75: Phoenix Strike charges with Mosaic claws.",
+     "Phoenix Strike guide", "https://maxroll.gg/d2/guides/phoenix-strike-assassin",
+     stage("Respec · Phoenix Strike", None,
+           s((253, 1), (264, 1), (273, 1), (252, 1), (258, 1), (267, 1), (263, 1), (254, 1), (265, 1), (259, 1), (269, 1), (274, 1),
+             (280, 1), (255, 1), (268, 1), (280, 20), (255, 20), (269, 20), (254, 20), (274, 20)),
+           [gear("str"), gear("dex"), rest("vit")],
+           [g("Claws", ["Mosaic|Greater Talons", "Bartuc's Cut-Throat", "Plague|Greater Talons"], "Two claws; Greater Talons need little Strength."),
+            g("Helmet", ["Griffon's Eye", "Harlequin Crest", "Guillaume's Face"]),
+            g("Body", ["Enigma|Mage Plate", "Chains of Honor", "Treachery"]),
+            g("Gloves", ["Magefist", "Dracul's Grasp"]),
+            g("Belt", ["Arachnid Mesh", "String of Ears"]),
+            g("Boots", ["Aldur's Advance", "War Traveler", "Waterwalk"]),
+            g("Amulet", ["Mara's Kaleidoscope", "Highlord's Wrath"]),
+            g("Rings", ["The Stone of Jordan", "Bul-Kathos' Wedding Band", "Raven Frost"]),
+            g("Charms", ["Annihilus", "Hellfire Torch", "Gheed's Fortune"])],
+           ["Hit with Phoenix Strike to build charges, then release them with a finisher; Mosaic keeps the charges after release."],
+           respec=True),
+     bp("ass", None, 48), [280, 255, 269],
+     merc_a2(MIGHT, "Infinity's Conviction lowers elemental resistances.", ["Insight|Giant Thresher", "Infinity|Giant Thresher"],
+             ["Treachery", "Fortitude"], ["Bulwark", "Andariel's Visage"]))
+
+# ---------------------------------------------------------------- Warlock: Mirrored Blades (from the Abyss stage at 75, like Echoing Strike)
+# 375 Death Mark, 379 Engorge, 380 Blood Boil, 382 Bind Demon (others above)
+then(WAR, "war-mirrored-blades", "Mirrored Blades Warlock",
+     "Levels with Miasma and Abyss like the Echoing Strike Warlock, then Mirrored Blades with Cleave and Hex: Purge at 75.",
+     "Mirrored Blades guide", "https://maxroll.gg/d2/guides/mirrored-blades-warlock-guide",
+     stage("Respec · Mirrored Blades", None,
+           s((385, 1), (393, 1), (396, 1), (400, 1), (373, 1), (374, 1), (378, 1), (383, 1), (388, 1), (390, 1), (391, 1), (387, 1),
+             (384, 1), (392, 1), (389, 1), (375, 1), (380, 1), (379, 1), (376, 1), (377, 1), (382, 1),
+             (392, 20), (391, 20), (389, 20), (374, 10), (382, 10), (383, 20)),
+           [gear("str"), rest("vit")],
+           [g("Weapon", ["Tomb Reaver"]),
+            g("Helmet", ["Guillaume's Face", "Harlequin Crest", "Crown of Ages"]),
+            g("Body", ["Enigma|Mage Plate", "Chains of Honor", "Stealth|Studded Leather"]),
+            g("Gloves", ["Chance Guards"]),
+            g("Belt", ["Arachnid Mesh", "Goldwrap"]),
+            g("Boots", ["Waterwalk", "Sandstorm Trek", "War Traveler"]),
+            g("Amulet", ["Mara's Kaleidoscope"]),
+            g("Rings", ["The Stone of Jordan", "Bul-Kathos' Wedding Band"]),
+            g("Swap", ["Call to Arms|Crystal Sword", "Staff of Teleportation"]),
+            g("Charms", ["Annihilus", "Hellfire Torch", "Gheed's Fortune"])],
+           ["Bind Demon: stop at 20 counting +skills; the rest goes to Levitation Mastery.",
+            "Aim for at least 48% faster hit recovery (no Warlock table is published yet)."],
+           respec=True),
+     {}, [392, 391, 389],
+     merc_a2(MIGHT, "Pride's aura raises your attack rating and damage.", ["Insight|Giant Thresher", "Pride|Giant Thresher"],
+             ["Smoke", "Treachery", "Guardian Angel"], ["Bulwark", "Tal Rasha's Horadric Crest", "Andariel's Visage"]),
+     cut=4)
+
+print('wrote %d build guides to %s' % (len(os.listdir(OUT)), OUT))

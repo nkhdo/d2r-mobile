@@ -56,6 +56,8 @@ class Format(unittest.TestCase):
                         self.assertTrue(gear['slot'] and gear['items'])
                 bp = g['breakpoints']
                 for k in ('fcr', 'fhr'):
+                    if k not in bp:
+                        continue            # a build that does not need this table leaves it out (BuildTab hides the row)
                     self.assertEqual(bp[k], sorted(bp[k]))
                     self.assertIn(bp[k + 'Target'], bp[k])
 
