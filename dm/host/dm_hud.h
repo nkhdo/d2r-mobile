@@ -52,7 +52,7 @@ typedef struct {
     int valid;              // in a run and the controlled player has been read
     int cls;                // character class: charstats.txt row (0 Amazon 1 Sorceress 2 Necromancer 3 Paladin 4 Barbarian 5 Druid 6 Assassin 7 Warlock)
     int level;
-    int base[4];            // Strength, Dexterity, Vitality, Energy as spent (stats 0-3, base layer)
+    int base[4];            // Strength, Dexterity, Vitality, Energy as spent (stats 0, 2, 3, 1, base layer)
     int stat_points, skill_points;   // unspent (stats 4 and 5)
     int fcr, fhr, ias;      // faster cast rate (105), faster hit recovery (99), increased attack speed (93), gear included
     int cap;                // highest base level a skill can take now: 20, or the raised cap once this character has cleared a Rift

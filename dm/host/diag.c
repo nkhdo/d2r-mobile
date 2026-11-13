@@ -836,7 +836,9 @@ static void build_tick(uint64_t player, module_t *mm) {
         if (tk_rd(player + 4, &cls, 4) && cls < 8) {
             b.valid = 1; b.cls = (int)cls;
             if (stat_read(player, 12, &v)) b.level = (int)v;
-            for (int i = 0; i < 4; i++) { v = 0; stat_read(player, (uint32_t)i, &v); b.base[i] = (int)v; }
+            // itemstatcost ids: 0 strength, 1 energy, 2 dexterity, 3 vitality; base[] is Str, Dex, Vit, Ene
+            static const uint32_t base_id[4] = { 0, 2, 3, 1 };
+            for (int i = 0; i < 4; i++) { v = 0; stat_read(player, base_id[i], &v); b.base[i] = (int)v; }
             v = 0; stat_read(player, 4, &v); b.stat_points = (int)v;
             v = 0; stat_read(player, 5, &v); b.skill_points = (int)v;
             b.fcr = get(player, 105, 0); b.fhr = get(player, 99, 0); b.ias = get(player, 93, 0);
