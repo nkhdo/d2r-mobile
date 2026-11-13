@@ -1,0 +1,552 @@
+{
+ "id": "nec-bone-spear",
+ "class": "nec",
+ "name": "Bone Spear Necromancer",
+ "summary": "Levels as the Summoner, then Bone Spear and Bone Spirit at 75; Bone Wall and Bone Prison as synergies.",
+ "links": [
+  {
+   "title": "Necromancer guides",
+   "url": "https://maxroll.gg/d2/category/guides/necromancer"
+  },
+  {
+   "title": "Bone Spear guide",
+   "url": "https://maxroll.gg/d2/guides/bone-spear-necromancer"
+  }
+ ],
+ "breakpoints": {
+  "fcr": [
+   0,
+   9,
+   18,
+   30,
+   48,
+   75,
+   125
+  ],
+  "fcrTarget": 125,
+  "fhr": [
+   0,
+   5,
+   10,
+   16,
+   26,
+   39,
+   56,
+   86,
+   152,
+   377
+  ],
+  "fhrTarget": 56
+ },
+ "after20": [
+  84,
+  93,
+  88
+ ],
+ "merc": {
+  "type": "Act 2 Holy Freeze (Greiz, Defensive)",
+  "note": "Holy Freeze slows everything that comes close.",
+  "gear": [
+   {
+    "slot": "Weapon",
+    "items": [
+     "Insight|Giant Thresher"
+    ]
+   },
+   {
+    "slot": "Body",
+    "items": [
+     "Smoke",
+     "Treachery",
+     "Fortitude"
+    ]
+   },
+   {
+    "slot": "Helmet",
+    "items": [
+     "Bulwark",
+     "Tal Rasha's Horadric Crest",
+     "Andariel's Visage"
+    ]
+   }
+  ]
+ },
+ "stages": [
+  {
+   "name": "Act 1 Normal",
+   "to": 13,
+   "skills": [
+    {
+     "skill": 70,
+     "to": 1
+    },
+    {
+     "skill": 69,
+     "to": 1
+    },
+    {
+     "skill": 70,
+     "to": 3
+    },
+    {
+     "skill": 66,
+     "to": 1
+    },
+    {
+     "skill": 67,
+     "to": 1
+    },
+    {
+     "skill": 74,
+     "to": 1
+    },
+    {
+     "skill": 75,
+     "to": 1
+    },
+    {
+     "skill": 70,
+     "to": 6
+    }
+   ],
+   "stats": [
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Wand"
+     ],
+     "note": "Any wand with +Raise Skeleton from Akara or drops."
+    },
+    {
+     "slot": "Helmets",
+     "items": [
+      "Cap"
+     ],
+     "note": "Two 2-socket helmets from Charsi or drops: one for Ral runes (fire resistance), one kept for Lore. At least one must not be magic."
+    },
+    {
+     "slot": "Body",
+     "items": [
+      "Studded Leather"
+     ],
+     "note": "2 sockets, not magic: kept for Stealth."
+    }
+   ],
+   "tips": [
+    "Corpse Explosion clears packs once the skeletons drop the first kill.",
+    "Farm the Countess (Act 1, Forgotten Tower) for Tal + Eth (Stealth) and Ral runes."
+   ]
+  },
+  {
+   "name": "Act 2 Normal – Act 1 Nightmare",
+   "to": 30,
+   "skills": [
+    {
+     "skill": 80,
+     "to": 1
+    },
+    {
+     "skill": 79,
+     "to": 1
+    },
+    {
+     "skill": 72,
+     "to": 1
+    },
+    {
+     "skill": 77,
+     "to": 1
+    },
+    {
+     "skill": 70,
+     "to": 12
+    },
+    {
+     "skill": 69,
+     "to": 6
+    },
+    {
+     "skill": 87,
+     "to": 1
+    },
+    {
+     "skill": 89,
+     "to": 1
+    },
+    {
+     "skill": 70,
+     "to": 20
+    }
+   ],
+   "stats": [
+    {
+     "stat": "str",
+     "gear": true
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Body",
+     "items": [
+      "Stealth|Studded Leather"
+     ],
+     "note": "Any 2-socket armor that is not magic; Tal + Eth. Wear it from level 17."
+    },
+    {
+     "slot": "Shield",
+     "items": [
+      "Ancients' Pledge|Kite Shield"
+     ],
+     "note": "3-socket shield from Farah (not magic); runes from the Act 5 quests."
+    },
+    {
+     "slot": "Helmet",
+     "items": [
+      "Lore|Cap"
+     ],
+     "note": "Ort Sol into the second 2-socket helmet."
+    },
+    {
+     "slot": "Belt",
+     "items": [
+      "Belt"
+     ],
+     "note": "Farah."
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Staff of Teleportation"
+     ],
+     "note": "Ormus (Act 3), levels 20-23. Check the red-background staves only."
+    }
+   ],
+   "tips": [
+    "Amplify Damage or Decrepify on bosses; let the army do the rest."
+   ]
+  },
+  {
+   "name": "Nightmare – Hell",
+   "skills": [
+    {
+     "skill": 69,
+     "to": 20
+    },
+    {
+     "skill": 80,
+     "to": 20
+    },
+    {
+     "skill": 85,
+     "to": 1
+    },
+    {
+     "skill": 90,
+     "to": 1
+    },
+    {
+     "skill": 95,
+     "to": 1
+    },
+    {
+     "skill": 89,
+     "to": 20
+    },
+    {
+     "skill": 74,
+     "to": 20
+    }
+   ],
+   "stats": [
+    {
+     "stat": "str",
+     "gear": true
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Heart of the Oak|Flail",
+      "Arm of King Leoric",
+      "Wizardspike"
+     ]
+    },
+    {
+     "slot": "Shield",
+     "items": [
+      "Homunculus",
+      "Spirit|Monarch",
+      "Rhyme|Bone Shield"
+     ]
+    },
+    {
+     "slot": "Helmet",
+     "items": [
+      "Harlequin Crest",
+      "Lore|Cap"
+     ]
+    },
+    {
+     "slot": "Body",
+     "items": [
+      "Enigma|Mage Plate",
+      "Skin of the Vipermagi",
+      "Smoke"
+     ]
+    },
+    {
+     "slot": "Gloves",
+     "items": [
+      "Magefist",
+      "Trang-Oul's Claws"
+     ]
+    },
+    {
+     "slot": "Belt",
+     "items": [
+      "Arachnid Mesh",
+      "Verdungo's Hearty Cord"
+     ]
+    },
+    {
+     "slot": "Boots",
+     "items": [
+      "Sandstorm Trek",
+      "Waterwalk",
+      "War Traveler"
+     ]
+    },
+    {
+     "slot": "Amulet",
+     "items": [
+      "Mara's Kaleidoscope"
+     ]
+    },
+    {
+     "slot": "Rings",
+     "items": [
+      "The Stone of Jordan",
+      "Bul-Kathos' Wedding Band"
+     ]
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Call to Arms|Crystal Sword"
+     ],
+     "note": "Battle Orders before a fight."
+    },
+    {
+     "slot": "Charms",
+     "items": [
+      "Annihilus",
+      "Hellfire Torch",
+      "Gheed's Fortune"
+     ]
+    }
+   ],
+   "tips": [
+    "Revive the strongest monsters you meet: they last a few minutes.",
+    "Summon Resist keeps the army alive in Hell.",
+    "At 75, respec into Bone Spear Necromancer (next stage)."
+   ],
+   "to": 75
+  },
+  {
+   "name": "Respec · Bone Spear",
+   "respec": true,
+   "skills": [
+    {
+     "skill": 66,
+     "to": 1
+    },
+    {
+     "skill": 72,
+     "to": 1
+    },
+    {
+     "skill": 77,
+     "to": 1
+    },
+    {
+     "skill": 87,
+     "to": 1
+    },
+    {
+     "skill": 76,
+     "to": 1
+    },
+    {
+     "skill": 82,
+     "to": 1
+    },
+    {
+     "skill": 75,
+     "to": 1
+    },
+    {
+     "skill": 67,
+     "to": 1
+    },
+    {
+     "skill": 74,
+     "to": 1
+    },
+    {
+     "skill": 84,
+     "to": 1
+    },
+    {
+     "skill": 68,
+     "to": 1
+    },
+    {
+     "skill": 78,
+     "to": 1
+    },
+    {
+     "skill": 88,
+     "to": 1
+    },
+    {
+     "skill": 93,
+     "to": 1
+    },
+    {
+     "skill": 84,
+     "to": 20
+    },
+    {
+     "skill": 88,
+     "to": 20
+    },
+    {
+     "skill": 78,
+     "to": 20
+    },
+    {
+     "skill": 93,
+     "to": 20
+    },
+    {
+     "skill": 67,
+     "to": 20
+    }
+   ],
+   "stats": [
+    {
+     "stat": "str",
+     "gear": true
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Heart of the Oak|Flail",
+      "Spirit|Crystal Sword",
+      "Wizardspike"
+     ]
+    },
+    {
+     "slot": "Shield",
+     "items": [
+      "Homunculus",
+      "Spirit|Monarch",
+      "Trang-Oul's Wing"
+     ]
+    },
+    {
+     "slot": "Helmet",
+     "items": [
+      "Harlequin Crest",
+      "Trang-Oul's Guise",
+      "Lore|Cap"
+     ]
+    },
+    {
+     "slot": "Body",
+     "items": [
+      "Enigma|Mage Plate",
+      "Skin of the Vipermagi",
+      "Bone|Mage Plate"
+     ]
+    },
+    {
+     "slot": "Gloves",
+     "items": [
+      "Trang-Oul's Claws",
+      "Magefist"
+     ]
+    },
+    {
+     "slot": "Belt",
+     "items": [
+      "Arachnid Mesh",
+      "Goldwrap"
+     ]
+    },
+    {
+     "slot": "Boots",
+     "items": [
+      "Marrowwalk",
+      "Sandstorm Trek",
+      "Silkweave"
+     ]
+    },
+    {
+     "slot": "Amulet",
+     "items": [
+      "Mara's Kaleidoscope"
+     ]
+    },
+    {
+     "slot": "Rings",
+     "items": [
+      "The Stone of Jordan",
+      "Bul-Kathos' Wedding Band",
+      "Nagelring"
+     ]
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Call to Arms|Crystal Sword",
+      "Staff of Teleportation"
+     ]
+    },
+    {
+     "slot": "Charms",
+     "items": [
+      "Annihilus",
+      "Hellfire Torch",
+      "Gheed's Fortune"
+     ]
+    }
+   ],
+   "tips": [
+    "Bone damage is magic: hardly anything resists it.",
+    "Clay Golem slows; Decrepify on bosses; Bone Prison walls them in."
+   ]
+  }
+ ]
+}
