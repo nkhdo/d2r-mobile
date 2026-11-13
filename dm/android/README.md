@@ -194,6 +194,20 @@ javac -encoding UTF-8 -d /tmp/dm-save-tests \
 java -cp /tmp/dm-save-tests com.xiaoboluo.d2r.SaveTransferTest
 ```
 
+The Deck's Build tab (`docs/THOR.md`): its logic and the guide files. The
+guide files are generated: edit the plans in `dm/android/tools/gen_build_guides.py`
+and run it (no arguments) to rewrite `app/src/main/assets/builds/`. With
+`DM_DECK_DIR=<import pack>/overlay/deck`, the Python check also tests every
+skill step against the game's own skill rules.
+
+```sh
+J=dm/android/app/src/main/java/com/xiaoboluo/d2r
+javac -encoding UTF-8 -d /tmp/dm-build-tests $J/MiniJson.java $J/BuildGuide.java \
+  $J/BuildPlan.java $J/ItemNames.java $J/BuildChoice.java dm/android/tests/BuildPlanTest.java
+java -cp /tmp/dm-build-tests com.xiaoboluo.d2r.BuildPlanTest
+python3 dm/android/tests/test_build_guides.py
+```
+
 Device acceptance must separately record installation, genuine GPU output/FPS,
 character creation, entering a world, moving and stopping, NPC interaction,
 inventory/skills, sound, background/resume, and saving/reloading. Headless host

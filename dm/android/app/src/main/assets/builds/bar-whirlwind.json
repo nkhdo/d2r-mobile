@@ -1,0 +1,690 @@
+{
+ "id": "bar-whirlwind",
+ "class": "bar",
+ "name": "Whirlwind Barbarian",
+ "summary": "Bash and Double Swing, War Cry from 31, then a second respec into Whirlwind at 75.",
+ "links": [
+  {
+   "title": "Leveling guide",
+   "url": "https://maxroll.gg/d2/guides/barbarian-leveling"
+  },
+  {
+   "title": "Whirlwind guide",
+   "url": "https://maxroll.gg/d2/guides/whirlwind-barbarian-guide"
+  }
+ ],
+ "breakpoints": {
+  "fcr": [
+   0,
+   9,
+   20,
+   37,
+   63,
+   105,
+   200
+  ],
+  "fcrTarget": 63,
+  "fhr": [
+   0,
+   7,
+   15,
+   27,
+   48,
+   86,
+   200
+  ],
+  "fhrTarget": 27
+ },
+ "after20": [
+  151,
+  127,
+  149
+ ],
+ "merc": {
+  "type": "Act 2 Might (Greiz, Offensive)",
+  "note": "The Reaper's Toll casts Decrepify on hit.",
+  "gear": [
+   {
+    "slot": "Weapon",
+    "items": [
+     "Insight|Giant Thresher",
+     "The Reaper's Toll"
+    ],
+    "note": "Insight early; The Reaper's Toll in the end."
+   },
+   {
+    "slot": "Body",
+    "items": [
+     "Smoke",
+     "Treachery",
+     "Fortitude"
+    ]
+   },
+   {
+    "slot": "Helmet",
+    "items": [
+     "Bulwark",
+     "Tal Rasha's Horadric Crest",
+     "Andariel's Visage"
+    ]
+   }
+  ]
+ },
+ "stages": [
+  {
+   "name": "Act 1 Normal",
+   "to": 15,
+   "skills": [
+    {
+     "skill": 126,
+     "to": 1
+    },
+    {
+     "skill": 129,
+     "to": 2
+    },
+    {
+     "skill": 126,
+     "to": 2
+    },
+    {
+     "skill": 133,
+     "to": 1
+    },
+    {
+     "skill": 132,
+     "to": 1
+    },
+    {
+     "skill": 133,
+     "to": 6
+    },
+    {
+     "skill": 126,
+     "to": 6
+    }
+   ],
+   "stats": [
+    {
+     "stat": "vit",
+     "to": 55
+    },
+    {
+     "stat": "dex",
+     "to": 35
+    },
+    {
+     "stat": "str",
+     "to": 41
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Scepter"
+     ],
+     "note": "Two scepters from Akara after the Den of Evil."
+    },
+    {
+     "slot": "Helmet",
+     "items": [
+      "Nadir|Cap"
+     ],
+     "note": "2-socket helmet, not magic: Nef Tir."
+    },
+    {
+     "slot": "Body",
+     "items": [
+      "Studded Leather"
+     ],
+     "note": "2 sockets, not magic: kept for Stealth."
+    }
+   ],
+   "tips": [
+    "Den of Evil point: Bash.",
+    "Save the level 5 point: Double Swing and Leap at 6.",
+    "Farm the Countess (Act 1, Forgotten Tower) for Tal + Eth (Stealth) and Ral runes."
+   ]
+  },
+  {
+   "name": "Act 2–4 Normal",
+   "to": 25,
+   "skills": [
+    {
+     "skill": 130,
+     "to": 1
+    },
+    {
+     "skill": 137,
+     "to": 1
+    },
+    {
+     "skill": 143,
+     "to": 1
+    },
+    {
+     "skill": 146,
+     "to": 1
+    },
+    {
+     "skill": 129,
+     "to": 3
+    },
+    {
+     "skill": 141,
+     "to": 1
+    },
+    {
+     "skill": 138,
+     "to": 1
+    },
+    {
+     "skill": 140,
+     "to": 1
+    },
+    {
+     "skill": 147,
+     "to": 1
+    },
+    {
+     "skill": 149,
+     "to": 1
+    },
+    {
+     "skill": 148,
+     "to": 1
+    },
+    {
+     "skill": 149,
+     "to": 2
+    },
+    {
+     "skill": 147,
+     "to": 2
+    }
+   ],
+   "stats": [
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Malice|Flail"
+     ],
+     "note": "Two Flails from Farah (level 14): Malice in one, 3 Tal gems in the other."
+    },
+    {
+     "slot": "Body",
+     "items": [
+      "Stealth|Studded Leather"
+     ],
+     "note": "Any 2-socket armor that is not magic; Tal + Eth. Wear it from level 17."
+    },
+    {
+     "slot": "Shield",
+     "items": [
+      "Bone Shield"
+     ],
+     "note": "Drognan: kept for Rhyme."
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Staff of Teleportation"
+     ],
+     "note": "Ormus (Act 3), levels 20-23. Check the red-background staves only."
+    }
+   ],
+   "tips": [
+    "Radament point: Howl.",
+    "Save points at 17 and 23 for the two-skill levels after."
+   ]
+  },
+  {
+   "name": "Act 5 Normal",
+   "to": 30,
+   "skills": [
+    {
+     "skill": 126,
+     "to": 9
+    },
+    {
+     "skill": 154,
+     "to": 1
+    },
+    {
+     "skill": 155,
+     "to": 1
+    }
+   ],
+   "stats": [
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Wand"
+     ],
+     "note": "Wyrm's Wand of the Magus from Malah (mana first)."
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Javelin"
+     ],
+     "note": "A throwing weapon with +1 to Warcries from Malah."
+    }
+   ],
+   "tips": [
+    "Save the level 29 point: War Cry and Battle Command at 30.",
+    "Respec in the Cow Level at 31."
+   ]
+  },
+  {
+   "name": "Respec · Act 1 Nightmare",
+   "to": 40,
+   "respec": true,
+   "skills": [
+    {
+     "skill": 126,
+     "to": 1
+    },
+    {
+     "skill": 139,
+     "to": 1
+    },
+    {
+     "skill": 144,
+     "to": 1
+    },
+    {
+     "skill": 132,
+     "to": 1
+    },
+    {
+     "skill": 143,
+     "to": 1
+    },
+    {
+     "skill": 151,
+     "to": 1
+    },
+    {
+     "skill": 129,
+     "to": 1
+    },
+    {
+     "skill": 141,
+     "to": 1
+    },
+    {
+     "skill": 148,
+     "to": 1
+    },
+    {
+     "skill": 145,
+     "to": 1
+    },
+    {
+     "skill": 153,
+     "to": 1
+    },
+    {
+     "skill": 130,
+     "to": 1
+    },
+    {
+     "skill": 137,
+     "to": 1
+    },
+    {
+     "skill": 138,
+     "to": 1
+    },
+    {
+     "skill": 146,
+     "to": 9
+    },
+    {
+     "skill": 149,
+     "to": 8
+    },
+    {
+     "skill": 155,
+     "to": 1
+    },
+    {
+     "skill": 154,
+     "to": 2
+    },
+    {
+     "skill": 146,
+     "to": 10
+    },
+    {
+     "skill": 154,
+     "to": 11
+    }
+   ],
+   "stats": [
+    {
+     "stat": "str",
+     "to": 43
+    },
+    {
+     "stat": "dex",
+     "to": 60
+    },
+    {
+     "stat": "dex",
+     "to": 70,
+     "note": "50% chance to block."
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Spirit|Crystal Sword"
+     ],
+     "note": "Two of them in the end: one now, one after Larzuk in Nightmare."
+    },
+    {
+     "slot": "Helmet",
+     "items": [
+      "Lore|Cap"
+     ],
+     "note": "Ort Sol into the second 2-socket helmet."
+    },
+    {
+     "slot": "Shield",
+     "items": [
+      "Rhyme|Bone Shield"
+     ]
+    },
+    {
+     "slot": "Weapon",
+     "items": [
+      "Black|Flail"
+     ],
+     "note": "On the Malice flail's base, or a new one."
+    },
+    {
+     "slot": "Shop (Nightmare)",
+     "items": [
+      "Coral Demonhide Sash",
+      "Garnet Heavy Boots of Haste",
+      "Garnet Heavy Gloves"
+     ]
+    }
+   ],
+   "tips": [
+    "War Cry stuns and hurts everything around you.",
+    "Den of Evil point: Battle Cry."
+   ]
+  },
+  {
+   "name": "Nightmare – Hell",
+   "to": 75,
+   "skills": [
+    {
+     "skill": 154,
+     "to": 20
+    },
+    {
+     "skill": 146,
+     "to": 20
+    },
+    {
+     "skill": 137,
+     "to": 20
+    },
+    {
+     "skill": 130,
+     "to": 20
+    }
+   ],
+   "stats": [
+    {
+     "stat": "dex",
+     "gear": true,
+     "note": "Keep 50% chance to block."
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Spirit|Crystal Sword"
+     ],
+     "note": "The second Spirit from Larzuk's quest in Nightmare."
+    }
+   ],
+   "tips": [
+    "At 75, respec again into Whirlwind (next stage)."
+   ]
+  },
+  {
+   "name": "Respec · Whirlwind",
+   "respec": true,
+   "skills": [
+    {
+     "skill": 126,
+     "to": 1
+    },
+    {
+     "skill": 139,
+     "to": 1
+    },
+    {
+     "skill": 144,
+     "to": 1
+    },
+    {
+     "skill": 132,
+     "to": 1
+    },
+    {
+     "skill": 143,
+     "to": 1
+    },
+    {
+     "skill": 151,
+     "to": 1
+    },
+    {
+     "skill": 130,
+     "to": 1
+    },
+    {
+     "skill": 137,
+     "to": 1
+    },
+    {
+     "skill": 146,
+     "to": 1
+    },
+    {
+     "skill": 138,
+     "to": 1
+    },
+    {
+     "skill": 149,
+     "to": 1
+    },
+    {
+     "skill": 155,
+     "to": 1
+    },
+    {
+     "skill": 131,
+     "to": 1
+    },
+    {
+     "skill": 142,
+     "to": 1
+    },
+    {
+     "skill": 150,
+     "to": 1
+    },
+    {
+     "skill": 141,
+     "to": 1
+    },
+    {
+     "skill": 148,
+     "to": 1
+    },
+    {
+     "skill": 145,
+     "to": 1
+    },
+    {
+     "skill": 153,
+     "to": 1
+    },
+    {
+     "skill": 151,
+     "to": 20
+    },
+    {
+     "skill": 127,
+     "to": 20
+    },
+    {
+     "skill": 149,
+     "to": 20
+    },
+    {
+     "skill": 131,
+     "to": 20
+    },
+    {
+     "skill": 152,
+     "to": 20
+    }
+   ],
+   "stats": [
+    {
+     "stat": "str",
+     "gear": true
+    },
+    {
+     "stat": "dex",
+     "gear": true
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapons",
+     "items": [
+      "Grief|Phase Blade",
+      "Beast|Berserker Axe",
+      "Breath of the Dying|War Pike",
+      "Obedience|Thresher"
+     ],
+     "note": "Two Grief Phase Blades in the end; Obedience is the cheap start (then Polearm Mastery instead of Blade Mastery)."
+    },
+    {
+     "slot": "Helmet",
+     "items": [
+      "Arreat's Face",
+      "Guillaume's Face",
+      "Crown of Ages"
+     ]
+    },
+    {
+     "slot": "Body",
+     "items": [
+      "Chains of Honor",
+      "Enigma",
+      "Fortitude"
+     ]
+    },
+    {
+     "slot": "Gloves",
+     "items": [
+      "Chance Guards",
+      "Laying of Hands"
+     ]
+    },
+    {
+     "slot": "Belt",
+     "items": [
+      "String of Ears",
+      "Verdungo's Hearty Cord",
+      "Thundergod's Vigor"
+     ]
+    },
+    {
+     "slot": "Boots",
+     "items": [
+      "Gore Rider",
+      "War Traveler",
+      "Goblin Toe"
+     ]
+    },
+    {
+     "slot": "Amulet",
+     "items": [
+      "Highlord's Wrath",
+      "Mara's Kaleidoscope",
+      "Metalgrid"
+     ]
+    },
+    {
+     "slot": "Rings",
+     "items": [
+      "Raven Frost",
+      "Bul-Kathos' Wedding Band"
+     ]
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Call to Arms|Crystal Sword",
+      "Heart of the Oak|Flail"
+     ]
+    },
+    {
+     "slot": "Charms",
+     "items": [
+      "Annihilus",
+      "Hellfire Torch",
+      "Gheed's Fortune"
+     ]
+    }
+   ],
+   "tips": [
+    "The mastery follows the weapon: Blade Mastery for Phase Blades.",
+    "Berserk for physical-immune monsters."
+   ]
+  }
+ ]
+}

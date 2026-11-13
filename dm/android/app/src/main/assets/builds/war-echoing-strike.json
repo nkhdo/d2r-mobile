@@ -1,0 +1,575 @@
+{
+ "id": "war-echoing-strike",
+ "class": "war",
+ "name": "Echoing Strike Warlock",
+ "summary": "Miasma and Abyss to 75, then a respec into Echoing Strike with Hex Purge and Mirrored Blades.",
+ "notes": "Warlock breakpoint tables are not published with the guides; the guide's targets (75 / 125 FCR, 26 FHR) match the Necromancer's tables, used here.",
+ "links": [
+  {
+   "title": "Leveling guide",
+   "url": "https://maxroll.gg/d2/guides/abyss-warlock-leveling-build-guide"
+  },
+  {
+   "title": "Echoing Strike guide",
+   "url": "https://maxroll.gg/d2/guides/echoing-strike-warlock-guide"
+  }
+ ],
+ "breakpoints": {
+  "fcr": [
+   0,
+   9,
+   18,
+   30,
+   48,
+   75,
+   125
+  ],
+  "fcrTarget": 125,
+  "fhr": [
+   0,
+   5,
+   10,
+   16,
+   26,
+   39,
+   56,
+   86,
+   152,
+   377
+  ],
+  "fhrTarget": 26
+ },
+ "after20": [
+  389,
+  392,
+  385
+ ],
+ "merc": {
+  "type": "Act 2 Prayer (Greiz, Combat)",
+  "note": "Prayer heals you and the mercenary.",
+  "gear": [
+   {
+    "slot": "Weapon",
+    "items": [
+     "Insight|Giant Thresher"
+    ]
+   },
+   {
+    "slot": "Body",
+    "items": [
+     "Smoke",
+     "Treachery",
+     "Chains of Honor"
+    ]
+   },
+   {
+    "slot": "Helmet",
+    "items": [
+     "Bulwark",
+     "Tal Rasha's Horadric Crest",
+     "Cure|Grand Crown"
+    ]
+   }
+  ]
+ },
+ "stages": [
+  {
+   "name": "Act 1–2 Normal",
+   "to": 18,
+   "skills": [
+    {
+     "skill": 395,
+     "to": 11
+    },
+    {
+     "skill": 399,
+     "to": 4
+    },
+    {
+     "skill": 393,
+     "to": 1
+    },
+    {
+     "skill": 383,
+     "to": 1
+    },
+    {
+     "skill": 388,
+     "to": 1
+    },
+    {
+     "skill": 390,
+     "to": 1
+    }
+   ],
+   "stats": [
+    {
+     "stat": "vit",
+     "to": 45
+    },
+    {
+     "stat": "dex",
+     "to": 25
+    },
+    {
+     "stat": "str",
+     "to": 25
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Helmets",
+     "items": [
+      "Cap"
+     ],
+     "note": "Two 2-socket helmets from Charsi or drops: one for Ral runes (fire resistance), one kept for Lore. At least one must not be magic."
+    },
+    {
+     "slot": "Body",
+     "items": [
+      "Hard Leather Armor"
+     ],
+     "note": "2 sockets, not magic: kept for Stealth."
+    },
+    {
+     "slot": "Boots",
+     "items": [
+      "Boots"
+     ],
+     "note": "Imbue boots at Charsi at 19 for a chance at faster run/walk."
+    }
+   ],
+   "tips": [
+    "Den of Evil point: Miasma Bolt.",
+    "Radament point: Sigil: Lethargy.",
+    "Farm the Countess (Act 1, Forgotten Tower) for Tal + Eth (Stealth) and Ral runes."
+   ]
+  },
+  {
+   "name": "Act 3–5 Normal",
+   "to": 27,
+   "skills": [
+    {
+     "skill": 399,
+     "to": 9
+    },
+    {
+     "skill": 399,
+     "to": 11
+    },
+    {
+     "skill": 397,
+     "to": 1
+    },
+    {
+     "skill": 399,
+     "to": 14
+    }
+   ],
+   "stats": [
+    {
+     "stat": "str",
+     "to": 48,
+     "note": "Includes Lam Esen's Tome (Act 3)."
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Body",
+     "items": [
+      "Stealth|Hard Leather Armor"
+     ]
+    },
+    {
+     "slot": "Shield",
+     "items": [
+      "Ancients' Pledge|Kite Shield"
+     ],
+     "note": "3-socket shield from Farah (not magic); runes from the Act 5 quests."
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Battle Staff"
+     ],
+     "note": "Battle Staff of Teleportation from Ormus, levels 20-23 (no more than 19,000 gold)."
+    }
+   ],
+   "tips": [
+    "Izual points: Miasma Chains."
+   ]
+  },
+  {
+   "name": "Nightmare",
+   "to": 40,
+   "skills": [
+    {
+     "skill": 399,
+     "to": 17
+    },
+    {
+     "skill": 402,
+     "to": 1
+    },
+    {
+     "skill": 399,
+     "to": 20
+    },
+    {
+     "skill": 402,
+     "to": 7
+    },
+    {
+     "skill": 402,
+     "to": 8
+    },
+    {
+     "skill": 402,
+     "to": 10
+    }
+   ],
+   "stats": [
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Helmet",
+     "items": [
+      "Lore|Cap"
+     ],
+     "note": "Ort Sol into the second 2-socket helmet."
+    },
+    {
+     "slot": "Weapon",
+     "items": [
+      "Spirit|Crystal Sword"
+     ],
+     "note": "Tal Thul Ort Amn from the Countess in Nightmare. Equip as soon as you have the runes."
+    },
+    {
+     "slot": "Shop (Nightmare)",
+     "items": [
+      "Coral Belt of the Mammoth",
+      "Russet Heavy Boots of Haste",
+      "Coral Heavy Gloves"
+     ],
+     "note": "Charsi or Gheed at the start of Nightmare: resistances first, lightning and fire."
+    }
+   ],
+   "tips": [
+    "Respec at 40, after all Nightmare quests: not before."
+   ]
+  },
+  {
+   "name": "Respec · Hell",
+   "to": 75,
+   "respec": true,
+   "skills": [
+    {
+     "skill": 373,
+     "to": 1
+    },
+    {
+     "skill": 376,
+     "to": 1
+    },
+    {
+     "skill": 377,
+     "to": 1
+    },
+    {
+     "skill": 374,
+     "to": 1
+    },
+    {
+     "skill": 378,
+     "to": 1
+    },
+    {
+     "skill": 381,
+     "to": 1
+    },
+    {
+     "skill": 383,
+     "to": 1
+    },
+    {
+     "skill": 388,
+     "to": 1
+    },
+    {
+     "skill": 390,
+     "to": 1
+    },
+    {
+     "skill": 393,
+     "to": 1
+    },
+    {
+     "skill": 396,
+     "to": 1
+    },
+    {
+     "skill": 400,
+     "to": 1
+    },
+    {
+     "skill": 395,
+     "to": 3
+    },
+    {
+     "skill": 399,
+     "to": 20
+    },
+    {
+     "skill": 397,
+     "to": 2
+    },
+    {
+     "skill": 402,
+     "to": 10
+    },
+    {
+     "skill": 402,
+     "to": 20
+    },
+    {
+     "skill": 395,
+     "to": 20
+    },
+    {
+     "skill": 400,
+     "to": 8
+    },
+    {
+     "skill": 397,
+     "to": 8
+    }
+   ],
+   "stats": [
+    {
+     "stat": "str",
+     "to": 48
+    },
+    {
+     "stat": "dex",
+     "to": 35
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Spirit|Crystal Sword"
+     ]
+    },
+    {
+     "slot": "Shield",
+     "items": [
+      "Spirit|Monarch",
+      "Ancients' Pledge|Kite Shield"
+     ]
+    }
+   ],
+   "tips": [
+    "Abyss and Miasma carry you to 75.",
+    "At 75, respec into Echoing Strike (next stage)."
+   ]
+  },
+  {
+   "name": "Respec · Echoing Strike",
+   "respec": true,
+   "skills": [
+    {
+     "skill": 383,
+     "to": 1
+    },
+    {
+     "skill": 388,
+     "to": 1
+    },
+    {
+     "skill": 390,
+     "to": 1
+    },
+    {
+     "skill": 391,
+     "to": 1
+    },
+    {
+     "skill": 387,
+     "to": 1
+    },
+    {
+     "skill": 384,
+     "to": 1
+    },
+    {
+     "skill": 385,
+     "to": 1
+    },
+    {
+     "skill": 393,
+     "to": 1
+    },
+    {
+     "skill": 373,
+     "to": 1
+    },
+    {
+     "skill": 376,
+     "to": 1
+    },
+    {
+     "skill": 377,
+     "to": 1
+    },
+    {
+     "skill": 374,
+     "to": 1
+    },
+    {
+     "skill": 389,
+     "to": 20
+    },
+    {
+     "skill": 392,
+     "to": 20
+    },
+    {
+     "skill": 385,
+     "to": 20
+    },
+    {
+     "skill": 374,
+     "to": 10
+    },
+    {
+     "skill": 384,
+     "to": 20
+    },
+    {
+     "skill": 378,
+     "to": 20
+    }
+   ],
+   "stats": [
+    {
+     "stat": "str",
+     "gear": true
+    },
+    {
+     "stat": "dex",
+     "to": 120,
+     "note": "About 100 points for attack rating."
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Void",
+      "Heart of the Oak|Flail",
+      "Spirit|Crystal Sword"
+     ],
+     "note": "Spirit to start; reach 75% cast rate first."
+    },
+    {
+     "slot": "Off-hand",
+     "items": [
+      "Spirit|Monarch",
+      "Lidless Wall"
+     ]
+    },
+    {
+     "slot": "Helmet",
+     "items": [
+      "Harlequin Crest",
+      "Lore|Cap"
+     ]
+    },
+    {
+     "slot": "Body",
+     "items": [
+      "Enigma|Mage Plate",
+      "Skin of the Vipermagi",
+      "Smoke"
+     ]
+    },
+    {
+     "slot": "Gloves",
+     "items": [
+      "Magefist",
+      "Trang-Oul's Claws"
+     ]
+    },
+    {
+     "slot": "Belt",
+     "items": [
+      "Arachnid Mesh",
+      "Verdungo's Hearty Cord"
+     ]
+    },
+    {
+     "slot": "Boots",
+     "items": [
+      "Sandstorm Trek",
+      "Waterwalk",
+      "War Traveler"
+     ]
+    },
+    {
+     "slot": "Amulet",
+     "items": [
+      "Mara's Kaleidoscope"
+     ]
+    },
+    {
+     "slot": "Rings",
+     "items": [
+      "The Stone of Jordan",
+      "Bul-Kathos' Wedding Band"
+     ]
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Call to Arms|Crystal Sword"
+     ],
+     "note": "Battle Orders before a fight."
+    },
+    {
+     "slot": "Charms",
+     "items": [
+      "Annihilus",
+      "Hellfire Torch",
+      "Gheed's Fortune"
+     ]
+    }
+   ],
+   "tips": [
+    "Keep 125% cast rate once you can.",
+    "Starter: Demonic Mastery only to 5 and Consume after the main skills."
+   ]
+  }
+ ]
+}

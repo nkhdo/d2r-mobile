@@ -822,6 +822,41 @@ int dm_portals(dm_portal_view *v) {
     v->n = 0; return 0;
 }
 
+// Bottom-screen Deck, Build tab (dm_hud.h dm_build_info): the controlled player's class, name, hard points and breakpoints, read on
+// the tick only while the tab is showing. Same readers as the rest of this file: stat_read = base layer (no gear), the game's own
+// getter main+0x5b9290 = totals with gear; skill base levels from the skill list as dm_actions.c a_skill_base walks it (node [0] ->
+// record, i16 id; +0x44 == -1 = not granted by an item; +0x38 base level; +8 next), here through tk_rd. Name: PlayerData (unit +0x10)
+// starts with the name, as dm_rift.c reads it
+static void build_tick(uint64_t player, module_t *mm) {
+    if (!dm_build_wanted()) return;
+    dm_build_info b = {0};
+    if (player && mm) {
+        int (*get)(uint64_t, int, int) = (int (*)(uint64_t, int, int))(mm->base + 0x5b9290);
+        uint32_t cls = 0, v = 0; uint64_t pd = 0;
+        if (tk_rd(player + 4, &cls, 4) && cls < 8) {
+            b.valid = 1; b.cls = (int)cls;
+            if (stat_read(player, 12, &v)) b.level = (int)v;
+            for (int i = 0; i < 4; i++) { v = 0; stat_read(player, (uint32_t)i, &v); b.base[i] = (int)v; }
+            v = 0; stat_read(player, 4, &v); b.stat_points = (int)v;
+            v = 0; stat_read(player, 5, &v); b.skill_points = (int)v;
+            b.fcr = get(player, 105, 0); b.fhr = get(player, 99, 0); b.ias = get(player, 93, 0);
+            { int dm_skill_cap(void); int dm_rift_cleared_any(void); b.cap = dm_rift_cleared_any() ? dm_skill_cap() : 20; }
+            if (tk_rd(player + 0x10, &pd, 8) && pd && tk_rd(pd, b.name, sizeof b.name - 1)) b.name[sizeof b.name - 1] = 0;
+            for (size_t i = 0; i < sizeof b.name && b.name[i]; i++) if ((unsigned char)b.name[i] < 0x20) { b.name[i] = 0; break; }
+            uint64_t l = 0, n = 0;
+            if (tk_rd(player + 0x100, &l, 8) && l && tk_rd(l, &n, 8))
+                for (int k = 0; n && k < 512 && b.n < DM_BUILD_SKILLS; k++) {
+                    uint64_t r = 0; int16_t id = -1; int32_t owner = 0, lv = 0;
+                    if (tk_rd(n, &r, 8) && r && tk_rd(r, &id, 2) && tk_rd(n + 0x44, &owner, 4) && owner == -1 && tk_rd(n + 0x38, &lv, 4) && lv > 0 && id >= 0) {
+                        b.skill[b.n] = id; b.lvl[b.n] = (uint8_t)(lv > 255 ? 255 : lv); b.n++;
+                    }
+                    if (!tk_rd(n + 8, &n, 8)) break;
+                }
+        }
+    }
+    dm_build_publish(&b);
+}
+
 static void hud_tick(uint64_t G) {        // 每拍：受控玩家等级 / 本级经验‰ / 腰带四列件数 / 回城次数 + 当前人数档 → g_hud（前端 dm_hud_get） | Every tick: controlled player's level / current-level experience ‰ / item counts of the four belt columns / town portal count + current /players setting → g_hud (front end dm_hud_get)
     dm_hud_info h = {0};
     uint64_t player = 0, inv = 0, u = 0, next = 0;
@@ -889,6 +924,7 @@ static void hud_tick(uint64_t G) {        // 每拍：受控玩家等级 / 本�
         h.valid = 1;
     }
     module_t *main = main_mod(); uint32_t pl = 0;
+    build_tick(h.valid ? player : 0, main);   // bottom-screen Deck Build tab: reads only while the tab is showing
     if (main) { void *obj = players_obj(main); if (obj && tk_rd((uint64_t)obj + 0xc, &pl, 4)) h.players = (int)pl; }
     static int logged;
     g_player_unit = player; { uint8_t gv; extern _Atomic int g_dm_game_ver; if (tk_rd(G + 0x106, &gv, 1)) atomic_store(&g_dm_game_ver, gv); }   // 房间初始化要的数据版本参数（dm_world.c 小地图标出小站与出入口用） | Data version parameter needed for room initialization (used by dm_world.c to mark waypoints and entrances/exits on the minimap)

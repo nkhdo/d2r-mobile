@@ -8,7 +8,7 @@ The Deck is made for controller play with the Thor's built-in gamepad. Touching 
 
 The Deck is drawn with the game's own panel art and fonts (HUD bar, globes, menu buttons, stone), taken from your own game files when the import pack is made. A pack made before this shows the same layout as plain panels.
 
-Three tabs on top: **Main**, **Map** and **Skills**.
+Four tabs on top: **Main**, **Map**, **Skills** and **Build**.
 
 **Main**
 
@@ -22,6 +22,8 @@ Three tabs on top: **Main**, **Map** and **Skills**.
 **Map**: a compass for the area you are in. The game's own map marks (quest goals such as Blood Raven or the Horadric Cube chest, the true Tal Rasha's tomb, waypoints and real exits) and the town portals and red portals in the area appear on a radar turned like the game's view, and in a list, nearest first, with an arrow, the game's name for it and the distance in map cells. It uses the same marks as the minimap, so it needs the Custom page's map marking on (the default). Exits and waypoints are marked at their room until you come near, then on the entrance or waypoint itself. Towns have no marks (the game marks nothing there) apart from portals, and areas without any say so.
 
 **Skills**: the skills bound to your controller buttons, with the game's own icons and names: the four face buttons as a diamond plus R and ZR, and the same again with ZL held, for the weapon set in your hands. To change a binding, use the game's skill menu (the **Skills** button on Main).
+
+**Build**: a plan for your character's class, worked out against your character as you play. On the left, **Now**: your next skill points in the plan's order (with the level each one needs, or the skill it still needs first), what to do with stat points, a "past 20" list once a Rift has raised your skill cap, and a **Respec now** card when the plan starts over and you still have points elsewhere. On top: the plan's name (tap to pick another one for your class, when there is more than one) and its **stages** by level; yours is lit, and tapping another shows it on the right. On the right: **Skills**, **Stats**, **Gear**, **Merc** and **Breakpoints** for that stage (drag to scroll). Skill and item names are in the game's language; the plans' own notes are in English. The buttons at the bottom of Now open the full guide on the bottom screen (it needs an internet connection; **◀ Deck** goes back). The plans are our own short summaries of community builds (one per class: Lightning Fury Amazon, Lightning Sentry Assassin, Whirlwind Barbarian, Wind Druid, Summoner Necromancer, Blessed Hammer Paladin, Blizzard Sorceress, Echoing Strike Warlock); the full guides are by maxroll.gg. Your choice is remembered per character.
 
 A button takes effect when you lift your finger, so sliding off a button cancels it. While you are not in a game (main menu, character select, loading), the Deck shows a short note instead. While your character is dead, the buttons are greyed out.
 
@@ -50,6 +52,7 @@ Any Android device with a second display that Android treats as a presentation d
 
 - Opening a page presses the controller's menu button for you and then jumps to the page, so the menu's last page can flash for a moment. It can fail while another window of the game is open, such as a vendor or the stash.
 - Items are managed in the game's own inventory (the **Inventory** button); the Deck only shows the belt.
+- The Build tab's gear lists are fixed: it does not look at what you wear. Opening a guide is the only thing in the app that uses the network.
 - The Map tab is a compass, not a drawn map. The Skills tab shows bindings but cannot change them. Buffs and their time left are not shown.
 - Tested on the Thor with the Snapdragon 8 Gen 2. The Thor Lite (Snapdragon 865) has not been tested.
 

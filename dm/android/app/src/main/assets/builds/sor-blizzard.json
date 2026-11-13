@@ -1,0 +1,467 @@
+{
+ "id": "sor-blizzard",
+ "class": "sor",
+ "name": "Blizzard Sorceress",
+ "summary": "Nova to 26, respec into Blizzard; Glacial Spike, Ice Blast and Ice Bolt as synergies.",
+ "links": [
+  {
+   "title": "Leveling guide",
+   "url": "https://maxroll.gg/d2/guides/sorceress-leveling"
+  },
+  {
+   "title": "Blizzard guide",
+   "url": "https://maxroll.gg/d2/guides/blizzard-sorceress"
+  }
+ ],
+ "breakpoints": {
+  "fcr": [
+   0,
+   9,
+   20,
+   37,
+   63,
+   105,
+   200
+  ],
+  "fcrTarget": 105,
+  "fhr": [
+   0,
+   5,
+   9,
+   14,
+   20,
+   30,
+   42,
+   60,
+   86,
+   142,
+   280
+  ],
+  "fhrTarget": 60
+ },
+ "after20": [
+  59,
+  55,
+  45
+ ],
+ "merc": {
+  "type": "Act 2 Holy Freeze (Greiz, Defensive)",
+  "note": "Infinity lets the mercenary's Conviction break cold immunity.",
+  "gear": [
+   {
+    "slot": "Weapon",
+    "items": [
+     "Insight|Giant Thresher",
+     "Infinity|Giant Thresher"
+    ],
+    "note": "Insight for mana; Infinity in the end."
+   },
+   {
+    "slot": "Body",
+    "items": [
+     "Smoke",
+     "Treachery",
+     "Fortitude"
+    ]
+   },
+   {
+    "slot": "Helmet",
+    "items": [
+     "Bulwark",
+     "Tal Rasha's Horadric Crest",
+     "Andariel's Visage"
+    ]
+   }
+  ]
+ },
+ "stages": [
+  {
+   "name": "Act 1 Normal",
+   "to": 13,
+   "skills": [
+    {
+     "skill": 38,
+     "to": 4
+    },
+    {
+     "skill": 44,
+     "to": 1
+    },
+    {
+     "skill": 42,
+     "to": 1
+    },
+    {
+     "skill": 42,
+     "to": 4
+    },
+    {
+     "skill": 43,
+     "to": 1
+    },
+    {
+     "skill": 40,
+     "to": 1
+    },
+    {
+     "skill": 48,
+     "to": 2
+    }
+   ],
+   "stats": [
+    {
+     "stat": "vit",
+     "to": 55
+    },
+    {
+     "stat": "str",
+     "to": 25
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Short Staff"
+     ],
+     "note": "Akara after the Den of Evil: look for +2 or +3 to Charged Bolt."
+    },
+    {
+     "slot": "Helmets",
+     "items": [
+      "Cap"
+     ],
+     "note": "Two 2-socket helmets from Charsi or drops: one for Ral runes (fire resistance), one kept for Lore. At least one must not be magic."
+    },
+    {
+     "slot": "Body",
+     "items": [
+      "Studded Leather"
+     ],
+     "note": "Any 2-socket armor that is not magic, kept for Stealth."
+    }
+   ],
+   "tips": [
+    "Den of Evil point: Charged Bolt.",
+    "Save the level 5 point: Frost Nova and Static Field both open at 6.",
+    "Farm the Countess (Act 1, Forgotten Tower) for Tal + Eth (Stealth) and Ral runes."
+   ]
+  },
+  {
+   "name": "Act 2–5 Normal",
+   "to": 26,
+   "skills": [
+    {
+     "skill": 48,
+     "to": 7
+    },
+    {
+     "skill": 54,
+     "to": 1
+    },
+    {
+     "skill": 48,
+     "to": 9
+    },
+    {
+     "skill": 42,
+     "to": 5
+    },
+    {
+     "skill": 48,
+     "to": 15
+    }
+   ],
+   "stats": [
+    {
+     "stat": "vit",
+     "to": 70
+    },
+    {
+     "stat": "str",
+     "to": 47
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Body",
+     "items": [
+      "Stealth|Studded Leather"
+     ],
+     "note": "Any 2-socket armor that is not magic; Tal + Eth. Wear it from level 17."
+    },
+    {
+     "slot": "Shield",
+     "items": [
+      "Ancients' Pledge|Kite Shield"
+     ],
+     "note": "3-socket shield from Farah (not magic); runes from the Act 5 quests."
+    },
+    {
+     "slot": "Weapon",
+     "items": [
+      "Wand"
+     ],
+     "note": "Wand of the Magus from Ormus at 23+ if it reaches the 63% cast rate breakpoint."
+    },
+    {
+     "slot": "Belt",
+     "items": [
+      "Belt"
+     ],
+     "note": "Farah: more potion rows."
+    },
+    {
+     "slot": "Weapon base",
+     "items": [
+      "Crystal Sword"
+     ],
+     "note": "From the Cow Level; add 4 sockets with Larzuk's quest (Act 5). Keep it for Spirit."
+    }
+   ],
+   "tips": [
+    "Save Radament's point for Teleport at 18.",
+    "Izual's points: Static Field.",
+    "Respec after 26, before Nightmare."
+   ]
+  },
+  {
+   "name": "Respec · Act 1 Nightmare",
+   "to": 35,
+   "respec": true,
+   "skills": [
+    {
+     "skill": 43,
+     "to": 1
+    },
+    {
+     "skill": 54,
+     "to": 1
+    },
+    {
+     "skill": 42,
+     "to": 4
+    },
+    {
+     "skill": 40,
+     "to": 1
+    },
+    {
+     "skill": 39,
+     "to": 1
+    },
+    {
+     "skill": 44,
+     "to": 1
+    },
+    {
+     "skill": 45,
+     "to": 7
+    },
+    {
+     "skill": 55,
+     "to": 8
+    },
+    {
+     "skill": 59,
+     "to": 3
+    },
+    {
+     "skill": 59,
+     "to": 6
+    },
+    {
+     "skill": 65,
+     "to": 1
+    },
+    {
+     "skill": 59,
+     "to": 12
+    }
+   ],
+   "stats": [
+    {
+     "stat": "str",
+     "gear": true
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Spirit|Crystal Sword"
+     ],
+     "note": "Tal Thul Ort Amn from the Countess in Nightmare. Equip as soon as you have the runes."
+    },
+    {
+     "slot": "Helmet",
+     "items": [
+      "Lore|Cap"
+     ],
+     "note": "Ort Sol into the second 2-socket helmet."
+    },
+    {
+     "slot": "Shop (Nightmare)",
+     "items": [
+      "Coral Belt of the Mammoth",
+      "Russet Heavy Boots of Haste",
+      "Coral Heavy Gloves"
+     ],
+     "note": "Charsi or Gheed at the start of Nightmare: resistances first, lightning and fire."
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Wand of Lower Resistance"
+     ],
+     "note": "Akara or Drognan in Nightmare, levels 30-35. Cast it on act bosses."
+    }
+   ],
+   "tips": [
+    "Keep one point after the respec for Cold Mastery at 30.",
+    "Spirit above 28% cast rate plus one 10% ring reaches 63%."
+   ]
+  },
+  {
+   "name": "Nightmare – Hell",
+   "skills": [
+    {
+     "skill": 65,
+     "to": 2
+    },
+    {
+     "skill": 59,
+     "to": 20
+    },
+    {
+     "skill": 65,
+     "to": 3
+    },
+    {
+     "skill": 55,
+     "to": 20
+    },
+    {
+     "skill": 45,
+     "to": 20
+    },
+    {
+     "skill": 39,
+     "to": 20
+    },
+    {
+     "skill": 65,
+     "to": 20
+    }
+   ],
+   "stats": [
+    {
+     "stat": "str",
+     "gear": true
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Heart of the Oak|Flail",
+      "Spirit|Crystal Sword",
+      "Death's Fathom"
+     ]
+    },
+    {
+     "slot": "Shield",
+     "items": [
+      "Spirit|Monarch",
+      "Lidless Wall"
+     ]
+    },
+    {
+     "slot": "Helmet",
+     "items": [
+      "Harlequin Crest",
+      "Lore|Cap"
+     ]
+    },
+    {
+     "slot": "Body",
+     "items": [
+      "Enigma|Mage Plate",
+      "Skin of the Vipermagi",
+      "Smoke"
+     ]
+    },
+    {
+     "slot": "Gloves",
+     "items": [
+      "Magefist",
+      "Trang-Oul's Claws"
+     ]
+    },
+    {
+     "slot": "Belt",
+     "items": [
+      "Arachnid Mesh",
+      "Verdungo's Hearty Cord"
+     ]
+    },
+    {
+     "slot": "Boots",
+     "items": [
+      "Sandstorm Trek",
+      "Waterwalk",
+      "War Traveler"
+     ]
+    },
+    {
+     "slot": "Amulet",
+     "items": [
+      "Mara's Kaleidoscope"
+     ]
+    },
+    {
+     "slot": "Rings",
+     "items": [
+      "The Stone of Jordan",
+      "Bul-Kathos' Wedding Band"
+     ]
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Call to Arms|Crystal Sword"
+     ],
+     "note": "Battle Orders before a fight."
+    },
+    {
+     "slot": "Charms",
+     "items": [
+      "Annihilus",
+      "Hellfire Torch",
+      "Gheed's Fortune"
+     ]
+    }
+   ],
+   "tips": [
+    "Static Field brings bosses down fast; Teleport everywhere.",
+    "Cold-immune monsters: leave them to the mercenary with Infinity."
+   ]
+  }
+ ]
+}

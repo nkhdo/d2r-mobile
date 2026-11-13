@@ -1,0 +1,482 @@
+{
+ "id": "ass-lightning-sentry",
+ "class": "ass",
+ "name": "Lightning Sentry Assassin",
+ "summary": "Fire traps to 38, respec into Lightning Sentry with Death Sentry and Charged Bolt Sentry.",
+ "links": [
+  {
+   "title": "Leveling guide",
+   "url": "https://maxroll.gg/d2/guides/assassin-leveling"
+  },
+  {
+   "title": "Lightning Sentry guide",
+   "url": "https://maxroll.gg/d2/guides/lightning-sentry-assassin"
+  }
+ ],
+ "breakpoints": {
+  "fcr": [
+   0,
+   8,
+   16,
+   27,
+   42,
+   65,
+   102,
+   174
+  ],
+  "fcrTarget": 102,
+  "fhr": [
+   0,
+   7,
+   15,
+   27,
+   48,
+   86,
+   200
+  ],
+  "fhrTarget": 48
+ },
+ "after20": [
+  271,
+  256,
+  261
+ ],
+ "merc": {
+  "type": "Act 2 Holy Freeze (Greiz, Defensive)",
+  "note": "Infinity's Conviction is the trap build's answer to lightning immunes.",
+  "gear": [
+   {
+    "slot": "Weapon",
+    "items": [
+     "Insight|Giant Thresher",
+     "Infinity|Giant Thresher"
+    ],
+    "note": "Insight early; Infinity in the end."
+   },
+   {
+    "slot": "Body",
+    "items": [
+     "Smoke",
+     "Treachery",
+     "Fortitude"
+    ]
+   },
+   {
+    "slot": "Helmet",
+    "items": [
+     "Bulwark",
+     "Tal Rasha's Horadric Crest",
+     "Andariel's Visage"
+    ]
+   }
+  ]
+ },
+ "stages": [
+  {
+   "name": "Act 1 Normal",
+   "to": 13,
+   "skills": [
+    {
+     "skill": 251,
+     "to": 4
+    },
+    {
+     "skill": 252,
+     "to": 1
+    },
+    {
+     "skill": 258,
+     "to": 2
+    },
+    {
+     "skill": 251,
+     "to": 5
+    },
+    {
+     "skill": 258,
+     "to": 5
+    },
+    {
+     "skill": 262,
+     "to": 2
+    }
+   ],
+   "stats": [
+    {
+     "stat": "ene",
+     "to": 35
+    },
+    {
+     "stat": "vit",
+     "to": 55
+    },
+    {
+     "stat": "str",
+     "to": 25
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Leaf|Short Staff"
+     ],
+     "note": "Short Staff from Akara after the Den of Evil (not a Long Staff); Tir Ral."
+    },
+    {
+     "slot": "Helmets",
+     "items": [
+      "Cap"
+     ],
+     "note": "Two 2-socket helmets from Charsi or drops: one for Ral runes (fire resistance), one kept for Lore. At least one must not be magic."
+    },
+    {
+     "slot": "Body",
+     "items": [
+      "Studded Leather"
+     ],
+     "note": "2 sockets, not magic: kept for Stealth."
+    }
+   ],
+   "tips": [
+    "Den of Evil point: Claw Mastery.",
+    "Farm the Countess (Act 1, Forgotten Tower) for Tal + Eth (Stealth) and Ral runes. Leaf needs Tir + Ral."
+   ]
+  },
+  {
+   "name": "Act 2–5 Normal",
+   "to": 26,
+   "skills": [
+    {
+     "skill": 262,
+     "to": 3
+    },
+    {
+     "skill": 251,
+     "to": 6
+    },
+    {
+     "skill": 262,
+     "to": 9
+    },
+    {
+     "skill": 251,
+     "to": 7
+    },
+    {
+     "skill": 262,
+     "to": 15
+    }
+   ],
+   "stats": [
+    {
+     "stat": "vit",
+     "to": 105
+    },
+    {
+     "stat": "str",
+     "to": 43
+    },
+    {
+     "stat": "str",
+     "to": 48,
+     "note": "Only if your Spirit base is a Broad Sword."
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Body",
+     "items": [
+      "Stealth|Studded Leather"
+     ],
+     "note": "Any 2-socket armor that is not magic; Tal + Eth. Wear it from level 17."
+    },
+    {
+     "slot": "Weapon",
+     "items": [
+      "Leaf|Short Staff"
+     ],
+     "note": "Make Leaf at 19."
+    },
+    {
+     "slot": "Shield",
+     "items": [
+      "Ancients' Pledge|Kite Shield"
+     ],
+     "note": "3-socket shield from Farah (not magic); runes from the Act 5 quests."
+    },
+    {
+     "slot": "Belt",
+     "items": [
+      "Belt"
+     ],
+     "note": "Farah."
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Battle Staff"
+     ],
+     "note": "Battle Staff of Teleportation from Ormus, levels 20-23."
+    },
+    {
+     "slot": "Weapon base",
+     "items": [
+      "Crystal Sword"
+     ],
+     "note": "From the Cow Level; add 4 sockets with Larzuk's quest (Act 5). Keep it for Spirit."
+    }
+   ],
+   "tips": [
+    "Radament and Izual points: Fire Blast."
+   ]
+  },
+  {
+   "name": "Act 1–3 Nightmare",
+   "to": 38,
+   "skills": [
+    {
+     "skill": 262,
+     "to": 20
+    },
+    {
+     "skill": 251,
+     "to": 8
+    },
+    {
+     "skill": 251,
+     "to": 15
+    }
+   ],
+   "stats": [
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Spirit|Crystal Sword"
+     ],
+     "note": "Tal Thul Ort Amn from the Countess in Nightmare. Equip as soon as you have the runes."
+    },
+    {
+     "slot": "Helmet",
+     "items": [
+      "Lore|Cap"
+     ],
+     "note": "Ort Sol into the second 2-socket helmet."
+    },
+    {
+     "slot": "Shop (Nightmare)",
+     "items": [
+      "Coral Belt of the Mammoth",
+      "Russet Heavy Boots of Haste",
+      "Coral Heavy Gloves"
+     ],
+     "note": "Charsi or Gheed at the start of Nightmare: resistances first, lightning and fire."
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Wand of Lower Resistance"
+     ],
+     "note": "Akara or Drognan in Nightmare, levels 30-35. Cast it on act bosses."
+    }
+   ],
+   "tips": [
+    "Respec at the start of Act 4 Nightmare, at 38 at the earliest."
+   ]
+  },
+  {
+   "name": "Respec · Nightmare – Hell",
+   "respec": true,
+   "skills": [
+    {
+     "skill": 253,
+     "to": 1
+    },
+    {
+     "skill": 264,
+     "to": 1
+    },
+    {
+     "skill": 273,
+     "to": 1
+    },
+    {
+     "skill": 252,
+     "to": 1
+    },
+    {
+     "skill": 258,
+     "to": 3
+    },
+    {
+     "skill": 251,
+     "to": 1
+    },
+    {
+     "skill": 256,
+     "to": 1
+    },
+    {
+     "skill": 261,
+     "to": 1
+    },
+    {
+     "skill": 271,
+     "to": 15
+    },
+    {
+     "skill": 276,
+     "to": 9
+    },
+    {
+     "skill": 261,
+     "to": 10
+    },
+    {
+     "skill": 271,
+     "to": 20
+    },
+    {
+     "skill": 256,
+     "to": 20
+    },
+    {
+     "skill": 267,
+     "to": 1
+    },
+    {
+     "skill": 263,
+     "to": 1
+    },
+    {
+     "skill": 261,
+     "to": 20
+    },
+    {
+     "skill": 276,
+     "to": 20
+    },
+    {
+     "skill": 251,
+     "to": 20
+    }
+   ],
+   "stats": [
+    {
+     "stat": "str",
+     "gear": true
+    },
+    {
+     "stat": "dex",
+     "gear": true
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Heart of the Oak|Flail",
+      "Spirit|Crystal Sword",
+      "Wizardspike"
+     ],
+     "note": "Claws with +6 Lightning Sentry from Anya are the upgrade later."
+    },
+    {
+     "slot": "Shield",
+     "items": [
+      "Spirit|Monarch",
+      "Stormshield"
+     ]
+    },
+    {
+     "slot": "Helmet",
+     "items": [
+      "Griffon's Eye",
+      "Harlequin Crest",
+      "Lore|Cap"
+     ]
+    },
+    {
+     "slot": "Body",
+     "items": [
+      "Enigma|Mage Plate",
+      "Treachery",
+      "Skin of the Vipermagi",
+      "Smoke"
+     ]
+    },
+    {
+     "slot": "Gloves",
+     "items": [
+      "Magefist",
+      "Trang-Oul's Claws"
+     ]
+    },
+    {
+     "slot": "Belt",
+     "items": [
+      "Arachnid Mesh",
+      "Goldwrap"
+     ]
+    },
+    {
+     "slot": "Boots",
+     "items": [
+      "Aldur's Advance",
+      "War Traveler",
+      "Waterwalk"
+     ]
+    },
+    {
+     "slot": "Amulet",
+     "items": [
+      "Mara's Kaleidoscope"
+     ]
+    },
+    {
+     "slot": "Rings",
+     "items": [
+      "The Stone of Jordan",
+      "Bul-Kathos' Wedding Band"
+     ]
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Call to Arms|Crystal Sword"
+     ]
+    },
+    {
+     "slot": "Charms",
+     "items": [
+      "Annihilus",
+      "Hellfire Torch",
+      "Gheed's Fortune"
+     ]
+    }
+   ],
+   "tips": [
+    "Five Lightning Sentries on one spot, then one or two Death Sentries once corpses drop.",
+    "Keep Burst of Speed up."
+   ]
+  }
+ ]
+}
