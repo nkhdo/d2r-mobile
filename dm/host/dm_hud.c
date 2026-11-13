@@ -17,3 +17,12 @@ void dm_hud_set_held(uint32_t id) { atomic_store(&g_held, id); }
 uint32_t dm_hud_held(void) { return atomic_load(&g_held); }
 void dm_hud_get(dm_hud_info *out) { pthread_mutex_lock(&g_mu); *out = g_info; pthread_mutex_unlock(&g_mu); out->holding = (int)atomic_load(&g_held); }
 void dm_hud_publish(const dm_hud_info *in) { pthread_mutex_lock(&g_mu); g_info = *in; pthread_mutex_unlock(&g_mu); }
+
+// Bottom-screen Deck, Build tab (dm_hud.h): same hand-off as the HUD numbers, read only while wanted
+static _Atomic int g_build_want;
+static pthread_mutex_t g_build_mu = PTHREAD_MUTEX_INITIALIZER;
+static dm_build_info g_build;
+void dm_build_want(int on) { atomic_store(&g_build_want, on != 0); }
+int dm_build_wanted(void) { return atomic_load(&g_build_want); }
+void dm_build_get(dm_build_info *out) { pthread_mutex_lock(&g_build_mu); *out = g_build; pthread_mutex_unlock(&g_build_mu); }
+void dm_build_publish(const dm_build_info *in) { pthread_mutex_lock(&g_build_mu); g_build = *in; pthread_mutex_unlock(&g_build_mu); }

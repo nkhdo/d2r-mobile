@@ -1,0 +1,477 @@
+{
+ "id": "pal-blessed-hammer",
+ "class": "pal",
+ "name": "Blessed Hammer Paladin",
+ "summary": "Holy Fire Zeal to 19, respec into Hammers with Concentration, Vigor and Blessed Aim.",
+ "links": [
+  {
+   "title": "Leveling guide",
+   "url": "https://maxroll.gg/d2/guides/paladin-leveling"
+  },
+  {
+   "title": "Blessed Hammer guide",
+   "url": "https://maxroll.gg/d2/guides/blessed-hammer-paladin"
+  }
+ ],
+ "breakpoints": {
+  "fcr": [
+   0,
+   9,
+   18,
+   30,
+   48,
+   75,
+   125
+  ],
+  "fcrTarget": 125,
+  "fhr": [
+   0,
+   7,
+   15,
+   27,
+   48,
+   86,
+   200
+  ],
+  "fhrTarget": 86
+ },
+ "after20": [
+  112,
+  113,
+  115
+ ],
+ "merc": {
+  "type": "Act 2 Holy Freeze (Greiz, Defensive)",
+  "note": "Slows everything around you while hammers spin.",
+  "gear": [
+   {
+    "slot": "Weapon",
+    "items": [
+     "Insight|Giant Thresher"
+    ],
+    "note": "Insight keeps your mana up."
+   },
+   {
+    "slot": "Body",
+    "items": [
+     "Smoke",
+     "Treachery",
+     "Fortitude"
+    ]
+   },
+   {
+    "slot": "Helmet",
+    "items": [
+     "Bulwark",
+     "Tal Rasha's Horadric Crest",
+     "Andariel's Visage"
+    ]
+   }
+  ]
+ },
+ "stages": [
+  {
+   "name": "Act 1 Normal",
+   "to": 13,
+   "skills": [
+    {
+     "skill": 98,
+     "to": 1
+    },
+    {
+     "skill": 96,
+     "to": 1
+    },
+    {
+     "skill": 100,
+     "to": 3
+    },
+    {
+     "skill": 102,
+     "to": 4
+    },
+    {
+     "skill": 97,
+     "to": 1
+    },
+    {
+     "skill": 107,
+     "to": 1
+    },
+    {
+     "skill": 106,
+     "to": 1
+    },
+    {
+     "skill": 102,
+     "to": 5
+    }
+   ],
+   "stats": [
+    {
+     "stat": "vit",
+     "to": 45
+    },
+    {
+     "stat": "dex",
+     "to": 21
+    },
+    {
+     "stat": "vit",
+     "to": 74
+    },
+    {
+     "stat": "ene",
+     "to": 25
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Scepter",
+      "Steel|Scimitar"
+     ],
+     "note": "Scepter from Akara after the Den of Evil; Steel if the Countess gives Tir El."
+    },
+    {
+     "slot": "Helmets",
+     "items": [
+      "Cap"
+     ],
+     "note": "Two 2-socket helmets from Charsi or drops: one for Ral runes (fire resistance), one kept for Lore. At least one must not be magic."
+    },
+    {
+     "slot": "Body",
+     "items": [
+      "Studded Leather"
+     ],
+     "note": "2 sockets, not magic: kept for Stealth."
+    }
+   ],
+   "tips": [
+    "Den of Evil point: Resist Fire.",
+    "Save the level 11 point: Charge and Zeal at 12.",
+    "Farm the Countess (Act 1, Forgotten Tower) for Tal + Eth (Stealth) and Ral runes."
+   ]
+  },
+  {
+   "name": "Act 2–3 Normal",
+   "to": 19,
+   "skills": [
+    {
+     "skill": 102,
+     "to": 7
+    },
+    {
+     "skill": 100,
+     "to": 4
+    },
+    {
+     "skill": 102,
+     "to": 11
+    }
+   ],
+   "stats": [
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Body",
+     "items": [
+      "Stealth|Studded Leather"
+     ],
+     "note": "Any 2-socket armor that is not magic; Tal + Eth. Wear it from level 17."
+    },
+    {
+     "slot": "Weapon",
+     "items": [
+      "Scepter"
+     ],
+     "note": "Reroll magic scepters in the Cube (scepter + 3 chipped gems) for +Blessed Hammer."
+    }
+   ],
+   "tips": [
+    "Radament point: Resist Fire.",
+    "Respec at 19, before Mephisto."
+   ]
+  },
+  {
+   "name": "Respec · Act 4 Normal – Nightmare",
+   "to": 35,
+   "respec": true,
+   "skills": [
+    {
+     "skill": 101,
+     "to": 1
+    },
+    {
+     "skill": 112,
+     "to": 1
+    },
+    {
+     "skill": 97,
+     "to": 1
+    },
+    {
+     "skill": 107,
+     "to": 1
+    },
+    {
+     "skill": 98,
+     "to": 1
+    },
+    {
+     "skill": 108,
+     "to": 8
+    },
+    {
+     "skill": 113,
+     "to": 1
+    },
+    {
+     "skill": 99,
+     "to": 1
+    },
+    {
+     "skill": 109,
+     "to": 1
+    },
+    {
+     "skill": 104,
+     "to": 1
+    },
+    {
+     "skill": 115,
+     "to": 2
+    },
+    {
+     "skill": 112,
+     "to": 2
+    },
+    {
+     "skill": 112,
+     "to": 18
+    },
+    {
+     "skill": 115,
+     "to": 3
+    },
+    {
+     "skill": 108,
+     "to": 9
+    }
+   ],
+   "stats": [
+    {
+     "stat": "str",
+     "to": 43,
+     "note": "18 points, more if your Spirit base needs it."
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Spirit|Crystal Sword"
+     ],
+     "note": "Tal Thul Ort Amn from the Countess in Nightmare. Equip as soon as you have the runes."
+    },
+    {
+     "slot": "Shield",
+     "items": [
+      "Spirit|Targe"
+     ],
+     "note": "Paladin shield with 4 sockets (Larzuk)."
+    },
+    {
+     "slot": "Helmet",
+     "items": [
+      "Lore|Cap"
+     ],
+     "note": "Ort Sol into the second 2-socket helmet."
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Staff of Teleportation"
+     ],
+     "note": "Ormus (Act 3), levels 20-23. Check the red-background staves only."
+    },
+    {
+     "slot": "Shop (Nightmare)",
+     "items": [
+      "Coral Belt of the Mammoth",
+      "Russet Heavy Boots of Haste",
+      "Coral Heavy Gloves"
+     ],
+     "note": "Charsi or Gheed at the start of Nightmare: resistances first, lightning and fire."
+    }
+   ],
+   "tips": [
+    "Izual points: Vigor and Blessed Aim."
+   ]
+  },
+  {
+   "name": "Nightmare – Hell",
+   "skills": [
+    {
+     "skill": 112,
+     "to": 20
+    },
+    {
+     "skill": 115,
+     "to": 4
+    },
+    {
+     "skill": 115,
+     "to": 11
+    },
+    {
+     "skill": 113,
+     "to": 2
+    },
+    {
+     "skill": 117,
+     "to": 1
+    },
+    {
+     "skill": 115,
+     "to": 20
+    },
+    {
+     "skill": 113,
+     "to": 20
+    },
+    {
+     "skill": 108,
+     "to": 20
+    },
+    {
+     "skill": 124,
+     "to": 1
+    },
+    {
+     "skill": 122,
+     "to": 1
+    },
+    {
+     "skill": 110,
+     "to": 20
+    }
+   ],
+   "stats": [
+    {
+     "stat": "str",
+     "gear": true
+    },
+    {
+     "stat": "dex",
+     "gear": true,
+     "note": "Enough for 75% chance to block with Holy Shield."
+    },
+    {
+     "stat": "vit",
+     "rest": true
+    }
+   ],
+   "gear": [
+    {
+     "slot": "Weapon",
+     "items": [
+      "Heart of the Oak|Flail",
+      "Spirit|Crystal Sword",
+      "Wizardspike"
+     ]
+    },
+    {
+     "slot": "Shield",
+     "items": [
+      "Spirit|Sacred Targe",
+      "Herald of Zakarum"
+     ]
+    },
+    {
+     "slot": "Helmet",
+     "items": [
+      "Harlequin Crest",
+      "Lore|Cap"
+     ]
+    },
+    {
+     "slot": "Body",
+     "items": [
+      "Enigma|Mage Plate",
+      "Skin of the Vipermagi",
+      "Smoke"
+     ]
+    },
+    {
+     "slot": "Gloves",
+     "items": [
+      "Magefist",
+      "Trang-Oul's Claws"
+     ]
+    },
+    {
+     "slot": "Belt",
+     "items": [
+      "Arachnid Mesh",
+      "Verdungo's Hearty Cord"
+     ]
+    },
+    {
+     "slot": "Boots",
+     "items": [
+      "Sandstorm Trek",
+      "Waterwalk",
+      "War Traveler"
+     ]
+    },
+    {
+     "slot": "Amulet",
+     "items": [
+      "Mara's Kaleidoscope"
+     ]
+    },
+    {
+     "slot": "Rings",
+     "items": [
+      "The Stone of Jordan",
+      "Bul-Kathos' Wedding Band"
+     ]
+    },
+    {
+     "slot": "Swap",
+     "items": [
+      "Call to Arms|Crystal Sword"
+     ],
+     "note": "Battle Orders before a fight."
+    },
+    {
+     "slot": "Charms",
+     "items": [
+      "Annihilus",
+      "Hellfire Torch",
+      "Gheed's Fortune"
+     ]
+    }
+   ],
+   "tips": [
+    "Once Blessed Hammer is maxed, keep synergies about 12 levels ahead of Concentration.",
+    "Hammers spiral out: stand next to the target, not on it."
+   ]
+  }
+ ]
+}

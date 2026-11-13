@@ -44,3 +44,24 @@ void dm_hud_request_players(int n);   // 1..8；任意线程调用 | 1..8; calla
 // Host internal (diag.c tick entry): take the latest request, publish this tick's readings
 int dm_hud_requested_players(void);
 void dm_hud_publish(const dm_hud_info *in);
+// Bottom-screen Deck, Build tab: what the build guide compares against (diag.c reads it on the server tick, only while the tab asks
+// via dm_build_want, so normal play pays nothing). Hard points only: base attributes (stats 0-3, the base layer: no gear) and each
+// skill's base level (the skill list's own entries, not ones granted by items); breakpoints as the game totals them (gear included)
+enum { DM_BUILD_SKILLS = 64 };
+typedef struct {
+    int valid;              // in a run and the controlled player has been read
+    int cls;                // character class: charstats.txt row (0 Amazon 1 Sorceress 2 Necromancer 3 Paladin 4 Barbarian 5 Druid 6 Assassin 7 Warlock)
+    int level;
+    int base[4];            // Strength, Dexterity, Vitality, Energy as spent (stats 0-3, base layer)
+    int stat_points, skill_points;   // unspent (stats 4 and 5)
+    int fcr, fhr, ias;      // faster cast rate (105), faster hit recovery (99), increased attack speed (93), gear included
+    int cap;                // highest base level a skill can take now: 20, or the raised cap once this character has cleared a Rift
+    int n;                  // skills with a base level of 1 or more
+    int16_t skill[DM_BUILD_SKILLS];   // skills.txt *Id
+    uint8_t lvl[DM_BUILD_SKILLS];     // its base level
+    char name[32];          // character name (UTF-8), the key the guide's choice is saved under
+} dm_build_info;
+void dm_build_want(int on);                    // any thread: the Build tab is showing (1) or not (0)
+int dm_build_wanted(void);
+void dm_build_get(dm_build_info *out);         // any thread
+void dm_build_publish(const dm_build_info *in);   // diag.c tick

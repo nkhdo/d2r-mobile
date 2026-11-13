@@ -100,6 +100,61 @@ class SkillNames(unittest.TestCase):
         self.assertEqual(rows(deck.skill_table(self.SKILLS, self.DESC, self.STRINGS))[0], ['id'] + list(deck.LANGS))
 
 
+class SkillRules(unittest.TestCase):
+    SKILLS = [{'skill': 'Attack', '*Id': '0', 'charclass': '', 'reqlevel': '1', 'maxlvl': '1'},
+              {'skill': 'Ice Bolt', '*Id': '39', 'charclass': 'sor', 'reqlevel': '1', 'maxlvl': '20'},
+              {'skill': 'Ice Blast', '*Id': '45', 'charclass': 'sor', 'reqlevel': '6', 'maxlvl': '20', 'reqskill1': 'Ice Bolt'},
+              {'skill': 'Blizzard', '*Id': '59', 'charclass': 'sor', 'reqlevel': '24', 'maxlvl': '20', 'reqskill1': 'Frost Nova', 'reqskill2': 'Glacial Spike'}]
+
+    def test_class_skills_with_requirements(self):
+        t = rows(deck.skill_rules(self.SKILLS))
+        self.assertEqual(t[0], ['id', 'class', 'reqlevel', 'maxlvl', 'req1', 'req2', 'req3'])
+        body = {r[0]: r[1:] for r in t[1:]}
+        self.assertNotIn('0', body)                                  # no class: left out
+        self.assertEqual(body['45'], ['sor', '6', '20', '39', '-1', '-1'])
+        self.assertEqual(body['59'][4:], ['-1', '-1'])               # prerequisites not in the table: -1
+
+
+class ItemNames(unittest.TestCase):
+    BASE = {'armor': [{'code': 'cap', 'namestr': 'cap'}], 'misc': [{'code': 'r30', 'namestr': 'r30'}, {'code': 'r31', 'namestr': 'r31'}]}
+    UROWS = [{'index': 'Harlequin Crest', '*ID': '248'}]
+    SROWS = [{'index': "Tal Rasha's Guardianship", '*ID': '60'}]
+    RUNES = [{'Name': 'Runeword130', 'complete': '1', 'Rune1': 'r07', 'Rune2': 'r10', 'Rune3': 'r09', 'Rune4': 'r11'},
+             {'Name': 'Runeword999', 'complete': '0', 'Rune1': 'r01'}]
+    STRINGS = [{'Key': 'cap', 'enUS': 'Cap', 'deDE': '[fs]Kappe'}, {'Key': 'r30', 'enUS': 'Ber Rune'}, {'Key': 'r31', 'enUS': 'Jah Rune'},
+               {'Key': 'Harlequin Crest', 'enUS': 'Harlequin Crest', 'zhCN': '丑角冠'},
+               {'Key': "Tal Rasha's Guardianship", 'enUS': "Tal Rasha's Guardianship"},
+               {'Key': 'Runeword130', 'enUS': 'Spirit', 'frFR': 'Esprit'}, {'Key': 'Runeword999', 'enUS': 'Unfinished'}]
+
+    def table(self):
+        t = rows(deck.item_names(self.BASE, self.UROWS, self.SROWS, self.RUNES, self.STRINGS))
+        return t[0], {r[0]: r[1:] for r in t[1:]}
+
+    def test_keys_are_english_names_without_spacing_or_punctuation(self):
+        head, t = self.table()
+        self.assertEqual(head[:3], ['key', 'ref', 'runes'])
+        self.assertEqual(deck.name_key("Tal Rasha's  Guardianship"), 'talrashasguardianship')
+        self.assertIn('talrashasguardianship', t)
+
+    def test_refs_point_at_the_picture_keys(self):
+        _, t = self.table()
+        self.assertEqual(t['harlequincrest'][0], 'u248')
+        self.assertEqual(t['talrashasguardianship'][0], 's60')
+        self.assertEqual(t['cap'][0], 'cap')
+        self.assertEqual(t['berrune'][0], 'r30')
+
+    def test_runewords_carry_their_runes_and_unfinished_ones_are_left_out(self):
+        _, t = self.table()
+        self.assertEqual(t['spirit'][:2], ['rw', 'r07 r10 r09 r11'])
+        self.assertEqual(t['spirit'][2 + deck.LANGS.index('frFR')], 'Esprit')
+        self.assertNotIn('unfinished', t)
+
+    def test_names_per_language_without_gender_tags(self):
+        _, t = self.table()
+        self.assertEqual(t['cap'][2 + 1], 'Kappe')
+        self.assertEqual(t['harlequincrest'][2 + deck.LANGS.index('zhCN')], '丑角冠')
+
+
 class GoalNames(unittest.TestCase):
     # label number -> (strings file, key), as gen_map_goal_art.py LABELS
     LABELS = [('levels', "Tal Rasha's Tomb"), ('monsters', 'Bloodraven'), ('objects', 'NoSuchKey')]

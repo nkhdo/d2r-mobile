@@ -28,6 +28,8 @@ import java.util.Arrays;
 //     exits) on a radar turned like the game's view, and a list nearest first with an arrow, the game's name and the distance.
 //   Skills: the skills bound to the controller buttons, as the game's own icons and names (SkillBar.java): the four face buttons as a
 //     diamond plus R and ZR, and the same again with ZL held. Read-only: bindings are changed in the game's skill menu.
+//   Build: a target Build for the character's class and the next steps toward it (BuildTab.java); its guide links open on the bottom
+//     screen through the GuideOpener SecondScreen sets.
 // The host's item list (BagModel.java) is read while the Deck shows, for the belt's own pictures. Item management stays in the
 // game's own inventory (the Inventory button): the bottom screen is for glancing and one-tap actions.
 // All text goes through the string table (nativeText). SecondScreen reads a snapshot every 100 ms and passes it to update, which redraws
@@ -46,6 +48,14 @@ final class ThorDeck extends View {
     static native int nativeBag(int[] out);
     static native int nativeGoals(int[] out);
     static native int nativeSkills(int[] out);
+    static native void nativeBuildWant(boolean on);
+    static native int nativeBuild(int[] out);
+    static native String nativeBuildName();
+    static native int nativeSkillIcon(int id, int[] out);
+
+    // opens a guide page on the bottom screen (SecondScreen's GuideWeb); null = nowhere to open it
+    interface GuideOpener { void open(String title, String url); }
+    GuideOpener guideOpener;
 
     private static final long LONG_PRESS_MS = 500;
     // twelve cells: 0–3 the four function pages, 4 portal, 5 map, 6 swap, 7 players, 8–11 the four belt columns
@@ -76,8 +86,10 @@ final class ThorDeck extends View {
     private final Runnable[] longPress = new Runnable[MAX_POINTERS];
     private boolean picking;   // the players 1–8 picker is open
     // tabs. Kept across shows of the Deck (a new view is made each time the bottom screen comes back)
-    private static final int TAB_MAIN = 0, TAB_MAP = 1, TAB_SKILLS = 2, TAB_COUNT = 3, TAB_BASE = 200;
-    private static final String[] TAB_LABEL = { "dmDeckTabMain", "dmDeckMap", "dmDeckSkills" };
+    private static final int TAB_MAIN = 0, TAB_MAP = 1, TAB_SKILLS = 2, TAB_BUILD = 3, TAB_COUNT = 4, TAB_BASE = 200;
+    private static final String[] TAB_LABEL = { "dmDeckTabMain", "dmDeckMap", "dmDeckSkills", "dmDeckTabBuild" };
+    private final BuildTab build;
+    private boolean buildTouch;   // the finger that went down on the Build tab's body: its whole gesture goes to BuildTab
     private static int tab = TAB_MAIN;
     private final RectF[] tabRect = new RectF[TAB_COUNT];
     private BagModel.Item[] bag = new BagModel.Item[0];
@@ -132,6 +144,17 @@ final class ThorDeck extends View {
         // the life globe's red turned blue for mana: red and blue swapped
         manaPaint.setColorFilter(new ColorMatrixColorFilter(new float[] { 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0 }));
         for (int i = 0; i < MAX_POINTERS; i++) { final int p = i; longPress[i] = () -> onLongPress(p); }
+        build = new BuildTab(new BuildTab.Host() {
+            @Override public Context context() { return getContext(); }
+            @Override public DeckArt art() { return ThorDeck.this.art(); }
+            @Override public DeckIcons icons() { return ThorDeck.this.icons(); }
+            @Override public int lang() { return hud[H_LANG]; }
+            @Override public String text(String key) { return t(key); }
+            @Override public String skillName(int id) { return ThorDeck.this.skillName(id); }
+            @Override public Bitmap skillAtlas(int a) { return ThorDeck.this.skillAtlas(a); }
+            @Override public void openGuide(String title, String url) { if (guideOpener != null) guideOpener.open(title, url); }
+            @Override public void redraw() { invalidate(); }
+        });
     }
 
     // new snapshot: redraw only on change. Returns false = same as last time
@@ -185,6 +208,7 @@ final class ThorDeck extends View {
         list.set(radar.right + 2 * gap, top, w - pad, h - pad);
         line.setStrokeWidth(Math.max(2, 3 * k));
         text.setShadowLayer(3 * k, 0, 2 * k, 0xE0000000);
+        build.layout(0, top, w, h, k);
     }
 
     @Override protected void onDraw(Canvas c) {
@@ -197,6 +221,7 @@ final class ThorDeck extends View {
         drawTabs(c);
         if (tab == TAB_MAP) { drawMap(c); return; }
         if (tab == TAB_SKILLS) { drawSkills(c); return; }
+        if (tab == TAB_BUILD) { build.draw(c, art.label(hud[H_LANG]), art.name(hud[H_LANG])); return; }
         drawHud(c);
         boolean on = actionsEnabled();
         for (int i = 0; i < B_COUNT; i++) drawCell(c, i, on);
@@ -572,15 +597,17 @@ final class ThorDeck extends View {
 
     private void setTab(int t) {
         if (t == tab) return;
+        if (tab == TAB_BUILD) build.shown(false);
         tab = t; picking = false; cancelAll();
+        if (tab == TAB_BUILD) build.shown(true);
         invalidate();
     }
 
-    @Override protected void onAttachedToWindow() { super.onAttachedToWindow(); nativeBagWant(true); bagGen = -1; }
-    @Override protected void onDetachedFromWindow() { nativeBagWant(false); super.onDetachedFromWindow(); }
+    @Override protected void onAttachedToWindow() { super.onAttachedToWindow(); nativeBagWant(true); bagGen = -1; if (tab == TAB_BUILD) build.shown(true); }
+    @Override protected void onDetachedFromWindow() { nativeBagWant(false); build.shown(false); super.onDetachedFromWindow(); }
 
     // called with every snapshot (SecondScreen, 10 Hz)
-    void poll() { pollBag(); pollGoals(); pollSkills(); }
+    void poll() { pollBag(); pollGoals(); pollSkills(); if (tab == TAB_BUILD) build.poll(); }
 
     // Skills tab: redraw when a binding changes
     private void pollSkills() {
@@ -624,6 +651,13 @@ final class ThorDeck extends View {
 
     @Override public boolean onTouchEvent(MotionEvent e) {
         int idx = e.getActionIndex(), id = e.getPointerId(idx);
+        // the Build tab is to read: its body takes one finger's whole gesture (taps and scrolling), also while the character is dead
+        if (e.getActionMasked() == MotionEvent.ACTION_DOWN) buildTouch = tab == TAB_BUILD && hud[H_VALID] != 0 && hit(e.getX(), e.getY()) < TAB_BASE;
+        if (buildTouch) {
+            build.touch(e);
+            if (e.getActionMasked() == MotionEvent.ACTION_UP || e.getActionMasked() == MotionEvent.ACTION_CANCEL) buildTouch = false;
+            return true;
+        }
         switch (e.getActionMasked()) {
         case MotionEvent.ACTION_DOWN: case MotionEvent.ACTION_POINTER_DOWN:
             if (id >= MAX_POINTERS || !actionsEnabled()) return true;

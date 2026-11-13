@@ -127,10 +127,20 @@ final class SecondScreen implements DisplayManager.DisplayListener {
     @Override public void onDisplayRemoved(int id) { gate.display(findDisplay() != null); reconcile(); }
     @Override public void onDisplayChanged(int id) { gate.display(findDisplay() != null); reconcile(); }
 
+    // The Deck, with the Build tab's guide page (GuideWeb) over it when one is open; the page is destroyed with the Presentation
     private static final class DeckPresentation extends Presentation {
         final ThorDeck deck;
+        private GuideWeb web;
         DeckPresentation(Context outer, Display display) { super(outer, display); deck = new ThorDeck(getContext()); }
-        @Override protected void onCreate(Bundle state) { super.onCreate(state); setContentView(deck); }
+        @Override protected void onCreate(Bundle state) {
+            super.onCreate(state);
+            android.widget.FrameLayout root = new android.widget.FrameLayout(getContext());
+            root.addView(deck);
+            setContentView(root);
+            web = new GuideWeb(root, ThorDeck::nativeText);
+            deck.guideOpener = (title, url) -> web.open(title, url);
+        }
+        @Override protected void onStop() { if (web != null) web.close(); super.onStop(); }
         // consume no keys: the BACK that gamepad B turns into at system level does not close it
         @Override public boolean dispatchKeyEvent(KeyEvent e) { return false; }
     }

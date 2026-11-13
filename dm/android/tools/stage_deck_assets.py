@@ -10,6 +10,8 @@ Writes into the import pack's overlay folder, before its manifest is written:
   deck/goals.tsv    map goal names per game language (the goal compass): key = the host's goal label number (dm_world.c, labels from
                     gen_map_goal_art.py), 255 = waypoint
   deck/skills.tsv   skill names per game language by skills.txt *Id (the Skills tab; icons come from overlay touchart/, native_art)
+  deck/skillrules.tsv  class skills by *Id: class, required level, highest base level, prerequisites (the Build tab's next steps)
+  deck/itemnames.tsv   item, unique, set and runeword names per game language by English name, with runewords' runes (the Build tab)
   deck/ui/*.png     the game's own panel art the Deck is drawn with (UI_ART below), and deck/ui/exocet.otf / formal.ttf, the game's fonts
 These files hold game text, so they only ever live in the player's own import pack.
 """
@@ -58,6 +60,59 @@ def skill_table(skills, skilldesc, strings):
         e = by_key.get(desc.get(r.get('skilldesc') or ''))
         if ident.isdigit() and e:
             out.append('\t'.join([ident] + [_clean(e.get(lang)) for lang in LANGS]))
+    return '\n'.join(out) + '\n'
+
+
+def skill_rules(skills):
+    """The Build tab's skill rules by skills.txt *Id (BuildPlan.java): class code, required level, highest base level, the three
+    prerequisite skill ids (-1 none). Skills of no class (monster skills, item skills) are left out."""
+    ids = {r.get('skill'): (r.get('*Id') or '').strip() for r in skills}
+    out = ['\t'.join(('id', 'class', 'reqlevel', 'maxlvl', 'req1', 'req2', 'req3'))]
+    for r in skills:
+        ident, cls = (r.get('*Id') or '').strip(), (r.get('charclass') or '').strip()
+        if not ident.isdigit() or not cls:
+            continue
+        req = [ids.get(r.get('reqskill%d' % i) or '', '') or '-1' for i in (1, 2, 3)]
+        out.append('\t'.join([ident, cls, (r.get('reqlevel') or '0').strip() or '0', (r.get('maxlvl') or '0').strip() or '0'] + req))
+    return '\n'.join(out) + '\n'
+
+
+def name_key(text):
+    """How the Build tab's guide files name an item: its English name, lowercase, letters and digits only ("Harlequin Crest" ->
+    "harlequincrest"), so apostrophes and spacing in the files do not matter."""
+    return re.sub(r'[^a-z0-9]+', '', (text or '').lower())
+
+
+def item_names(base, unique_rows, set_rows, rune_rows, strings):
+    """Item names per game language for the Build tab, keyed by name_key(English name). Columns: key, ref (base code, "u<ID>",
+    "s<ID>" as in items.tsv for the picture, or "rw" for a runeword), runes (a runeword's rune codes, space separated), then the 13
+    languages. base: rows of armor / weapons / misc .txt (code, namestr); strings: entries of item-names.json and item-runes.json.
+    First name wins: runewords, then uniques, sets, base items."""
+    by_key = {}
+    for e in strings:
+        by_key.setdefault(e.get('Key'), e)
+    out, seen = ['\t'.join(('key', 'ref', 'runes') + LANGS)], set()
+
+    def add(string_key, ref, runes=''):
+        e = by_key.get(string_key)
+        key = name_key(e.get('enUS')) if e else ''
+        if not key or key in seen:
+            return
+        seen.add(key)
+        out.append('\t'.join([key, ref, runes] + [_clean(e.get(lang)) for lang in LANGS]))
+
+    for r in rune_rows:
+        if (r.get('complete') or '').strip() == '1':
+            add(r.get('Name'), 'rw', ' '.join(c for c in (r.get('Rune%d' % i, '').strip() for i in range(1, 7)) if c))
+    for prefix, rows in (('u', unique_rows), ('s', set_rows)):
+        for r in rows:
+            ident = (r.get('*ID') or '').strip()
+            if ident.isdigit():
+                add(r.get('index'), prefix + ident)
+    for rows in base.values():
+        for r in rows:
+            if r.get('code'):
+                add(r.get('namestr') or r.get('code'), r['code'])
     return '\n'.join(out) + '\n'
 
 
@@ -224,6 +279,14 @@ def _stage_icons(romfs, target):
             skill_strings += json.loads(read(path[0]).decode('utf-8-sig'))
     (target / 'skills.tsv').write_text(skill_table(annot_strings.excel(romfs, 'skills.txt'), annot_strings.excel(romfs, 'skilldesc.txt'),
                                                    skill_strings), encoding='utf-8', newline='\n')
+    (target / 'skillrules.tsv').write_text(skill_rules(annot_strings.excel(romfs, 'skills.txt')), encoding='utf-8', newline='\n')
+    item_strings = []
+    for name in ('item-names.json', 'item-runes.json'):
+        path = [p for p in index if p.endswith('/lng/strings/' + name)]
+        if path:
+            item_strings += json.loads(read(path[0]).decode('utf-8-sig'))
+    (target / 'itemnames.tsv').write_text(item_names(base, unique_rows, set_rows, annot_strings.excel(romfs, 'runes.txt'), item_strings),
+                                          encoding='utf-8', newline='\n')
     _stage_ui(read, target)
     return len(icons), len(set(icons.values()))
 

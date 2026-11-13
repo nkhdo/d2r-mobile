@@ -102,6 +102,43 @@ JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeSkills(JNIEnv *env,
     return 12;
 }
 
+// Build tab (BuildPlan.java): the host reads the player's class, hard points and breakpoints on the tick only while the tab asks
+JNIEXPORT void JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeBuildWant(JNIEnv *env, jclass cls, jboolean on) { (void)env; (void)cls; dm_build_want(on); }
+
+// out = valid, class, level, Str, Dex, Vit, Ene, unspent stat points, unspent skill points, FCR, FHR, IAS, skill cap, n, then n pairs
+// (skills.txt *Id, base level). Returns the number of ints written, -1 if out is too short. Layout matches BuildPlan.Live.decode
+enum { B_HEAD = 14 };
+JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeBuild(JNIEnv *env, jclass cls, jintArray out) {
+    (void)cls;
+    if ((*env)->GetArrayLength(env, out) < B_HEAD + 2 * DM_BUILD_SKILLS) return -1;
+    dm_build_info b; dm_build_get(&b);
+    jint v[B_HEAD + 2 * DM_BUILD_SKILLS];
+    v[0] = b.valid && dm_uiscreen_ingame(); v[1] = b.cls; v[2] = b.level;
+    for (int i = 0; i < 4; i++) v[3 + i] = b.base[i];
+    v[7] = b.stat_points; v[8] = b.skill_points; v[9] = b.fcr; v[10] = b.fhr; v[11] = b.ias; v[12] = b.cap; v[13] = b.n;
+    for (int i = 0; i < b.n; i++) { v[B_HEAD + 2 * i] = b.skill[i]; v[B_HEAD + 2 * i + 1] = b.lvl[i]; }
+    (*env)->SetIntArrayRegion(env, out, 0, B_HEAD + 2 * b.n, v);
+    return B_HEAD + 2 * b.n;
+}
+
+// the character's name (the key the chosen build is saved under); "" when not in a run. Names are ASCII or UTF-8 Chinese (hle_charname.c)
+JNIEXPORT jstring JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeBuildName(JNIEnv *env, jclass cls) {
+    (void)cls;
+    dm_build_info b; dm_build_get(&b);
+    return (*env)->NewStringUTF(env, b.valid ? b.name : "");
+}
+
+// one skill's icon: out = atlas (overlay touchart/dm_native_skill_<atlas>.png), x, y, width, height. Returns 0 when there is none
+JNIEXPORT jint JNICALL Java_com_xiaoboluo_d2r_ThorDeck_nativeSkillIcon(JNIEnv *env, jclass cls, jint id, jintArray out) {
+    (void)cls;
+    if (id < 0 || (*env)->GetArrayLength(env, out) < 5) return 0;
+    dm_ta_glyph g = dm_ta_skill((uint32_t)id); dm_ta_frame fr;
+    if (g.status != DM_TA_GLYPH || !dm_ta_frame_at(g.atlas, g.normal_frame, &fr)) return 0;
+    jint v[5] = { g.atlas, fr.x, fr.y, fr.width, fr.height };
+    (*env)->SetIntArrayRegion(env, out, 0, 5, v);
+    return 1;
+}
+
 // action numbers match A_* in ThorDeck.java
 enum { A_DRINK, A_FEED_MERC, A_PORTAL, A_MAP, A_SWAP, A_TAB, A_PLAYERS };
 
