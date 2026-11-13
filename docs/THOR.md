@@ -37,6 +37,8 @@ The switch only appears when your import pack is made from **this repository's s
 
 The Deck changes files that the import pack is checked against. An import pack made from another copy of the source, even the same version, is rejected: the App says "The touch resources are incomplete or do not match this version of the app" and stops. Make the import pack with this repository's `dm/tools/d2rm_android.py` (step 1 in [ANDROID.md](ANDROID.md)), and use the APK built from the same commit.
 
+This build's launcher title is **D2R Thor**. It imports from the usual `Download/S2X/D2R Mobile/android` folder, so don't keep an upstream D2R Mobile app installed beside it: that app would import this pack too and then refuse to start.
+
 ## When the Deck steps aside
 
 - **Home, recent apps, or another app in front:** the Deck hides at once and comes back when you return to the game.
