@@ -136,27 +136,31 @@
       "Scepter",
       "Steel|Scimitar"
      ],
-     "note": "Scepter from Akara after the Den of Evil; Steel if the Countess gives Tir El."
+     "note": "Scepter from Akara after the Den of Evil; Steel if the Countess gives the runes."
     },
     {
      "slot": "Helmets",
      "items": [
       "Cap"
      ],
-     "note": "Two 2-socket helmets from Charsi or drops: one for Ral runes (fire resistance), one kept for Lore. At least one must not be magic."
+     "note": "Two 2-socket helmets from Charsi or drops: one for Ral runes (fire resistance), one kept for [Lore] at level 27. At least one must not be magic."
     },
     {
      "slot": "Body",
      "items": [
       "Studded Leather"
      ],
-     "note": "2 sockets, not magic: kept for Stealth."
+     "note": "2 sockets, not magic: kept for [Stealth] at level 17."
+    },
+    {
+     "slot": "Runes",
+     "items": [],
+     "note": "Farm the Countess (Act 1, Forgotten Tower) for runes: [Stealth], and Ral for fire resistance."
     }
    ],
    "tips": [
     "Den of Evil point: Resist Fire.",
-    "Save the level 11 point: Charge and Zeal at 12.",
-    "Farm the Countess (Act 1, Forgotten Tower) for Tal + Eth (Stealth) and Ral runes."
+    "Save the level 11 point: Charge and Zeal at 12."
    ]
   },
   {

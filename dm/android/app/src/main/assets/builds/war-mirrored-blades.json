@@ -102,14 +102,14 @@
      "items": [
       "Cap"
      ],
-     "note": "Two 2-socket helmets from Charsi or drops: one for Ral runes (fire resistance), one kept for Lore. At least one must not be magic."
+     "note": "Two 2-socket helmets from Charsi or drops: one for Ral runes (fire resistance), one kept for [Lore] at level 27. At least one must not be magic."
     },
     {
      "slot": "Body",
      "items": [
-      "Hard Leather Armor"
+      "Stealth|Hard Leather Armor"
      ],
-     "note": "2 sockets, not magic: kept for Stealth."
+     "note": "2 sockets, not magic: kept for Stealth at level 17."
     },
     {
      "slot": "Boots",
@@ -117,12 +117,16 @@
       "Boots"
      ],
      "note": "Imbue boots at Charsi at 19 for a chance at faster run/walk."
+    },
+    {
+     "slot": "Runes",
+     "items": [],
+     "note": "Farm the Countess (Act 1, Forgotten Tower) for runes: [Stealth], and Ral for fire resistance."
     }
    ],
    "tips": [
     "Den of Evil point: Miasma Bolt.",
-    "Radament point: Sigil: Lethargy.",
-    "Farm the Countess (Act 1, Forgotten Tower) for Tal + Eth (Stealth) and Ral runes."
+    "Radament point: Sigil: Lethargy."
    ]
   },
   {
@@ -564,7 +568,9 @@
     }
    ],
    "tips": [
-    "Bind Demon: stop at 20 counting +skills; the rest goes to Levitation Mastery.",
+    "Bind Demon: stop at 20 counting +skills; the rest goes to Levitation Mastery."
+   ],
+   "bpTips": [
     "Aim for at least 48% faster hit recovery (no Warlock table is published yet)."
    ]
   }

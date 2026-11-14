@@ -46,6 +46,7 @@ final class BuildTab {
     }
 
     private static final int TEXT = 0xFFE8D9B0, DIM = 0xFF8A7F68, GOLD = 0xFFC7A04A, RED = 0xFFE04030, GREEN = 0xFF7FC060, BLUE = 0xFF7FA8FF,
+        RUNE = 0xFFFFA530,   // rune names: the game's orange for runes
         PANEL = DeckArt.PANEL, PRESSED = DeckArt.PRESSED;
     private static final String[] SECTION_KEY = { "dmDeckSkills", "dmBuildStats", "dmBuildGear", "dmBuildMerc", "dmBuildBp" };
     private static final String[] STAT_KEY = { "dmBuildStr", "dmBuildDex", "dmBuildVit", "dmBuildEne" };
@@ -55,6 +56,7 @@ final class BuildTab {
     private static List<BuildGuide> guides;
     private static Map<Integer, BuildPlan.Rule> rules;
     private static ItemNames items;
+    private Map<String, Integer> have = new HashMap<>();   // runes held (BagModel.runes), for the runeword checks
 
     private final Host host;
     private final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG), fill = new Paint(Paint.ANTI_ALIAS_FLAG), line = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -166,6 +168,14 @@ final class BuildTab {
         }
         rows = null;
         host.redraw();
+    }
+
+    // the player's items changed: returns true when the runes held changed (then the rows are rebuilt)
+    boolean bag(BagModel.Item[] all) {
+        Map<String, Integer> next = BagModel.runes(all);
+        if (next.equals(have)) return false;
+        have = next; rows = null;
+        return true;
     }
 
     private int shownStage() { return guide == null ? 0 : viewStage >= 0 ? viewStage : BuildPlan.stage(guide, live.level); }
@@ -390,21 +400,45 @@ final class BuildTab {
         return new Row(52 * k) { void draw(Canvas c, float x, float y, float w) { left(c, s, x, y + 38 * k, 28 * k, w, colour); } };
     }
 
-    // wrapped text; lines measured now with the content width
+    // wrapped text; lines measured now with the content width. ItemNames' marks colour spans (runes orange, held checks green).
     private List<Row> paragraph(String s, final float size, final int colour, float indent) {
         List<Row> out = new ArrayList<>();
         text.setTextSize(size);
         float w = content.width() - 40 * k - indent;
-        for (String part : s.split("\n")) {
-            String rest = part;
-            while (!rest.isEmpty()) {
-                int n = text.breakText(rest, true, w, null);
-                if (n < rest.length()) { int sp = rest.lastIndexOf(' ', n); if (sp > 0) n = sp; }
-                final String ln = rest.substring(0, Math.max(1, n)).trim();
-                rest = rest.substring(Math.max(1, n)).trim();
-                final float ind = indent;
-                out.add(new Row(size * 1.35f) { void draw(Canvas c, float x, float y, float ww) { left(c, ln, x + ind, y + size, size, 0, colour); } });
-            }
+        StringBuilder plain = new StringBuilder();
+        final int[] col = new int[s.length()];
+        int cur = colour;
+        for (int i = 0; i < s.length(); i++) {
+            char ch = s.charAt(i);
+            if (ch == ItemNames.RUNE) cur = RUNE; else if (ch == ItemNames.HAVE) cur = GREEN; else if (ch == ItemNames.END) cur = colour;
+            else { col[plain.length()] = cur; plain.append(ch); }
+        }
+        final String p = plain.toString();
+        final float ind = indent;
+        int start = 0;
+        while (start < p.length()) {
+            int partEnd = p.indexOf('\n', start);
+            if (partEnd < 0) partEnd = p.length();
+            while (start < partEnd && p.charAt(start) == ' ') start++;
+            if (start >= partEnd) { start = partEnd + 1; continue; }
+            int end = start + Math.max(1, text.breakText(p, start, partEnd, true, w, null));
+            if (end < partEnd) { int sp = p.lastIndexOf(' ', end); if (sp > start) end = sp; }
+            int e = end;
+            while (e > start && p.charAt(e - 1) == ' ') e--;
+            final int a = start, b = e;
+            out.add(new Row(size * 1.35f) {
+                void draw(Canvas c, float x, float y, float ww) {
+                    text.setTextAlign(Paint.Align.LEFT); text.setTextSize(size);
+                    float px = x + ind;
+                    for (int i = a; i < b; ) {
+                        int j = i;
+                        while (j < b && col[j] == col[i]) j++;
+                        text.setColor(col[i]); c.drawText(p, i, j, px, y + size, text);
+                        px += text.measureText(p, i, j); i = j;
+                    }
+                }
+            });
+            start = end;
         }
         return out;
     }
@@ -435,8 +469,8 @@ final class BuildTab {
         out.add(heading(g.slot, GOLD));
         final int lang = host.lang();
         for (final String it : g.items) {
-            final String nm = items.display(it, lang), runes = items.runes(it, lang), pic = items.picture(it);
-            out.add(new Row(runes.isEmpty() ? 50 * k : 74 * k) {
+            final String nm = items.display(it, lang), runes = items.runeLine(it, lang, have), from = items.source(it, have), pic = items.picture(it);
+            out.add(new Row(50 * k) {
                 void draw(Canvas c, float x, float y, float w) {
                     Bitmap b = pic == null ? null : host.icons().load(pic);
                     float ix = x + 10 * k;
@@ -446,11 +480,16 @@ final class BuildTab {
                         c.drawBitmap(b, null, tmp, bitmapPaint);
                     }
                     left(c, nm, x + 64 * k, y + 34 * k, 25 * k, w - 64 * k, TEXT);
-                    if (!runes.isEmpty()) left(c, runes, x + 64 * k, y + 62 * k, 21 * k, w - 64 * k, DIM);
                 }
             });
+            // its runes (held ones checked), then where the highest missing one drops
+            if (!runes.isEmpty()) out.addAll(paragraph(runes + (from.isEmpty() ? "" : "   ·   " + from), 22 * k, DIM, 64 * k));
         }
-        if (!g.note.isEmpty()) out.addAll(paragraph(g.note, 22 * k, DIM, 64 * k));
+        if (!g.note.isEmpty()) out.addAll(paragraph(items.expand(g.note, lang, have), 22 * k, DIM, 64 * k));
+    }
+
+    private void tipRows(List<Row> out, List<String> tips) {
+        for (String tip : tips) out.addAll(paragraph("• " + items.expand(tip, host.lang(), have), 23 * k, DIM, 0));
     }
 
     private Row breakpoint(final String label, final int[] table, final int have, final int target) {
@@ -487,7 +526,7 @@ final class BuildTab {
                 out.add(heading(host.text("dmBuildPast20"), BLUE));
                 for (int id : guide.after20) out.add(skillRow(0, id, live.cap));
             }
-            for (String tip : st.tips) out.addAll(paragraph("• " + tip, 23 * k, DIM, 0));
+            tipRows(out, st.tips);
             break;
         case 1:   // stats
             out.add(heading(st.name, TEXT));
@@ -495,27 +534,29 @@ final class BuildTab {
             for (BuildGuide.StatRule r : st.stats) {
                 String s = host.text(STAT_KEY[r.stat]);
                 boolean met = r.kind == BuildGuide.StatRule.TO && live.base[r.stat] >= r.to;
-                if (r.kind == BuildGuide.StatRule.TO) s += "  →  " + r.to + (met ? "  ✓" : "  (+" + (r.to - live.base[r.stat]) + ")");
+                if (r.kind == BuildGuide.StatRule.TO) s += "  →  " + r.to + (met ? "  " + ItemNames.HAVE + "✓" + ItemNames.END :"  (+" + (r.to - live.base[r.stat]) + ")");
                 else if (r.kind == BuildGuide.StatRule.GEAR) s = String.format(host.text("dmBuildGearStat"), s);
                 else s = String.format(host.text("dmBuildRest"), s);
                 out.addAll(paragraph(s, 27 * k, met ? DIM : TEXT, 0));
-                if (!r.note.isEmpty()) out.addAll(paragraph(r.note, 22 * k, DIM, 24 * k));
+                if (!r.note.isEmpty()) out.addAll(paragraph(items.expand(r.note, host.lang(), have), 22 * k, DIM, 24 * k));
             }
             break;
         case 2:   // gear
             out.add(heading(st.name, TEXT));
             if (st.gear.isEmpty()) out.addAll(paragraph(host.text("dmBuildNoGear"), 23 * k, DIM, 0));
             for (BuildGuide.Gear g : st.gear) gearRows(out, g);
+            tipRows(out, st.gearTips);
             break;
         case 3:   // mercenary
             out.add(heading(guide.mercType, TEXT));
-            if (!guide.mercNote.isEmpty()) out.addAll(paragraph(guide.mercNote, 23 * k, DIM, 0));
+            if (!guide.mercNote.isEmpty()) out.addAll(paragraph(items.expand(guide.mercNote, host.lang(), have), 23 * k, DIM, 0));
             for (BuildGuide.Gear g : guide.merc) gearRows(out, g);
             break;
         default:  // breakpoints
             if (guide.fcr.length > 0) out.add(breakpoint(host.text("dmBuildFcr"), guide.fcr, live.fcr, guide.fcrTarget));
             if (guide.fhr.length > 0) out.add(breakpoint(host.text("dmBuildFhr"), guide.fhr, live.fhr, guide.fhrTarget));
             out.addAll(paragraph(String.format(host.text("dmBuildIas"), live.ias), 24 * k, DIM, 0));
+            tipRows(out, st.bpTips);   // the shown stage's
         }
         out.add(new Row(24 * k) { void draw(Canvas c, float x, float y, float w) { } });
         out.addAll(paragraph(host.text("dmBuildCredit"), 20 * k, DIM, 0));

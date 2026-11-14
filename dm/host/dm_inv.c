@@ -29,9 +29,11 @@ static void publish(const dm_inv_item *items, int n) {
         atomic_fetch_add(&g_gen, 1);
         static int logged;
         if (logged < 20) {   // first 20 changes: one line to cross-check the reader on a device
-            logged++; char line[640]; int k = snprintf(line, sizeof line, "Deck bag: %d items:", n);
+            logged++; char line[640]; int per[5] = {0};
+            for (int i = 0; i < n; i++) per[items[i].where % 5]++;
+            int k = snprintf(line, sizeof line, "Deck bag: %d items (bag %d worn %d belt %d cube %d stash %d):", n, per[0], per[1], per[2], per[3], per[4]);
             for (int i = 0; i < n && k < (int)sizeof line - 40; i++)
-                k += snprintf(line + k, sizeof line - k, " %s/%c%d,%d %dx%d q%d%s%s", items[i].code, "BWL"[items[i].where % 3],
+                k += snprintf(line + k, sizeof line - k, " %s/%c%d,%d %dx%d q%d%s%s", items[i].code, "BWLCS"[items[i].where % 5],
                               items[i].where == DM_INV_WORN ? items[i].loc : items[i].x, items[i].y, items[i].w, items[i].h, items[i].quality,
                               items[i].unid ? " unid" : "", items[i].row >= 0 ? (items[i].quality == 7 ? " u" : " s") : "");
             LOG("%s", line);
@@ -69,13 +71,14 @@ void dm_inv_tick(uint8_t *b, uint64_t pl) {
     for (int k = 0; it && k < 1024 && n < DM_INV_MAX; k++) {
         uint64_t d = *(uint64_t *)(it + 0x10); if (!d) break;
         uint32_t mode = *(uint32_t *)(it + 0xc);
-        int keep = (mode == 0 && *(uint8_t *)(d + 0x55) == 0) || mode == 1 || mode == 2;   // page 0 = the bag (3 cube and 4 stash are left for later)
+        uint8_t page = mode == 0 ? *(uint8_t *)(d + 0x55) : 0;   // stored: page 0 the bag, 3 the cube, 4 the stash
+        int keep = (mode == 0 && (page == 0 || page == 3 || page == 4)) || mode == 1 || mode == 2;
         if (keep) {
             dm_inv_item *o = &cur[n++]; memset(o, 0, sizeof *o);
             o->id = *(uint32_t *)(it + 8);
             uint32_t code = ((uint32_t (*)(uint64_t))(b + 0x570260))(it);
             for (int i = 0; i < 3; i++) { char c = (char)(code >> (8 * i)); o->code[i] = c == ' ' ? 0 : c; }
-            o->where = mode == 1 ? DM_INV_WORN : mode == 2 ? DM_INV_BELT : DM_INV_BAG;
+            o->where = mode == 1 ? DM_INV_WORN : mode == 2 ? DM_INV_BELT : page == 3 ? DM_INV_CUBE : page == 4 ? DM_INV_STASH : DM_INV_BAG;
             o->quality = (uint8_t)*(uint32_t *)d;
             o->unid = !(*(uint32_t *)(d + 0x18) & 0x10);
             o->loc = mode == 1 ? *(uint8_t *)(d + 0x54) : 0;

@@ -127,19 +127,23 @@
      "items": [
       "Cap"
      ],
-     "note": "Two 2-socket helmets from Charsi or drops: one for Ral runes (fire resistance), one kept for Lore. At least one must not be magic."
+     "note": "Two 2-socket helmets from Charsi or drops: one for Ral runes (fire resistance), one kept for [Lore] at level 27. At least one must not be magic."
     },
     {
      "slot": "Body",
      "items": [
       "Studded Leather"
      ],
-     "note": "2 sockets, not magic: kept for Stealth."
+     "note": "2 sockets, not magic: kept for [Stealth] at level 17."
+    },
+    {
+     "slot": "Runes",
+     "items": [],
+     "note": "Farm the Countess (Act 1, Forgotten Tower) for runes: [Stealth], and Ral for fire resistance."
     }
    ],
    "tips": [
-    "Corpse Explosion clears packs once the skeletons drop the first kill.",
-    "Farm the Countess (Act 1, Forgotten Tower) for Tal + Eth (Stealth) and Ral runes."
+    "Corpse Explosion clears packs once the skeletons drop the first kill."
    ]
   },
   {

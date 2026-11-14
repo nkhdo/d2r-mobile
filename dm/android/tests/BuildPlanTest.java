@@ -27,7 +27,7 @@ public class BuildPlanTest {
         + " \"merc\": {\"type\": \"Act 2 Holy Freeze\", \"gear\": [{\"slot\": \"Weapon\", \"items\": [\"Insight\"]}]},\n"
         + " \"stages\": [\n"
         + "  {\"name\": \"Early\", \"to\": 12, \"skills\": [{\"skill\": 39, \"to\": 3}, {\"skill\": 42, \"to\": 1}],\n"
-        + "   \"stats\": [{\"stat\": \"vit\", \"rest\": true}], \"gear\": [{\"slot\": \"Body\", \"items\": [\"Stealth|Studded Leather\"]}], \"tips\": [\"t1\"]},\n"
+        + "   \"stats\": [{\"stat\": \"vit\", \"rest\": true}], \"gear\": [{\"slot\": \"Body\", \"items\": [\"Stealth|Studded Leather\"]}], \"tips\": [\"t1\"], \"gearTips\": [\"g1\"]},\n"
         + "  {\"name\": \"Mid\", \"to\": 26, \"skills\": [{\"skill\": 43, \"to\": 1}, {\"skill\": 54, \"to\": 1}],\n"
         + "   \"stats\": [{\"stat\": \"str\", \"to\": 45}, {\"stat\": \"dex\", \"gear\": true}, {\"stat\": \"vit\", \"rest\": true}]},\n"
         + "  {\"name\": \"Respec\", \"respec\": true, \"skills\": [{\"skill\": 39, \"to\": 1}, {\"skill\": 45, \"to\": 1}, {\"skill\": 55, \"to\": 1},\n"
@@ -65,6 +65,8 @@ public class BuildPlanTest {
         check("last stage open-ended", Integer.MAX_VALUE, g.stages.get(2).to);
         check("respec flag", true, g.stages.get(2).respec);
         check("stat kinds", BuildGuide.StatRule.GEAR, g.stages.get(1).stats.get(1).kind);
+        check("gear tips", Arrays.asList("g1"), g.stages.get(0).gearTips);
+        check("no breakpoint tips: empty", 0, g.stages.get(1).bpTips.size());
         check("merc", "Act 2 Holy Freeze", g.mercType);
         check("link", "https://example.org/g", g.links.get(0).url);
         throwsOn("unknown class", "{\"id\": \"x\", \"name\": \"x\", \"class\": \"foo\", \"stages\": [{}]}");
@@ -140,6 +142,17 @@ public class BuildPlanTest {
         check("unknown as written", "Short Staff +2 Charged Bolt", names.display("Short Staff +2 Charged Bolt", 0));
         check("runes, English without 'Rune'", "Tal Eth", names.runes("Stealth", 0));
         check("runes, German (English fallback loses 'Rune' too)", "Tal Eth-Rune", names.runes("Stealth", 1));
+        check("note: runeword with runes", "kept for Tarnung (Tal Eth-Rune).", names.expand("kept for [Stealth].", 1));
+        check("note: item, no runes", "a Harlequin Crest or Stealth (Tal Eth)", names.expand("a [Harlequin Crest] or [Stealth]", 0));
+        check("note: unknown and unclosed as written", "a Tiara and [Stealth", names.expand("a [Tiara] and [Stealth", 0));
+        java.util.Map<String, Integer> held = new java.util.HashMap<>();
+        held.put("r03", 1);
+        check("rune line: held one checked", "\u0001Tal\u0003 \u0002✓\u0003 \u0001Eth\u0003", names.runeLine("Stealth", 0, held));
+        check("note with marks", "for Stealth (\u0001Tal\u0003 \u0001Eth\u0003).", names.expand("for [Stealth].", 0, new java.util.HashMap<>()));
+        check("source: highest missing rune (Eth, 4)", "Countess, Normal", names.source("Stealth|Studded Leather", held));
+        held.put("r04", 1);
+        check("source: all held", "", names.source("Stealth", held));
+        check("source: not a runeword", "", names.source("Harlequin Crest", held));
         check("unique picture", "u248", names.picture("Harlequin Crest"));
         check("runeword: its base's picture", "stu", names.picture("Stealth|Studded Leather"));
         check("runeword alone: none", null, names.picture("Stealth"));

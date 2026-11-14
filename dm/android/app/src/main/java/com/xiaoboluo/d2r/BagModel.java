@@ -3,7 +3,7 @@ package com.xiaoboluo.d2r;
 // The host's item list for the bottom-screen Deck, without Android types (tested by BagModelTest): decoding deck_jni.c nativeBag's
 // output (from dm_inv.c). Main's potion row draws each belt slot with its own item's picture from it.
 final class BagModel {
-    static final int BAG = 0, WORN = 1, BELT = 2;
+    static final int BAG = 0, WORN = 1, BELT = 2, CUBE = 3, STASH = 4;
     static final int INTS = 5;   // ints per item in nativeBag's output
     static final class Item {
         int id, where, quality, loc, x, y, w, h, row, flags;
@@ -27,6 +27,14 @@ final class BagModel {
             it.row = (short) raw[o + 4]; it.flags = raw[o + 4] >>> 16;
             out[i] = it;
         }
+        return out;
+    }
+
+    // runes the player holds, by code ("r07" -> 2), in the bag, stash and cube (the Build tab's runeword rows)
+    static java.util.Map<String, Integer> runes(Item[] items) {
+        java.util.Map<String, Integer> out = new java.util.HashMap<>();
+        for (Item it : items)
+            if ((it.where == BAG || it.where == STASH || it.where == CUBE) && it.code.matches("r[0-9][0-9]")) out.merge(it.code, 1, Integer::sum);
         return out;
     }
 }

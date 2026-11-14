@@ -39,11 +39,41 @@ def g(slot, items, note=None):
     if note: r["note"] = note
     return r
 
+class G(str):   # a tip about gear: shown in the Gear section ("gearTips")
+    pass
+
+class B(str):   # a tip about breakpoints: shown in the Breakpoints section ("bpTips")
+    pass
+
+# Required level of the runewords a base is kept for (the highest rune's level; misc.txt levelreq). A "Runeword|Base" row in a stage
+# that ends before that level is left out (it cannot be made yet: the note names it with its runes instead); when it stays, the note
+# names it plainly, since the row shows the runes, and the bare base row goes (the runeword row names its base: one item, not two).
+RW_LEVEL = {"Stealth": 17, "Lore": 27, "Spirit": 25, "Rhyme": 29}
+
+def early(gear_row, until):
+    items, note = [], gear_row.get("note", "")
+    for it in gear_row["items"]:
+        rw = it.split("|")[0]
+        if until and RW_LEVEL.get(rw, 0) > until and "|" in it and it.split("|", 1)[1] in gear_row["items"]:
+            continue   # only a "keep this base for it" pair; a runeword the guide lists alone stays
+        items.append(it)
+        note = note.replace("[%s]" % rw, rw) if "|" in it else note
+    made = {it.split("|", 1)[1] for it in items if "|" in it}
+    items = [it for it in items if it not in made]   # one item: the base the runeword goes into is not a second row
+    out = dict(gear_row, items=items)
+    if note: out["note"] = note
+    return out
+
 def stage(name, until, skills, stats, gear_=(), tips=(), respec=False):
+    """tips: plain strings go under Skills; G("...") under Gear, B("...") under Breakpoints."""
     r = {"name": name}
     if until: r["to"] = until
     if respec: r["respec"] = True
-    r.update({"skills": skills, "stats": stats, "gear": list(gear_), "tips": list(tips)})
+    r.update({"skills": skills, "stats": stats, "gear": [early(x, until) for x in gear_],
+              "tips": [str(t) for t in tips if not isinstance(t, (G, B))]})
+    for key, kind in (("gearTips", G), ("bpTips", B)):
+        if any(isinstance(t, kind) for t in tips):
+            r[key] = [str(t) for t in tips if isinstance(t, kind)]
     return r
 
 BP = {
@@ -72,11 +102,12 @@ def bp(cls, fcr_target, fhr_target, fcr_table=None):
     return out
 
 # common leveling gear lines
-RUNES_A1 = "Farm the Countess (Act 1, Forgotten Tower) for Tal + Eth (Stealth) and Ral runes."
-HELMS = g("Helmets", ["Cap"], "Two 2-socket helmets from Charsi or drops: one for Ral runes (fire resistance), one kept for Lore. At least one must not be magic.")
+COUNTESS = "Farm the Countess (Act 1, Forgotten Tower) for runes: %s, and Ral for fire resistance."
+RUNES_A1 = g("Runes", [], COUNTESS % "[Stealth]")
+HELMS = g("Helmets", ["Cap", "Lore|Cap"], "Two 2-socket helmets from Charsi or drops: one for Ral runes (fire resistance), one kept for [Lore] at level 27. At least one must not be magic.")
 STEALTH = g("Body", ["Stealth|Studded Leather"], "Any 2-socket armor that is not magic; Tal + Eth. Wear it from level 17.")
 AP = g("Shield", ["Ancients' Pledge|Kite Shield"], "3-socket shield from Farah (not magic); runes from the Act 5 quests.")
-SPIRIT_BASE = g("Weapon base", ["Crystal Sword"], "From the Cow Level; add 4 sockets with Larzuk's quest (Act 5). Keep it for Spirit.")
+SPIRIT_BASE = g("Weapon base", ["Crystal Sword", "Spirit|Crystal Sword"], "From the Cow Level; add 4 sockets with Larzuk's quest (Act 5). Keep it for [Spirit] at level 25.")
 SPIRIT_NM = g("Weapon", ["Spirit|Crystal Sword"], "Tal Thul Ort Amn from the Countess in Nightmare. Equip as soon as you have the runes.")
 LORE = g("Helmet", ["Lore|Cap"], "Ort Sol into the second 2-socket helmet.")
 NM_SHOP = g("Shop (Nightmare)", ["Coral Belt of the Mammoth", "Russet Heavy Boots of Haste", "Coral Heavy Gloves"],
@@ -123,8 +154,8 @@ SOR = write({
         stage("Act 1 Normal", 13, s((38, 4), (44, 1), (42, 1), (42, 4), (43, 1), (40, 1), (48, 2)),
               [to("vit", 55), to("str", 25), rest("vit")],
               [g("Weapon", ["Short Staff"], "Akara after the Den of Evil: look for +2 or +3 to Charged Bolt."), HELMS,
-               g("Body", ["Studded Leather"], "Any 2-socket armor that is not magic, kept for Stealth.")],
-              ["Den of Evil point: Charged Bolt.", "Save the level 5 point: Frost Nova and Static Field both open at 6.", RUNES_A1]),
+               g("Body", ["Studded Leather", "Stealth|Studded Leather"], "Any 2-socket armor that is not magic, kept for [Stealth] at level 17."), RUNES_A1],
+              ["Den of Evil point: Charged Bolt.", "Save the level 5 point: Frost Nova and Static Field both open at 6."]),
         stage("Act 2–5 Normal", 26, s((48, 7), (54, 1), (48, 9), (42, 5), (48, 15)),
               [to("vit", 70), to("str", 47), rest("vit")],
               [STEALTH, AP, g("Weapon", ["Wand"], "Wand of the Magus from Ormus at 23+ if it reaches the 63% cast rate breakpoint."),
@@ -134,7 +165,7 @@ SOR = write({
                                                    (59, 6), (65, 1), (59, 12)),
               [gear("str"), rest("vit")],
               [SPIRIT_NM, LORE, NM_SHOP, LOWER_RES],
-              ["Keep one point after the respec for Cold Mastery at 30.", "Spirit above 28% cast rate plus one 10% ring reaches 63%."],
+              ["Keep one point after the respec for Cold Mastery at 30.", G("Spirit above 28% cast rate plus one 10% ring reaches 63%.")],
               respec=True),
         stage("Nightmare – Hell", None, s((65, 2), (59, 20), (65, 3), (55, 20), (45, 20), (39, 20), (65, 20)),
               [gear("str"), rest("vit")],
@@ -159,8 +190,8 @@ AMA = write({
         stage("Act 1 Normal", 13, s((7, 4), (6, 1), (15, 5), (12, 1), (16, 2)),
               [to("vit", 70), to("dex", 28), to("str", 27), rest("vit")],
               [g("Weapon", ["Hunter's Bow"], "Put a Chipped Ruby in it for Exploding Arrow."), HELMS,
-               g("Body", ["Studded Leather"], "2 sockets, not magic: kept for Stealth.")],
-              ["Den of Evil point: Magic Arrow.", RUNES_A1]),
+               g("Body", ["Studded Leather", "Stealth|Studded Leather"], "2 sockets, not magic: kept for [Stealth] at level 17."), RUNES_A1],
+              ["Den of Evil point: Magic Arrow."]),
         stage("Act 2–5 Normal", 26, s((16, 3), (7, 5), (16, 9), (7, 6), (16, 15)),
               [to("ene", 30), rest("vit")],
               [STEALTH, g("Shield", ["Rhyme|Bone Shield"], "Bone Shield from Drognan; Shael Eth in Nightmare."),
@@ -186,7 +217,7 @@ AMA = write({
                g("Rings", ["Raven Frost", "The Stone of Jordan", "Bul-Kathos' Wedding Band"]),
                g("Swap", ["Call to Arms|Crystal Sword"]),
                g("Charms", ["Annihilus", "Hellfire Torch", "Gheed's Fortune"])],
-              ["52% attack speed is the Lightning Fury breakpoint to aim for.", "Pierce makes every bolt count; Razortail gives 100%."],
+              [B("52% attack speed is the Lightning Fury breakpoint to aim for."), "Pierce makes every bolt count; Razortail gives 100%."],
               respec=True),
     ]})
 
@@ -205,9 +236,9 @@ PAL = write({
     "stages": [
         stage("Act 1 Normal", 13, s((98, 1), (96, 1), (100, 3), (102, 4), (97, 1), (107, 1), (106, 1), (102, 5)),
               [to("vit", 45), to("dex", 21), to("vit", 74), to("ene", 25), rest("vit")],
-              [g("Weapon", ["Scepter", "Steel|Scimitar"], "Scepter from Akara after the Den of Evil; Steel if the Countess gives Tir El."),
-               HELMS, g("Body", ["Studded Leather"], "2 sockets, not magic: kept for Stealth.")],
-              ["Den of Evil point: Resist Fire.", "Save the level 11 point: Charge and Zeal at 12.", RUNES_A1]),
+              [g("Weapon", ["Scepter", "Steel|Scimitar"], "Scepter from Akara after the Den of Evil; Steel if the Countess gives the runes."),
+               HELMS, g("Body", ["Studded Leather", "Stealth|Studded Leather"], "2 sockets, not magic: kept for [Stealth] at level 17."), RUNES_A1],
+              ["Den of Evil point: Resist Fire.", "Save the level 11 point: Charge and Zeal at 12."]),
         stage("Act 2–3 Normal", 19, s((102, 7), (100, 4), (102, 11)),
               [rest("vit")],
               [STEALTH, g("Weapon", ["Scepter"], "Reroll magic scepters in the Cube (scepter + 3 chipped gems) for +Blessed Hammer.")],
@@ -242,8 +273,8 @@ ASS = write({
         stage("Act 1 Normal", 13, s((251, 4), (252, 1), (258, 2), (251, 5), (258, 5), (262, 2)),
               [to("ene", 35), to("vit", 55), to("str", 25), rest("vit")],
               [g("Weapon", ["Leaf|Short Staff"], "Short Staff from Akara after the Den of Evil (not a Long Staff); Tir Ral."), HELMS,
-               g("Body", ["Studded Leather"], "2 sockets, not magic: kept for Stealth.")],
-              ["Den of Evil point: Claw Mastery.", RUNES_A1 + " Leaf needs Tir + Ral."]),
+               g("Body", ["Studded Leather", "Stealth|Studded Leather"], "2 sockets, not magic: kept for [Stealth] at level 17."), g("Runes", [], COUNTESS % "[Stealth], [Leaf]")],
+              ["Den of Evil point: Claw Mastery."]),
         stage("Act 2–5 Normal", 26, s((262, 3), (251, 6), (262, 9), (251, 7), (262, 15)),
               [to("vit", 105), to("str", 43), to("str", 48, "Only if your Spirit base is a Broad Sword."), rest("vit")],
               [STEALTH, g("Weapon", ["Leaf|Short Staff"], "Make Leaf at 19."), AP, g("Belt", ["Belt"], "Farah."),
@@ -288,8 +319,8 @@ DRU = write({
         stage("Act 1 Normal", 13, s((225, 5), (229, 2), (225, 9), (234, 2)),
               [to("vit", 75), to("str", 25), rest("vit")],
               [g("Weapon", ["Leaf|Short Staff"], "Short Staff from Akara after the Den of Evil; Tir Ral."), HELMS,
-               g("Body", ["Studded Leather"], "2 sockets, not magic: kept for Stealth.")],
-              ["Den of Evil point: Firestorm.", RUNES_A1]),
+               g("Body", ["Studded Leather", "Stealth|Studded Leather"], "2 sockets, not magic: kept for [Stealth] at level 17."), RUNES_A1],
+              ["Den of Evil point: Firestorm."]),
         stage("Act 2–5 Normal", 26, s((234, 3), (225, 10), (234, 9), (225, 11), (234, 15)),
               [to("vit", 115), to("str", 43), to("str", 48, "Only if your Spirit base is a Broad Sword."), rest("vit")],
               [STEALTH, g("Weapon", ["Leaf|Short Staff"]), AP, g("Belt", ["Belt"], "Farah."), TELE_STAFF, SPIRIT_BASE],
@@ -297,7 +328,7 @@ DRU = write({
         stage("Act 1–3 Nightmare", 38, s((225, 12), (225, 13), (234, 19), (225, 14), (225, 20), (244, 1)),
               [rest("vit")],
               [SPIRIT_NM, LORE, NM_SHOP],
-              ["Wait for Anya's reward until 30 for a chance at +1 to skills.", "Respec before Mephisto in Nightmare at the latest."]),
+              [G("Wait for Anya's reward until 30 for a chance at +1 to skills."), "Respec before Mephisto in Nightmare at the latest."]),
         stage("Respec · Nightmare – Hell", None,
               s((230, 1), (235, 1), (240, 1), (245, 15), (250, 9), (235, 14), (245, 20), (250, 20), (235, 20), (221, 1), (227, 1), (226, 1),
                 (237, 1), (247, 1), (240, 20), (226, 20), (237, 20)),
@@ -333,8 +364,8 @@ NEC = write({
         stage("Act 1 Normal", 13, s((70, 1), (69, 1), (70, 3), (66, 1), (67, 1), (74, 1), (75, 1), (70, 6)),
               [rest("vit")],
               [g("Weapon", ["Wand"], "Any wand with +Raise Skeleton from Akara or drops."), HELMS,
-               g("Body", ["Studded Leather"], "2 sockets, not magic: kept for Stealth.")],
-              ["Corpse Explosion clears packs once the skeletons drop the first kill.", RUNES_A1]),
+               g("Body", ["Studded Leather", "Stealth|Studded Leather"], "2 sockets, not magic: kept for [Stealth] at level 17."), RUNES_A1],
+              ["Corpse Explosion clears packs once the skeletons drop the first kill."]),
         stage("Act 2 Normal – Act 1 Nightmare", 30, s((80, 1), (79, 1), (72, 1), (77, 1), (70, 12), (69, 6), (87, 1), (89, 1), (70, 20)),
               [gear("str"), rest("vit")],
               [STEALTH, AP, LORE, g("Belt", ["Belt"], "Farah."), TELE_STAFF],
@@ -365,13 +396,13 @@ BAR = write({
               [to("vit", 55), to("dex", 35), to("str", 41), rest("vit")],
               [g("Weapon", ["Scepter"], "Two scepters from Akara after the Den of Evil."),
                g("Helmet", ["Nadir|Cap"], "2-socket helmet, not magic: Nef Tir."),
-               g("Body", ["Studded Leather"], "2 sockets, not magic: kept for Stealth.")],
-              ["Den of Evil point: Bash.", "Save the level 5 point: Double Swing and Leap at 6.", RUNES_A1]),
+               g("Body", ["Studded Leather", "Stealth|Studded Leather"], "2 sockets, not magic: kept for [Stealth] at level 17."), RUNES_A1],
+              ["Den of Evil point: Bash.", "Save the level 5 point: Double Swing and Leap at 6."]),
         stage("Act 2–4 Normal", 25, s((130, 1), (137, 1), (143, 1), (146, 1), (129, 3), (141, 1), (138, 1), (140, 1), (147, 1), (149, 1),
                                       (148, 1), (149, 2), (147, 2)),
               [rest("vit")],
               [g("Weapon", ["Malice|Flail"], "Two Flails from Farah (level 14): Malice in one, 3 Tal gems in the other."),
-               STEALTH, g("Shield", ["Bone Shield"], "Drognan: kept for Rhyme."), TELE_STAFF],
+               STEALTH, g("Shield", ["Bone Shield", "Rhyme|Bone Shield"], "Drognan: kept for [Rhyme] at level 29."), TELE_STAFF],
               ["Radament point: Howl.", "Save points at 17 and 23 for the two-skill levels after."]),
         stage("Act 5 Normal", 30, s((126, 9), (154, 1), (155, 1)),
               [rest("vit")],
@@ -428,9 +459,9 @@ WAR = write({
     "stages": [
         stage("Act 1–2 Normal", 18, s((395, 11), (399, 4), (393, 1), (383, 1), (388, 1), (390, 1)),
               [to("vit", 45), to("dex", 25), to("str", 25), rest("vit")],
-              [HELMS, g("Body", ["Hard Leather Armor"], "2 sockets, not magic: kept for Stealth."),
-               g("Boots", ["Boots"], "Imbue boots at Charsi at 19 for a chance at faster run/walk.")],
-              ["Den of Evil point: Miasma Bolt.", "Radament point: Sigil: Lethargy.", RUNES_A1]),
+              [HELMS, g("Body", ["Hard Leather Armor", "Stealth|Hard Leather Armor"], "2 sockets, not magic: kept for [Stealth] at level 17."),
+               g("Boots", ["Boots"], "Imbue boots at Charsi at 19 for a chance at faster run/walk."), RUNES_A1],
+              ["Den of Evil point: Miasma Bolt.", "Radament point: Sigil: Lethargy."]),
         stage("Act 3–5 Normal", 27, s((399, 9), (399, 11), (397, 1), (399, 14)),
               [to("str", 48, "Includes Lam Esen's Tome (Act 3)."), rest("vit")],
               [g("Body", ["Stealth|Hard Leather Armor"]), AP, g("Swap", ["Battle Staff"], "Battle Staff of Teleportation from Ormus, levels 20-23 (no more than 19,000 gold).")],
@@ -451,7 +482,7 @@ WAR = write({
               [gear("str"), to("dex", 120, "About 100 points for attack rating."), rest("vit")],
               [g("Weapon", ["Void", "Heart of the Oak|Flail", "Spirit|Crystal Sword"], "Spirit to start; reach 75% cast rate first."),
                g("Off-hand", ["Spirit|Monarch", "Lidless Wall"])] + CASTER_END,
-              ["Keep 125% cast rate once you can.", "Starter: Demonic Mastery only to 5 and Consume after the main skills."],
+              [B("Keep 125% cast rate once you can."), "Starter: Demonic Mastery only to 5 and Consume after the main skills."],
               respec=True),
     ]})
 
@@ -498,7 +529,7 @@ then(SOR, "sor-lightning", "Lightning Sorceress",
             g("Rings", ["The Stone of Jordan", "Bul-Kathos' Wedding Band", "Nagelring"]),
             g("Swap", ["Call to Arms|Crystal Sword", "Wand of Lower Resistance"], "Lower Resist charges help against lightning immunes."),
             g("Charms", ["Crack of the Heavens", "Annihilus", "Hellfire Torch", "Gheed's Fortune"], "Crack of the Heavens lowers lightning immunity.")],
-           ["Lightning and Chain Lightning have their own cast speed table: 117% is the target.",
+           [B("Lightning and Chain Lightning have their own cast speed table: 117% is the target."),
             "Warmth takes the points left over at the very end."],
            respec=True),
      bp("sor", 117, 60, [0, 7, 15, 23, 35, 52, 78, 117, 194]), [49, 53, 63],
@@ -575,7 +606,7 @@ then(PAL, "pal-smiter", "Smite Paladin",
             g("Amulet", ["Mara's Kaleidoscope", "Metalgrid"]),
             g("Rings", ["Raven Frost", "Bul-Kathos' Wedding Band", "Wisp Projector"]),
             g("Charms", ["Annihilus", "Hellfire Torch"])],
-           ["Smite always hits and stuns.", "Crushing blow and life tap (Dracul's Grasp) melt bosses."],
+           ["Smite always hits and stuns.", G("Crushing blow and life tap (Dracul's Grasp) melt bosses.")],
            respec=True),
      bp("pal", None, 48), [117, 122, 97],
      merc_a2(MIGHT, "The Reaper's Toll casts Decrepify on hit.", ["Insight|Giant Thresher", "The Reaper's Toll"],
@@ -678,7 +709,7 @@ then(WAR, "war-mirrored-blades", "Mirrored Blades Warlock",
             g("Swap", ["Call to Arms|Crystal Sword", "Staff of Teleportation"]),
             g("Charms", ["Annihilus", "Hellfire Torch", "Gheed's Fortune"])],
            ["Bind Demon: stop at 20 counting +skills; the rest goes to Levitation Mastery.",
-            "Aim for at least 48% faster hit recovery (no Warlock table is published yet)."],
+            B("Aim for at least 48% faster hit recovery (no Warlock table is published yet).")],
            respec=True),
      {}, [392, 391, 389],
      merc_a2(MIGHT, "Pride's aura raises your attack rating and damage.", ["Insight|Giant Thresher", "Pride|Giant Thresher"],

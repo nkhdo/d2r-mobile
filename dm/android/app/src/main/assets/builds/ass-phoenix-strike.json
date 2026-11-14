@@ -118,19 +118,23 @@
      "items": [
       "Cap"
      ],
-     "note": "Two 2-socket helmets from Charsi or drops: one for Ral runes (fire resistance), one kept for Lore. At least one must not be magic."
+     "note": "Two 2-socket helmets from Charsi or drops: one for Ral runes (fire resistance), one kept for [Lore] at level 27. At least one must not be magic."
     },
     {
      "slot": "Body",
      "items": [
       "Studded Leather"
      ],
-     "note": "2 sockets, not magic: kept for Stealth."
+     "note": "2 sockets, not magic: kept for [Stealth] at level 17."
+    },
+    {
+     "slot": "Runes",
+     "items": [],
+     "note": "Farm the Countess (Act 1, Forgotten Tower) for runes: [Stealth], [Leaf], and Ral for fire resistance."
     }
    ],
    "tips": [
-    "Den of Evil point: Claw Mastery.",
-    "Farm the Countess (Act 1, Forgotten Tower) for Tal + Eth (Stealth) and Ral runes. Leaf needs Tir + Ral."
+    "Den of Evil point: Claw Mastery."
    ]
   },
   {
@@ -216,9 +220,9 @@
     {
      "slot": "Weapon base",
      "items": [
-      "Crystal Sword"
+      "Spirit|Crystal Sword"
      ],
-     "note": "From the Cow Level; add 4 sockets with Larzuk's quest (Act 5). Keep it for Spirit."
+     "note": "From the Cow Level; add 4 sockets with Larzuk's quest (Act 5). Keep it for Spirit at level 25."
     }
    ],
    "tips": [

@@ -93,7 +93,7 @@ final class ThorDeck extends View {
     private static int tab = TAB_MAIN;
     private final RectF[] tabRect = new RectF[TAB_COUNT];
     private BagModel.Item[] bag = new BagModel.Item[0];
-    private final int[] bagRaw = new int[1 + 128 * BagModel.INTS];
+    private final int[] bagRaw = new int[1 + 256 * BagModel.INTS];   // DM_INV_MAX
     private int bagGen = -1;
     private final Bitmap[] beltSeen = new Bitmap[4];   // per belt column, the last picture of its own item (beltBottle)
     private DeckIcons icons;
@@ -627,7 +627,8 @@ final class ThorDeck extends View {
         if (n < 0 || bagRaw[0] == bagGen) return;
         bagGen = bagRaw[0];
         bag = BagModel.decode(Arrays.copyOfRange(bagRaw, 1, bagRaw.length), n);
-        if (tab == TAB_MAIN) invalidate();
+        boolean runes = build.bag(bag);
+        if (tab == TAB_MAIN || runes && tab == TAB_BUILD) invalidate();
     }
 
     // Map tab: the goals for the current area, redrawn when they or the player's cell change

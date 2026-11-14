@@ -16,8 +16,9 @@ import java.util.Map;
 //           to wear the gear: not checkable, shown as a reminder) or "rest": true (everything left).
 //   gear    {"slot": text, "items": [names], "note": text}. An item is its English game name ("Harlequin Crest", a runeword such as
 //           "Spirit"), optionally "|base" ("Spirit|Crystal Sword"); names are shown in the game's language when the import pack has
-//           them (ItemNames), else as written.
-//   tips    short lines of our own.
+//           them (ItemNames), else as written. No items: just the note under the slot heading ("Runes": where to farm them).
+//   tips    short lines of our own, shown under Skills; "gearTips" under Gear and "bpTips" under Breakpoints (both optional).
+// In notes and tips, "[Stealth]" names a game item: shown in the game's language, a runeword with its runes ("Stealth (Tal Eth)").
 // Build-wide: "merc" (type and gear like a stage's), "breakpoints" ({"fcr": [table], "fcrTarget": N, "fhr": [table], "fhrTarget": N}),
 // "after20" (skill ids to push past 20 once a Rift has raised the cap), "links" ([{"title", "url"}]; the first is the full guide).
 final class BuildGuide {
@@ -46,9 +47,11 @@ final class BuildGuide {
         final List<Step> skills;
         final List<StatRule> stats;
         final List<Gear> gear;
-        final List<String> tips;
-        Stage(String name, int to, boolean respec, List<Step> skills, List<StatRule> stats, List<Gear> gear, List<String> tips) {
+        final List<String> tips, gearTips, bpTips;
+        Stage(String name, int to, boolean respec, List<Step> skills, List<StatRule> stats, List<Gear> gear, List<String> tips,
+              List<String> gearTips, List<String> bpTips) {
             this.name = name; this.to = to; this.respec = respec; this.skills = skills; this.stats = stats; this.gear = gear; this.tips = tips;
+            this.gearTips = gearTips; this.bpTips = bpTips;
         }
     }
 
@@ -98,7 +101,8 @@ final class BuildGuide {
                 stats.add(new StatRule(stat, kind, num(r, "to", 0), str(r, "note", "")));
             }
             stages.add(new Stage(str(s, "name", "?"), to, Boolean.TRUE.equals(s.get("respec")), Collections.unmodifiableList(steps),
-                                 Collections.unmodifiableList(stats), gear(s.get("gear")), strings(s.get("tips"))));
+                                 Collections.unmodifiableList(stats), gear(s.get("gear")), strings(s.get("tips")),
+                                 strings(s.get("gearTips")), strings(s.get("bpTips"))));
         }
         Map<String, Object> m = o.get("merc") == null ? Collections.emptyMap() : obj(o.get("merc"), id + " merc");
         Map<String, Object> bp = o.get("breakpoints") == null ? Collections.emptyMap() : obj(o.get("breakpoints"), id + " breakpoints");

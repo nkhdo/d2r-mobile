@@ -45,6 +45,13 @@ public class BagModelTest {
 
         check("flags beside the row", 3, items[1].flags);
         check("belt slot", 5, items[5].x);
+        BagModel.Item[] runes = BagModel.decode(pack(
+            item(21, "r07", BagModel.BAG, 2, 0, 0, 0, 0, 1, 1, -1),
+            item(22, "r07", BagModel.STASH, 2, 0, 0, 0, 0, 1, 1, -1),
+            item(23, "r05", BagModel.CUBE, 2, 0, 0, 0, 0, 1, 1, -1),
+            item(24, "r30", BagModel.WORN, 2, 0, 0, 0, 0, 1, 1, -1),   // not a place a rune is kept: ignored
+            item(25, "rin", BagModel.BAG, 2, 0, 0, 0, 0, 1, 1, -1)), 5);
+        check("runes held in bag, stash and cube", "{r05=1, r07=2}", new java.util.TreeMap<>(BagModel.runes(runes)).toString());
         check("short list", 0, BagModel.decode(new int[3], 1).length);
         System.out.println("BagModelTest OK (" + cases + " cases)");
     }

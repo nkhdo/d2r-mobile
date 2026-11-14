@@ -25,6 +25,14 @@ def guides():
     return {p.name: json.loads(p.read_text(encoding='utf-8')) for p in sorted(BUILDS.glob('*.json'))}
 
 
+def texts(g):
+    """Every note and tip of a guide (where "[Item]" may name a game item)."""
+    out = [g['merc'].get('note', '')] + [x.get('note', '') for x in g['merc']['gear']]
+    for s in g['stages']:
+        out += s['tips'] + s.get('gearTips', []) + s.get('bpTips', []) + [x.get('note', '') for x in s['gear'] + s['stats']]
+    return out
+
+
 def effective(stages, i):
     """BuildPlan.steps: the steps from the last respec stage at or before i, up to i."""
     start = max([k for k in range(i + 1) if stages[k].get('respec')] or [0])
@@ -53,7 +61,7 @@ class Format(unittest.TestCase):
                         self.assertIn(r['stat'], STATS)
                         self.assertTrue(('to' in r) + bool(r.get('gear')) + bool(r.get('rest')) == 1, r)
                     for gear in s['gear']:
-                        self.assertTrue(gear['slot'] and gear['items'])
+                        self.assertTrue(gear['slot'] and (gear['items'] or gear.get('note')))   # no items: a note under a heading
                 bp = g['breakpoints']
                 for k in ('fcr', 'fhr'):
                     if k not in bp:
@@ -110,6 +118,14 @@ class AgainstTheGame(unittest.TestCase):
                         if re.sub(r'[^a-z0-9]+', '', part.lower()) not in self.items:
                             unknown.add(part)
         print('\nshown as written (not game item names): ' + ', '.join(sorted(unknown)))
+
+    def test_items_named_in_notes(self):
+        # "[Item]" in a note or tip must be a game name, or it shows without its runes
+        for name, g in guides().items():
+            for t in texts(g):
+                for item in re.findall(r'\[([^\]]*)\]', t):
+                    with self.subTest(build=name, item=item):
+                        self.assertIn(re.sub(r'[^a-z0-9]+', '', item.lower()), self.items)
 
 
 if __name__ == '__main__':
